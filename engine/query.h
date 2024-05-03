@@ -64,7 +64,6 @@ struct query {
 private:
     query_type type;
     std::string table_name;
-    // TODO: optimizer after checking whether every thing is ok shoull add the pointer to the proper table
     table* p_table;
     std::vector<std::string> fields;
     std::map<std::string, std::string> updates;

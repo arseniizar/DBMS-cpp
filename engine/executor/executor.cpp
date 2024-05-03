@@ -13,7 +13,6 @@ auto executor::set_query(struct query &q) {
 auto executor::select() {
     auto fields = executor::query.get_fields();
     auto table = *(query.get_table_pointer());
-    // TODO: make a function inside the optimizer in order to check whether the name of the table is valid
     auto vec = std::vector<column>();
     if (fields.at(0) == "*") {
         for (auto &column: table.get_columns()) vec.push_back(column);
