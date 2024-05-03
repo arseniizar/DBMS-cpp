@@ -50,6 +50,10 @@ inline std::string reserved_words[] {
     "SET", "AS",
 };
 
+inline std::string start_words[] {
+    "SELECT", "INSERT INTO", "UPDATE", "DELETE FROM"
+};
+
 struct parser {
 private:
     std::deque<std::string> tokens;
@@ -81,25 +85,27 @@ public:
     struct query parse();
     std::pair<struct query, struct parse_error> do_parse();
 
-    const std::deque<std::string> &get_tokens() const;
+    const parse_error &get_error() const;
 
-    void set_tokens(const std::deque<std::string> &tokens);
-
-    const std::string &get_input() const;
-
-    void set_input(const std::string &input);
-
-    const struct query &get_query() const;
-
-    void set_query(const struct query &query);
-
-    size_t get_index() const;
-
-    void set_index(size_t index);
-
-    enum step get_step() const;
-
-    void set_step(enum step step);
+//    const std::deque<std::string> &get_tokens() const;
+//
+//    void set_tokens(const std::deque<std::string> &tokens);
+//
+//    const std::string &get_input() const;
+//
+//    void set_input(const std::string &input);
+//
+//    const struct query &get_query() const;
+//
+//    void set_query(const struct query &query);
+//
+//    size_t get_index() const;
+//
+//    void set_index(size_t index);
+//
+//    enum step get_step() const;
+//
+//    void set_step(enum step step);
 };
 
 

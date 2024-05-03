@@ -5,17 +5,14 @@
 
 // I will use pl/sql as the basis of sql in this project
 
+auto format_as(query q) {
+    return fmt::format("{}", q.to_string());
+}
+
 auto main() -> int {
-    using namespace std;
-    auto input = string();
-    fmt::println("Write a simple query :)");
-//    getline(cin, input);
-    input = "SELECT id, name FROM EMP";
-    parser parser(input);
-    parser.lexeme();
-    fmt::println("{}", parser.get_tokens());
-    parser.pop();
-    parser.pop();
-    fmt::println("{}", parser.get_index());
+    auto p = parser("SELECT id, name FROM 'b' where a = b");
+    query q = p.parse();
+    fmt::println("{}", q);
+    fmt::println("{}", p.get_error().message);
     return 0;
 }

@@ -28,35 +28,35 @@ inline std::string query_type_str[] = {
 enum struct query_operator {
     UnknownOperator,
     // =
-    Eq,
+    eq,
     // !=
-    Ne,
+    ne,
     // >
-    Gt,
+    gt,
     // <
-    Lt,
+    lt,
     // >=
-    Gte,
+    gte,
     // <=
-    Lte
+    lte
 };
 
 inline std::string query_operator_str[] = {
-        "UnknownOperator",
-        "Eq",
-        "Ne",
-        "Gt",
-        "Lt",
-        "Gte",
-        "Lte",
+        "unknown_operator",
+        "eq",
+        "ne",
+        "gt",
+        "lt",
+        "gte",
+        "lte",
 };
 
-enum struct condition {
-    Operand1,
-    OperandIsField,
-    Operator,
-    Operand2,
-    Operand2IsField
+struct condition {
+    std::string operand1;
+    bool operand1_is_field;
+    query_operator query_operator;
+    std::string operand2;
+    bool operand2_is_field;
 };
 
 struct query {
@@ -73,6 +73,10 @@ public:
         query::type = type;
     }
 
+    size_t get_fields_size() {
+        return query::fields.size();
+    }
+
     void append_field(std::string const &field) {
         query::fields.push_back(field);
     }
@@ -81,8 +85,41 @@ public:
         query::aliases[key] = value;
     }
 
+    void append_update(std::string const& key, std::string const& value) {
+        query::updates[key] = value;
+    }
+
+    void append_condition(const condition& condition) {
+        query::conditions.push_back(condition);
+    }
+
+    void append_inserts_vec(std::vector<std::string> const& vec) {
+        query::inserts.push_back(vec);
+    }
+
+    void append_insert(std::string const& insert) {
+        query::inserts.back().push_back(insert);
+    }
+
+    std::vector<std::string> get_current_inserts() {
+        return query::inserts.back();
+    }
+
+    struct condition get_current_condition() {
+        return query::conditions.back();
+    }
+
+    void set_current_condition(condition const& condition) {
+        query::conditions.pop_back();
+        query::conditions.push_back(condition);
+    }
+
     void set_table_name(const std::string &table_name) {
         query::table_name = table_name;
+    }
+
+    std::string to_string() {
+        return std::string("query table name: " + query::table_name);
     }
 };
 
