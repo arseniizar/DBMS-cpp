@@ -1,7 +1,7 @@
 #include <bits/stdc++.h>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include "engine/parser.h"
+#include "engine/dbms.h"
 
 // I will use pl/sql as the basis of sql in this project
 
@@ -10,9 +10,10 @@ auto format_as(query q) {
 }
 
 auto main() -> int {
-    auto p = parser("SELECT id, name FROM 'b' where a = b");
-    query q = p.parse();
+    auto db = dbms();
+    db.parser.input("SELECT * FROM 'b' where a = b");
+    query q = db.parser.parse();
     fmt::println("{}", q);
-    fmt::println("{}", p.get_error().message);
+    fmt::println("{}", db.parser.get_error().message);
     return 0;
 }

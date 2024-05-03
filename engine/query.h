@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "table.h"
 
 enum struct query_type {
     UnknownType,
@@ -63,6 +64,8 @@ struct query {
 private:
     query_type type;
     std::string table_name;
+    // TODO: optimizer after checking whether every thing is ok shoull add the pointer to the proper table
+    table* p_table;
     std::vector<std::string> fields;
     std::map<std::string, std::string> updates;
     std::map<std::string, std::string> aliases;
@@ -120,6 +123,18 @@ public:
 
     std::string to_string() {
         return std::string("query table name: " + query::table_name);
+    }
+
+    const auto get_fields() {
+        return query::fields;
+    }
+
+    const auto get_table_name() {
+        return query::table_name;
+    }
+
+    const auto get_table_pointer() {
+        return query::p_table;
     }
 };
 

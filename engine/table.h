@@ -11,52 +11,63 @@
 #include <deque>
 #include <string>
 
-template<typename T>
-struct t_row {
+struct row {
 private:
-    T data;
+    std::string data;
 public:
     auto get_data() {
-        return t_row::data;
+        return row::data;
     }
 
-    void insert_data(T ins_data) {
-        t_row::data = ins_data;
+    void insert_data(std::string const& ins_data) {
+        row::data = ins_data;
     }
 };
 
-template<typename T>
-struct t_column {
+struct column {
 private:
-    std::deque<t_row<T>> rows;
+    std::deque<row> rows;
     std::string col_name;
 public:
     auto get_rows() {
-        return t_column::rows;
+        return column::rows;
     }
 
-    void insert_row(t_row<T> row, T data) {
+    void insert_row(row row, std::string const& data) {
         row.insert_data(data);
-        t_column::rows.push_back(row);
+        column::rows.push_back(row);
     }
 
     void set_name(const std::string &name) {
-        t_column::col_name = name;
+        column::col_name = name;
+    }
+
+    const auto get_name() {
+        return column::col_name;
     }
 };
 
-template<typename T>
-struct t_table {
+struct table {
 private:
-    std::deque<t_column<T>> columns;
+    std::string table_name;
+    std::deque<column> columns;
 public:
     auto get_columns() {
-        return t_table::columns;
+        return table::columns;
     }
 
-    void insert_column(t_column<T> column, std::string col_name) {
+    auto get_table_name() {
+        return table::table_name;
+    }
+
+    void insert_column(column column, std::string const& col_name) {
         column.set_name(col_name);
-        t_table::columns.push_back(column);
+        table::columns.push_back(column);
+    }
+
+    auto get_column_by_name(std::string const& col_name) {
+        for(auto &column : columns)
+            if(column.get_name() ==col_name) return column;
     }
 };
 
