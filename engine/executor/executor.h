@@ -7,7 +7,7 @@
 
 #include "execution_result.h"
 #include "execution_error.h"
-#include "../query.h"
+#include "../query/query.h"
 
 // query looks like that:
 // type - I can use inline array of query_type strings
@@ -18,6 +18,19 @@
 // conditions (where etc.)
 // inserts
 
+enum struct q_action {
+    SELECT, DELETE, INSERT, UPDATE, CREATE
+};
+
+inline std::string q_action_str[] {
+    "SELECT", "DELETE",
+    "INSERT", "UPDATE", "CREATE"
+};
+
+ // I will obtain this from the optimizer as the return type;
+struct executable {
+
+};
 
 struct executor {
     query query;
@@ -26,7 +39,7 @@ struct executor {
 
     void execute();
 
-    auto select();
+    struct table select();
 
     auto delete_f();
 

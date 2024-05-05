@@ -11,7 +11,7 @@ auto format_as(query q) {
 
 auto main() -> int {
     auto db = dbms();
-    db.parser.input("SELECT * FROM 'b' where a = b");
+    db.parser.input("DELETE FROM a where a");
     query q = db.parser.parse();
     fmt::println("{}", q);
     fmt::println("{}", db.parser.get_error().message);

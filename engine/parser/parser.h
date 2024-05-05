@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 #include <deque>
-#include "../query.h"
+#include "../query/query.h"
 #include "parse_error.h"
 
 enum struct step {

@@ -1,0 +1,35 @@
+//
+// Created by Altezza on 05.05.2024.
+//
+
+#ifndef DATABASEPROJECT_DATA_TYPE_H
+#define DATABASEPROJECT_DATA_TYPE_H
+
+#include <string>
+#include <regex>
+
+enum struct data_type {
+    UNKNOWN, NVARCHAR2, DATE, INTEGER
+};
+
+inline std::string data_types_str[]{
+        "UNKNOWN", "NVARCHAR2",
+        "DATE", "INTEGER"
+};
+
+static auto return_data_type(const std::string &data) {
+    auto date_regex = std::regex(R"(\d{1,2}\/\d{1,2}\/\d{2})"),
+            integer_regex = std::regex(R"([+-]?(?<!\.)\b[0-9]+\b(?!\.[0-9]))");
+    std::vector<std::regex *> regexes = {&date_regex, &integer_regex};
+    auto matcher = std::smatch();
+    auto count = 1;
+    for (auto const &reg: regexes) {
+        count++;
+        auto matched = std::regex_match(data, matcher, *reg);
+        if (matched) {
+            return static_cast<data_type>(count);
+        }
+    }
+}
+
+#endif //DATABASEPROJECT_DATA_TYPE_H

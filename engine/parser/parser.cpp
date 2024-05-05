@@ -160,6 +160,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 } else {
                     return parser::make_error_pair("Invalid query type");
                 }
+                break;
             }
             case step::select_field: {
                 auto identifier = parser::peek();
@@ -185,6 +186,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                     continue;
                 }
                 parser::step = step::select_comma;
+                break;
             }
             case step::select_comma: {
                 auto comma = parser::peek();

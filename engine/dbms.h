@@ -6,11 +6,11 @@
 #define DATABASEPROJECT_DBMS_H
 
 #include <vector>
-#include "query.h"
-#include "table.h"
+#include "query/query.h"
+#include "table/table.h"
 #include "parser/parser.h"
-#include "executor/executor.h"
 #include "optimizer/optimizer.h"
+#include "executor/executor.h"
 
 struct dbms {
     std::vector<query> queries;

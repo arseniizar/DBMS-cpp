@@ -6,7 +6,7 @@
 #define DATABASEPROJECT_EXECUTION_RESULT_H
 
 #include <string>
-#include "../query.h"
+#include "../query/query.h"
 
 struct execution_result {
     std::string message;
