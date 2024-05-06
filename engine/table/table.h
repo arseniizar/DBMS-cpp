@@ -14,48 +14,8 @@
 #include "../query/condition.h"
 #include "data_type.h"
 #include "../query/get_operator.h"
-
-
-struct row {
-private:
-    std::string data;
-    data_type type;
-public:
-    auto get_data() {
-        return row::data;
-    }
-
-    auto get_type() {
-        return row::type;
-    }
-
-    void insert_data(std::string const &ins_data) {
-        row::data = ins_data;
-    }
-};
-
-struct column {
-private:
-    std::deque<row> rows;
-    std::string col_name;
-public:
-    auto get_rows() {
-        return column::rows;
-    }
-
-    void insert_row(row row, std::string const &data) {
-        row.insert_data(data);
-        column::rows.push_back(row);
-    }
-
-    void set_name(const std::string &name) {
-        column::col_name = name;
-    }
-
-    auto get_name() {
-        return column::col_name;
-    }
-};
+#include "column.h"
+#include "row.h"
 
 // Here in the table struct I can implement the printing function of the table
 
@@ -63,28 +23,6 @@ struct table {
 private:
     std::string table_name;
     std::vector<column> columns;
-
-    static auto predicate(std::string const &op, row row, std::string const &field) {
-        if (op == "eq") {
-            return (row.get_data() == field) && (row.get_type()
-                                                 == return_data_type(field));
-        } else if (op == "ne") {
-            return (row.get_data() != field) && (row.get_type()
-                                                 == return_data_type(field));
-        } else if (op == "gt") {
-            return (row.get_data() > field) && (row.get_type()
-                                                == return_data_type(field));
-        } else if (op == "lt") {
-            return (row.get_data() < field) && (row.get_type()
-                                                == return_data_type(field));
-        } else if (op == "gte") {
-            return (row.get_data() >= field) && (row.get_type()
-                                                 == return_data_type(field));
-        } else if (op == "lte") {
-            return (row.get_data() <= field) && (row.get_type()
-                                                 == return_data_type(field));
-        }
-    }
 
 public:
     table(std::string table_name, const std::vector<column> &columns)
@@ -101,19 +39,25 @@ public:
 
     auto erase(const std::vector<condition> &conditions) {
         // I am using condition WHERE!
-        auto erased_columns = std::vector<row>();
+        auto cols_of_erased_rows = std::vector<column>();
+        auto erased_rows = std::vector<row>();
         for (auto const &condition: conditions) {
             auto col = table::get_column_by_name(condition.operand1);
             for (auto i = 0; i < col.get_rows().size(); i++) {
                 auto op = get_operator(condition);
+                auto row = col.get_rows()[i];
                 // HOLY FUCKING HELL
                 // assuming that operand1 - name, operand2 - int, etc.
-                if (predicate(op, col.get_rows()[i], condition.operand2)) {
+                if (predicate(op, row, condition.operand2)) {
                     // make something for erasing some values inside the column
+                    erased_rows.push_back(row);
+                    col.remove_row(row);
                 }
             }
+            auto temp_col = column(erased_rows, col.get_name() + ".rec");
+            cols_of_erased_rows.push_back(temp_col);
         }
-        return erased_columns;
+        return cols_of_erased_rows;
     }
 
     auto erase() {

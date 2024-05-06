@@ -39,8 +39,16 @@ private:
     std::vector<condition> conditions;
     std::vector<std::vector<std::string>> inserts;
 public:
+    auto set_p_table(table *p_t) {
+        query::p_table = p_t;
+    }
+
     void set_type(query_type type) {
         query::type = type;
+    }
+
+    auto get_type() {
+        return query::type;
     }
 
     auto get_conditions() {

@@ -7,6 +7,8 @@
 
 
 #include <string>
+#include "../table/row.h"
+#include "../table/data_type.h"
 
 enum struct query_operator {
     UnknownOperator,
@@ -33,6 +35,28 @@ inline std::string query_operator_str[] = {
         "gte",
         "lte",
 };
+
+static auto predicate(std::string const &op, row row, std::string const &field) {
+        if (op == "eq") {
+            return (row.get_data() == field) && (row.get_type()
+                                                 == return_data_type(field));
+        } else if (op == "ne") {
+            return (row.get_data() != field) && (row.get_type()
+                                                 == return_data_type(field));
+        } else if (op == "gt") {
+            return (row.get_data() > field) && (row.get_type()
+                                                == return_data_type(field));
+        } else if (op == "lt") {
+            return (row.get_data() < field) && (row.get_type()
+                                                == return_data_type(field));
+        } else if (op == "gte") {
+            return (row.get_data() >= field) && (row.get_type()
+                                                 == return_data_type(field));
+        } else if (op == "lte") {
+            return (row.get_data() <= field) && (row.get_type()
+                                                 == return_data_type(field));
+        }
+    }
 
 
 #endif //DATABASEPROJECT_QUERY_OPERATOR_H

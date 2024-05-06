@@ -22,24 +22,26 @@ enum struct q_action {
     SELECT, DELETE, INSERT, UPDATE, CREATE
 };
 
-inline std::string q_action_str[] {
-    "SELECT", "DELETE",
-    "INSERT", "UPDATE", "CREATE"
+inline std::string q_action_str[]{
+        "SELECT", "DELETE",
+        "INSERT", "UPDATE", "CREATE"
 };
 
- // I will obtain this from the optimizer as the return type;
+// I will obtain this from the optimizer as the return type;
 struct executable {
 
 };
 
 struct executor {
-    query query;
+    query q;
     execution_result result;
     execution_error error;
 
-    void execute();
+    void set_query(const query &q);
 
-    struct table select();
+    query get_query();
+
+    auto select();
 
     auto delete_f();
 
@@ -47,7 +49,8 @@ struct executor {
 
     auto update();
 
-    auto set_query(struct query &q);
+    std::vector<column> execute();
+
 };
 
 #endif //DATABASEPROJECT_EXECUTOR_H

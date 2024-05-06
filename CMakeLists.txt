@@ -30,5 +30,8 @@ add_executable(DatabaseProject main.cpp
         engine/query/query_operator.h
         engine/table/data_type.h
         engine/query/get_operator.h
+        engine/table/column.h
+        engine/table/row.h
+        engine/utils/backup.h
 )
 target_link_libraries(DatabaseProject fmt)
