@@ -16,7 +16,8 @@ enum struct query_type {
     Select,
     Update,
     Insert,
-    Delete
+    Delete,
+    Create
 };
 
 inline std::string query_type_str[] = {
@@ -24,21 +25,23 @@ inline std::string query_type_str[] = {
         "Select",
         "Update",
         "Insert",
-        "Delete"
+        "Delete",
+        "Create"
 };
-
 
 struct query {
 private:
     query_type type;
     std::string table_name;
     table* p_table;
-    std::vector<std::string> fields;
+    std::map<std::string, data_type> fields;
     std::map<std::string, std::string> updates;
     std::map<std::string, std::string> aliases;
     std::vector<condition> conditions;
     std::vector<std::vector<std::string>> inserts;
 public:
+    query() = default;
+
     auto set_p_table(table *p_t) {
         query::p_table = p_t;
     }
@@ -59,8 +62,8 @@ public:
         return query::fields.size();
     }
 
-    void append_field(std::string const &field) {
-        query::fields.push_back(field);
+    void append_field(std::string const &field, data_type const &type) {
+        query::fields[field] = type;
     }
 
     void append_alias(std::string const& key, std::string const& value) {
@@ -100,20 +103,24 @@ public:
         query::table_name = table_name;
     }
 
-    std::string to_string() {
-        return std::string("query table name: " + query::table_name);
-    }
-
-    const auto get_fields() {
+    auto get_fields() {
         return query::fields;
     }
 
-    const auto get_table_name() {
+    auto get_table_name() {
         return query::table_name;
     }
 
-    const auto get_table_pointer() {
+    auto get_table_pointer() {
         return query::p_table;
+    }
+
+    auto get_alises() {
+        return query::aliases;
+    }
+
+    auto get_inserts() {
+        return query::inserts;
     }
 };
 

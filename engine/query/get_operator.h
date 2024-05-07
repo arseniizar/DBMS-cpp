@@ -8,8 +8,8 @@
 
 #include "condition.h"
 
-static auto get_operator(const condition &cond) {
-    return query_operator_str[static_cast<int>(cond.query_operator)];
+static auto get_operator(condition &cond) {
+    return query_operator_str[static_cast<int>(cond.get_operator())];
 }
 
 

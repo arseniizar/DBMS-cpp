@@ -7,13 +7,11 @@
 #include "fmt/core.h"
 
 // parser struct generated functions
-
 const parse_error &parser::get_error() const {
     return error;
 }
 
 // auxiliary functions
-
 auto is_identifier(std::string str) {
     std::transform(str.begin(), str.end(), str.begin(), ::toupper);
     for (auto const &word: reserved_words) {
@@ -34,34 +32,10 @@ auto str_toupper(std::string &str) {
 }
 
 auto parser::make_error_pair(std::string const &message) {
-    return std::make_pair(parser::query, parse_error(message));
+    return std::make_pair(parser::q, parse_error(message));
 }
 
 // so I will try to make my own LL(1) parser!
-
-// test lexeme (lexical analysis)
-void parser::lexeme() {
-    using namespace std;
-    if (parser::sql.empty()) {
-        fmt::println("Input should not be empty!");
-    }
-    auto parse_tokens = stringstream(parser::sql);
-    auto containsOperator = [](string &str) {
-        for (char &c: str)
-            if (c >= '!' and c <= '/') return c;
-        return '\0';
-    };
-    for (auto token = string(); parse_tokens >> token;) {
-        auto token_operator = containsOperator(token);
-        if (token_operator != '\0') {
-            token.erase(token.find(token_operator));
-            parser::tokens.push_back(token);
-            parser::tokens.emplace_back(1, token_operator);
-        } else {
-            parser::tokens.push_back(token);
-        }
-    }
-}
 
 std::string parser::pop() {
     auto pair = parser::peek_with_length();
@@ -135,28 +109,32 @@ struct query parser::parse() {
 
 std::pair<struct query, struct parse_error> parser::do_parse() {
     while (true) {
-        if (parser::index >= parser::sql.size())
-            return std::make_pair(parser::query, parser::error);
+        if (parser::index > parser::sql.size())
+            return std::make_pair(parser::q, parser::error);
         switch (parser::step) {
             case step::type: {
                 auto peeked = parser::peek();
                 str_toupper(peeked);
                 if (peeked == "SELECT") {
-                    parser::query.set_type(query_type::Select);
+                    parser::q.set_type(query_type::Select);
                     parser::pop();
                     parser::step = step::select_field;
                 } else if (peeked == "INSERT INTO") {
-                    parser::query.set_type(query_type::Insert);
+                    parser::q.set_type(query_type::Insert);
                     parser::pop();
                     parser::step = step::insert_table;
                 } else if (peeked == "UPDATE") {
-                    parser::query.set_type(query_type::Update);
+                    parser::q.set_type(query_type::Update);
                     parser::pop();
                     parser::step = step::update_table;
                 } else if (peeked == "DELETE FROM") {
-                    parser::query.set_type(query_type::Delete);
+                    parser::q.set_type(query_type::Delete);
                     parser::pop();
                     parser::step = step::delete_from_table;
+                } else if (peeked == "CREATE TABLE") {
+                    parser::q.set_type(query_type::Create);
+                    parser::pop();
+                    parser::step = step::create_table;
                 } else {
                     return parser::make_error_pair("Invalid query type");
                 }
@@ -166,7 +144,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 auto identifier = parser::peek();
                 if (!is_identifier_or_asterisk(identifier))
                     return parser::make_error_pair("at SELECT: expected field to SELECT");
-                parser::query.append_field(identifier);
+                parser::q.append_field(identifier, data_type::TABLE_SELECT);
                 parser::pop();
                 auto from = parser::peek();
                 str_toupper(from);
@@ -176,7 +154,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                     if (!is_identifier(alias))
                         return parser::make_error_pair("at SELECT: expected field alias for "
                                                        + identifier + " as to SELECT");
-                    parser::query.append_alias(identifier, alias);
+                    parser::q.append_alias(identifier, alias);
                     parser::pop();
                     from = parser::peek();
                 }
@@ -212,7 +190,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 if (table_name.empty()) {
                     return make_error_pair("at SELECT: expected quoted table name");
                 }
-                parser::query.set_table_name(table_name);
+                parser::q.set_table_name(table_name);
                 parser::pop();
                 parser::step = step::where;
                 break;
@@ -222,7 +200,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 if (table_name.empty()) {
                     return make_error_pair("at INSERT INTO: expected quoted table name");
                 }
-                parser::query.set_table_name(table_name);
+                parser::q.set_table_name(table_name);
                 parser::pop();
                 parser::step = step::insert_fields_opening_parens;
                 break;
@@ -232,9 +210,60 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 if (table_name.empty()) {
                     return make_error_pair("at DELETE FROM: expected quoted table name");
                 }
-                parser::query.set_table_name(table_name);
+                parser::q.set_table_name(table_name);
                 parser::pop();
                 parser::step = step::where;
+                break;
+            }
+            // ! CREATE TABLE THROWS SEGMENTATION FAULT
+            // IN CASE OF ABSENCE OF THE TYPE FOR THE FIELD
+            // ALSO IT DOESN'T CHECK THE PRESENCE OF THE TABLE_NAME
+            case step::create_table: {
+                auto table_name = parser::peek();
+                if (table_name.empty())
+                    return make_error_pair("at CREATE TABLE: expected quoted table name");
+                parser::q.set_table_name(table_name);
+                parser::step = step::create_table_opening_parens;
+                break;
+            }
+            case step::create_table_opening_parens: {
+                auto opening_parens = parser::peek();
+                if (opening_parens != "(" || opening_parens.size() != 1)
+                    return make_error_pair("at CREATE TABLE: expected opening parens");
+                parser::pop();
+                parser::step = step::create_table_field_name;
+                break;
+            }
+            case step::create_table_field_name: {
+                auto identifier = parser::peek();
+                if (!is_identifier(identifier))
+                    return make_error_pair("at CREATE TABLE: expected at least one "
+                                           "field for the table creation");
+                parser::current_create_table_field = identifier;
+                parser::pop();
+                parser::step = step::create_table_field_type;
+                break;
+            }
+            case step::create_table_field_type: {
+                auto type = parser::peek();
+                if (type.empty())
+                    return make_error_pair("at CREATE TABLE: expected a type to the field");
+                data_type d_type = return_data_type_by_str(type);
+                parser::q.append_field(current_create_table_field, d_type);
+                parser::pop();
+                parser::step = step::create_table_comma_or_closing_parens;
+                break;
+            }
+            case step::create_table_comma_or_closing_parens: {
+                auto comma_or_closing_paren = parser::peek();
+                if (comma_or_closing_paren != "," or comma_or_closing_paren != ")")
+                    return make_error_pair("at CREATE TABLE: expected comma or closing parens");
+                parser::pop();
+                if (comma_or_closing_paren == ",") {
+                    parser::step = step::create_table_field_name;
+                    continue;
+                }
+                // nothing is think because you can`t do shit after this q...
                 break;
             }
             case step::update_table: {
@@ -242,7 +271,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 if (table_name.empty()) {
                     return make_error_pair("at UPDATE: expected quoted table name");
                 }
-                parser::query.set_table_name(table_name);
+                parser::q.set_table_name(table_name);
                 parser::pop();
                 parser::step = step::update_set;
                 break;
@@ -277,7 +306,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 auto pair = parser::peek_quoted_with_length();
                 if (pair.second == 0)
                     return make_error_pair("at UPDATE: expected quoted value");
-                parser::query.append_update(parser::next_update_field, pair.first);
+                parser::q.append_update(parser::next_update_field, pair.first);
                 parser::next_update_field.erase();
                 parser::pop();
                 auto where = parser::peek();
@@ -310,14 +339,14 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 auto identifier = parser::peek();
                 if (!is_identifier(identifier))
                     return make_error_pair("at WHERE: expected field");
-                parser::query.append_condition(condition(identifier, true));
+                parser::q.append_condition(condition(identifier, true));
                 parser::pop();
                 parser::step = step::where_operator;
                 break;
             }
             case step::where_operator: {
                 auto op = parser::peek();
-                auto curr_cond = parser::query.get_current_condition();
+                auto curr_cond = parser::q.get_current_condition();
                 if (op == "=") curr_cond.query_operator = query_operator::eq;
                 else if (op == ">") curr_cond.query_operator = query_operator::gt;
                 else if (op == ">=") curr_cond.query_operator = query_operator::gte;
@@ -325,25 +354,25 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 else if (op == "<=") curr_cond.query_operator = query_operator::lte;
                 else if (op == "!=") curr_cond.query_operator = query_operator::ne;
                 else return make_error_pair("at WHERE: unknown operator");
-                parser::query.set_current_condition(curr_cond);
+                parser::q.set_current_condition(curr_cond);
                 parser::pop();
                 parser::step = step::where_value;
                 break;
             }
             case step::where_value: {
-                auto curr_cond = parser::query.get_current_condition();
+                auto curr_cond = parser::q.get_current_condition();
                 auto identifier = parser::peek();
-                if(is_identifier(identifier)) {
+                if (is_identifier(identifier)) {
                     curr_cond.operand2 = identifier;
                     curr_cond.operand2_is_field = true;
                 } else {
                     auto pair = parser::peek_quoted_with_length();
-                    if(pair.second == 0)
+                    if (pair.second == 0)
                         return make_error_pair("at WHERE: expected quoted value");
                     curr_cond.operand2 = pair.first;
                     curr_cond.operand2_is_field = false;
                 }
-                parser::query.set_current_condition(curr_cond);
+                parser::q.set_current_condition(curr_cond);
                 parser::pop();
                 parser::step = step::where_and;
                 break;
@@ -351,7 +380,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
             case step::where_and: {
                 auto and_word = parser::peek();
                 str_toupper(and_word);
-                if(and_word != "AND")
+                if (and_word != "AND")
                     return make_error_pair("expected AND");
                 parser::pop();
                 parser::step = step::where_field;
@@ -359,7 +388,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
             }
             case step::insert_fields_opening_parens: {
                 auto opening_parens = parser::peek();
-                if(opening_parens != "(" || opening_parens.size() != 1)
+                if (opening_parens != "(" || opening_parens.size() != 1)
                     return make_error_pair("at INSERT INTO: expected opening parens");
                 parser::pop();
                 parser::step = step::insert_fields;
@@ -367,19 +396,22 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
             }
             case step::insert_fields: {
                 auto identifier = parser::peek();
-                if(!is_identifier(identifier))
+                if (!is_identifier(identifier))
                     return make_error_pair("at INSERT INTO: expected at least one field to insert");
-                parser::query.append_field(identifier);
+                data_type d_type = return_data_type(identifier);
+                if (d_type == data_type::UNKNOWN)
+                    return make_error_pair("at INSERT INTO: provided an UNKNOWN data type");
+                parser::q.append_field(identifier, d_type);
                 parser::pop();
-                parser::step = step::insert_fields_comma_or_closing_parens;
+                parser::step = step::insert_field_type;
                 break;
             }
             case step::insert_fields_comma_or_closing_parens: {
                 auto comma_or_closing_paren = parser::peek();
-                if(comma_or_closing_paren != "," or comma_or_closing_paren != ")")
+                if (comma_or_closing_paren != "," or comma_or_closing_paren != ")")
                     return make_error_pair("at INSERT INTO: expected comma or closing parens");
                 parser::pop();
-                if(comma_or_closing_paren == ",") {
+                if (comma_or_closing_paren == ",") {
                     parser::step = step::insert_fields;
                     continue;
                 }
@@ -389,7 +421,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
             case step::insert_values_rword: {
                 auto values = parser::peek();
                 str_toupper(values);
-                if(values != "VALUES")
+                if (values != "VALUES")
                     return make_error_pair("at INSERT INTO: expected 'VALUES'");
                 parser::pop();
                 parser::step = step::insert_values_opening_parens;
@@ -397,18 +429,18 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
             }
             case step::insert_values_opening_parens: {
                 auto opening_parens = parser::peek();
-                if(opening_parens != "(")
+                if (opening_parens != "(")
                     return make_error_pair("at INSERT INTO: expected opening parens");
-                parser::query.append_inserts_vec(std::vector<std::string>());
+                parser::q.append_inserts_vec(std::vector<std::string>());
                 parser::pop();
                 parser::step = step::insert_values;
                 break;
             }
             case step::insert_values: {
                 auto pair = parser::peek_quoted_with_length();
-                if(pair.second == 0 )
+                if (pair.second == 0)
                     return make_error_pair("at INSERT INTO: expected quoted value");
-                parser::query.append_insert(pair.first);
+                parser::q.append_insert(pair.first);
                 parser::pop();
                 parser::step = step::insert_values_comma_or_closing_parens;
                 break;
@@ -418,12 +450,12 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
                 if (comma_or_closing_parens != "," and comma_or_closing_parens != ")")
                     return make_error_pair("at INSERT INTO: expected comma or closing parens");
                 parser::pop();
-                if(comma_or_closing_parens == ",") {
+                if (comma_or_closing_parens == ",") {
                     parser::step = step::insert_values;
                     continue;
                 }
-                auto curr_insert_row = parser::query.get_current_inserts();
-                if(curr_insert_row.size() < parser::query.get_fields_size())
+                auto curr_insert_row = parser::q.get_current_inserts();
+                if (curr_insert_row.size() < parser::q.get_fields_size())
                     return make_error_pair("at INSERT INTO: value count doesn't match field count");
                 parser::pop();
                 parser::step = step::insert_values_comma_before_opening_parens;
@@ -431,7 +463,7 @@ std::pair<struct query, struct parse_error> parser::do_parse() {
             }
             case step::insert_values_comma_before_opening_parens: {
                 auto comma = parser::peek();
-                if(comma != ",")
+                if (comma != ",")
                     return make_error_pair("at INSERT INTO: expected comma");
                 parser::pop();
                 parser::step = step::insert_values_opening_parens;

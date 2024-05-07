@@ -37,18 +37,18 @@ public:
             if (column.get_name() == col_name) return column;
     }
 
-    auto erase(const std::vector<condition> &conditions) {
+    auto erase(std::vector<condition> &conditions) {
         // I am using condition WHERE!
         auto cols_of_erased_rows = std::vector<column>();
         auto erased_rows = std::vector<row>();
-        for (auto const &condition: conditions) {
-            auto col = table::get_column_by_name(condition.operand1);
+        for (auto &condition: conditions) {
+            auto col = table::get_column_by_name(condition.get_operand1());
             for (auto i = 0; i < col.get_rows().size(); i++) {
                 auto op = get_operator(condition);
                 auto row = col.get_rows()[i];
                 // HOLY FUCKING HELL
                 // assuming that operand1 - name, operand2 - int, etc.
-                if (predicate(op, row, condition.operand2)) {
+                if (predicate(op, row, condition.get_operand2())) {
                     // make something for erasing some values inside the column
                     erased_rows.push_back(row);
                     col.remove_row(row);

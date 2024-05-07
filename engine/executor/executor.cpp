@@ -18,12 +18,12 @@ auto executor::select() {
     auto fields = executor::q.get_fields();
     auto query_table = *(q.get_table_pointer());
     auto vec = std::vector<column>();
-    if (fields.at(0) == "*") {
+    if (fields.begin()->first == "*") {
         return query_table.get_columns();
     } else {
-        for (auto const &field: fields)
+        for (auto [col_name, _] : fields)
             for (auto &column: query_table.get_columns())
-                if (column.get_name() == field) vec.push_back(column);
+                if (column.get_name() == col_name) vec.push_back(column);
     }
     return vec;
 }
@@ -53,7 +53,7 @@ auto executor::update() {
 }
 
 std::vector<column> executor::execute() {
-    // depending on the type of the query I will do something from above
+    // depending on the type of the q I will do something from above
     auto query = executor::q;
     auto query_type = query_type_str[static_cast<int>(query.get_type())];
     auto res = std::vector<column>();

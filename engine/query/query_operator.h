@@ -36,7 +36,7 @@ inline std::string query_operator_str[] = {
         "lte",
 };
 
-static auto predicate(std::string const &op, row row, std::string const &field) {
+static bool predicate(std::string const &op, row row, std::string const &field) {
         if (op == "eq") {
             return (row.get_data() == field) && (row.get_type()
                                                  == return_data_type(field));

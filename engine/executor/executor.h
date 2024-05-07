@@ -9,7 +9,7 @@
 #include "execution_error.h"
 #include "../query/query.h"
 
-// query looks like that:
+// q looks like that:
 // type - I can use inline array of query_type strings
 // table_name
 // fields
