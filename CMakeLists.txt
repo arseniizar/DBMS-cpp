@@ -14,21 +14,22 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fmt)
 
 add_executable(DatabaseProject main.cpp
-        engine/table/table.h
+        engine/table/table.hpp
         engine/parser/parser.cpp
-        engine/parser/parser.h
-        engine/query/query.h
-        engine/parser/parse_error.h
-        engine/dbms.h
-        engine/executor/execution_error.h
-        engine/executor/execution_result.h
+        engine/parser/parser.hpp
+        engine/query/query.hpp
+        engine/parser/parse_error.hpp
+        engine/dbms.hpp
+        engine/executor/execution_error.hpp
+        engine/executor/execution_result.hpp
         engine/executor/executor.cpp
         engine/executor/executor.cpp
-        engine/query/condition.h
-        engine/query/query_operator.h
-        engine/table/data_type.h
-        engine/query/get_operator.h
-        engine/table/column.h
-        engine/table/row.h
+        engine/query/condition.hpp
+        engine/query/query_operator.hpp
+        engine/table/data_type.hpp
+        engine/query/get_operator.hpp
+        engine/table/column.hpp
+        engine/table/row.hpp
+        engine/utils/print_table.hpp
 )
 target_link_libraries(DatabaseProject fmt)
