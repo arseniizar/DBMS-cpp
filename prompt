@@ -1,0 +1,9 @@
+// code:
+
+
+// error:
+return make_error_pair("at INSERT INTO: expected comma or closing parens");
+return make_error_pair("at INSERT INTO: value count doesn't match field count");
+
+// step::error
+

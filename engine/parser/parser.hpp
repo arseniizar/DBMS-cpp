@@ -45,27 +45,40 @@ enum struct step {
     create_table_field_name,
     create_table_field_type,
     create_table_comma_or_closing_parens,
+    group_by,
+    group_by_field,
+    having,
+    having_field,
+    having_operator,
+    having_value,
+    join,
+    join_table,
+    join_on,
+    join_on_field1,
+    join_on_equal,
+    join_on_field2,
+    error,
 };
 
-inline std::string reserved_words[]{
+inline std::vector<std::string> reserved_words{
         "(", ")", ">=", "<=", "!=",
         ",", "=", ">", "<", "SELECT",
         "INSERT INTO", "VALUES", "UPDATE",
         "DELETE FROM", "CREATE TABLE", "WHERE",
         "FROM", "SET", "AS", "NVARCHAR2",
-        "DATE", "INTEGER"
-};
-
-inline std::string start_words[]{
-        "SELECT", "INSERT INTO", "UPDATE", "DELETE FROM"
+        "DATE", "INTEGER", "GROUP BY", "HAVING",
+        "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN",
+        "INNER JOIN", "LEFT OUTER JOIN", "RIGHT OUTER JOIN",
+        "FULL OUTER JOIN", "ON"
 };
 
 struct parser {
 private:
-    std::deque<std::string> tokens;
+    std::string error_message;
     std::string sql;
     std::string next_update_field;
     std::string current_create_table_field;
+    std::string current_peeked;
     query q;
     size_t index;
     step step;
@@ -76,22 +89,13 @@ public:
     explicit parser()
             : sql(std::string()), index(0), step(step::type), pop_flag(false) {}
 
-    void clean() {
-        parser::tokens.erase(parser::tokens.begin(), parser::tokens.end());
-        parser::sql = std::string();
-        parser::next_update_field = std::string();
-        parser::current_create_table_field = std::string();
-        parser::q = query();
-        parser::index = std::size_t(0);
-        parser::step = step::type;
-        parser::error = parse_error();
-    }
-
-    void input(std::string const &sql) {
-        parser::sql = sql;
-    }
-
     auto make_error_pair(std::string const &message);
+
+    void clean();
+
+    void clean_error();
+
+    void input(std::string const &sql);
 
     std::string peek();
 
@@ -109,7 +113,96 @@ public:
 
     std::pair<struct query, struct parse_error> do_parse();
 
-    [[nodiscard]] const parse_error &get_error() const;
+    [[nodiscard]] parse_error get_error();
+
+    auto split_string_in_words();
+
+    // complementary functions:
+    bool peek_is_comma(std::string const &message);
+
+    bool is_index_at_end();
+
+    bool is_peek_empty();
+
+    auto parser_switch();
+
+    //switch case functions
+    auto step_type();
+
+    auto step_select_field();
+
+    auto step_select_from();
+
+    auto step_select_comma();
+
+    auto step_select_from_table();
+
+    auto step_insert_table();
+
+    auto step_insert_fields_opening_parens();
+
+    auto step_insert_fields();
+
+    auto step_insert_fields_comma_or_closing_parens();
+
+    auto step_insert_values_opening_parens();
+
+    auto step_insert_values_rword();
+
+    auto step_insert_values();
+
+    auto step_insert_values_comma_or_closing_parens();
+
+    auto step_insert_values_comma_before_opening_parens();
+
+    auto step_update_table();
+
+    auto step_update_set();
+
+    auto step_update_field();
+
+    auto step_update_equals();
+
+    auto step_update_value();
+
+    auto step_update_comma();
+
+    auto step_delete_from_table();
+
+    auto step_where();
+
+    auto step_where_field();
+
+    auto step_where_operator();
+
+    auto step_where_value();
+
+    auto step_where_and();
+
+    auto step_create_table();
+
+    auto step_create_table_opening_parens();
+
+    auto step_create_table_field_name();
+
+    auto step_create_table_field_type();
+
+    auto step_create_table_comma_or_closing_parens();
+
+    auto step_group_by();
+    auto step_group_by_field();
+    auto step_having();
+    auto step_having_field();
+    auto step_having_operator();
+    auto step_having_value();
+    auto step_join();
+    auto step_join_table();
+    auto step_join_on();
+    auto step_join_on_field1();
+    auto step_join_on_equal();
+    auto step_join_on_field2();
+
+    auto step_error();
 };
 
 

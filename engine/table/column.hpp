@@ -5,6 +5,7 @@
 #ifndef DATABASEPROJECT_COLUMN_HPP
 #define DATABASEPROJECT_COLUMN_HPP
 
+#include <utility>
 
 #include "row.hpp"
 
@@ -12,11 +13,17 @@ struct column {
 private:
     std::vector<row> rows;
     std::string col_name;
+    data_type type;
 public:
     column() = default;
-    column(std::vector<row> rows, std::string name) {
-        column::rows = rows;
-        column::col_name = name;
+    column(std::vector<row> r, std::string n, data_type t) {
+        column::rows = std::move(r);
+        column::col_name = std::move(n);
+        column::type = t;
+    }
+
+    auto get_type() {
+        return column::type;
     }
 
     auto get_rows() {

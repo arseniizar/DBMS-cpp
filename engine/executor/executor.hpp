@@ -44,7 +44,11 @@ struct executor {
 
     [[nodiscard]] execution_result get_execution_res() const;
 
+    [[nodiscard]] execution_error get_error() const;
+
     [[nodiscard]] query get_query() const;
+
+    void set_error(execution_error const& err);
 
     void set_query(const query &que);
 

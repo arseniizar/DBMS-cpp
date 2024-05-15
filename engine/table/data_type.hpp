@@ -35,8 +35,9 @@ static data_type return_data_type(const std::string &data) {
 
 static data_type return_data_type_by_str(std::string const &str) {
     if(str == "NVARCHAR2") return data_type::NVARCHAR2;
-    if(str == "DATE") return data_type::DATE;
-    if(str == "INTEGER") return data_type::INTEGER;
+    else if(str == "DATE") return data_type::DATE;
+    else if(str == "INTEGER") return data_type::INTEGER;
+    else return data_type::UNKNOWN;
 }
 
 #endif //DATABASEPROJECT_DATA_TYPE_HPP

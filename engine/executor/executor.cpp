@@ -10,6 +10,14 @@ q_action executor::get_action() const {
     return executor::action;
 }
 
+void executor::set_error(const execution_error &err) {
+    executor::error = err;
+}
+
+execution_error executor::get_error() const {
+    return executor::error;
+}
+
 void executor::set_query(const query &que) {
     executor::q = que;
 }
@@ -23,9 +31,14 @@ execution_result executor::get_execution_res() const {
 }
 
 table executor::create_table() {
-    auto query = executor::q;
     executor::action = q_action::CREATE;
-    return table(q.get_table_name())
+    table created_table = table();
+    created_table.set_table_name(executor::q.get_table_name());
+    for(auto [name, type] : executor::q.get_fields()) {
+        column col = column(std::vector<row>(), name, type);
+        created_table.insert_column(col);
+    }
+    return created_table;
 }
 
 std::vector<column> executor::select() {
@@ -89,4 +102,3 @@ void executor::execute() {
     }
     executor::result = execution_result("Executed!", &query);
 }
-

@@ -30,6 +30,10 @@ add_executable(DatabaseProject main.cpp
         engine/query/get_operator.hpp
         engine/table/column.hpp
         engine/table/row.hpp
-        engine/utils/print_table.hpp
+        engine/utils/print_util.hpp
+        engine/backup/recent_change.hpp
+        engine/parser/parser_switch.hpp
+        engine/parser/parser_complementary.hpp
+        engine/parser/parser_steps.hpp
 )
 target_link_libraries(DatabaseProject fmt)

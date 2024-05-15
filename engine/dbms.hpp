@@ -9,65 +9,109 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <iostream>
+#include <algorithm>
 #include "query/query.hpp"
 #include "table/table.hpp"
 #include "parser/parser.hpp"
 #include "executor/executor.hpp"
+#include "utils/print_util.hpp"
+#include "backup/recent_change.hpp"
 
 struct dbms {
 private:
     std::vector<query> queries;
     std::vector<table> tables;
-    // in order to undo some devious actions :)
-    std::vector<table> recent_actions;
+    // for the logs, maybe UNDO in the future
+    std::vector<recent_change> recent_changes;
     std::vector<std::string> table_names;
     parser parser;
     executor executor;
+    // vectors of errors in order to log data etc.
+    std::vector<parse_error> parse_errors;
+    std::vector<execution_error> execution_errors;
 
-    auto find_table_by_name(std::string const &name) {
-        for (auto &table: tables)
-            if (table.get_table_name() == name) return table;
+    std::pair<std::vector<column>, execution_error> executor_error(std::string const &message) {
+        execution_error err = execution_error(message);
+        dbms::executor.set_error(err);
+        dbms::executor.set_error(err);
+        return std::make_pair(dbms::executor.tmp_cols, err);
     }
 
-    auto add_rec_change(const table &rec_t) {
-        dbms::recent_actions.push_back(rec_t);
+    // cool data type, just tried to write it like that :)
+    __gnu_cxx::__normal_iterator<table *, std::vector<table>>
+    find_table_by_name(std::string const &name) {
+        return std::find_if(dbms::tables.begin(), dbms::tables.end(),
+                            [&name](table t) {
+                                return t.get_table_name() == name;
+                            });
     }
 
-    auto parse_query(std::string const &str) {
+    bool is_table_already_exist(std::string const &table_name) {
+        return std::any_of(dbms::table_names.begin(), table_names.end(),
+                           [&table_name](std::string const &str) {
+                               return str == table_name;
+                           });
+    }
+
+    void add_rec_change(const recent_change &rec_c) {
+        dbms::recent_changes.push_back(rec_c);
+    }
+
+    void add_table(std::string const &name, std::vector<column> const &cols) {
+        dbms::table_names.push_back(name);
+        dbms::tables.emplace_back(name, cols);
+    }
+
+    void add_table(table t) {
+        dbms::table_names.push_back(t.get_table_name());
+        dbms::tables.push_back(t);
+    }
+
+    std::pair<query, parse_error> parse_query(std::string const &str) {
         dbms::parser.input(str);
         query q = dbms::parser.parse();
         if (!dbms::parser.get_error().message.empty())
             fmt::println("{}", dbms::parser.get_error().message);
         else fmt::println("SUCCESSFUL QUERY!");
         dbms::parser.clean();
-        return q;
+        return std::make_pair(q, parser.get_error());
     }
 
-    auto execute_query(query &q) {
+    std::pair<std::vector<column>, execution_error> execute_query(query &q) {
         dbms::executor.set_query(q);
         dbms::executor.execute();
         execution_result rec = dbms::executor.get_execution_res();
-        if(dbms::executor.action == q_action::SELECT) {
-
+        if (dbms::executor.action == q_action::SELECT) {
+            print_columns(dbms::executor.tmp_cols);
         } else if (dbms::executor.action == q_action::DELETE) {
-
+            print_columns(dbms::executor.tmp_cols);
         } else if (dbms::executor.action == q_action::INSERT) {
-
+            print_columns(dbms::executor.tmp_cols);
         } else if (dbms::executor.action == q_action::UPDATE) {
-
+            print_columns(dbms::executor.tmp_cols);
         } else if (dbms::executor.action == q_action::CREATE) {
-
+            print_table(dbms::executor.tmp_t);
+            auto table_name = dbms::executor.tmp_t.get_table_name();
+            if (is_table_already_exist(table_name)) {
+                return executor_error("at EXECUTION: table with name already exists");
+            }
+            dbms::add_table(dbms::executor.tmp_t);
         }
-        // table couldn't be found sometimes
-        auto table_name = dbms::executor.get_query().get_table_name() + ".rec";
-        auto q_t = dbms::find_table_by_name(q.get_table_name());
+        std::string table_name = dbms::executor.tmp_t.get_table_name();
+        table q_t = *dbms::find_table_by_name(dbms::executor.tmp_t.get_table_name());
         q.set_p_table(&q_t);
-//        dbms::add_rec_change(table(table_name, *(rec.p_query).);
+        auto rec_c = recent_change(&q);
+        dbms::add_rec_change(rec_c);
+        dbms::queries.push_back(q);
+        if (!dbms::executor.get_error().message.empty())
+            fmt::println("{}", dbms::parser.get_error().message);
+        else fmt::println("EXECUTED SUCCESSFULLY");
+        return std::make_pair(dbms::executor.tmp_cols, execution_error());
     }
 
 
 public:
-    auto run() {
+    void run() {
         fmt::println("Welcome to the Arsenii`s database!");
         fmt::println("Here you can to write some simple queries!");
         if (dbms::tables.empty())
@@ -77,8 +121,19 @@ public:
             auto input = std::string();
             std::getline(std::cin, input);
             if (input == "EXIT") break;
-            auto query = dbms::parse_query(input);
-            dbms::execute_query(query);
+            std::pair<query, parse_error> parse_pair = dbms::parse_query(input);
+            if (!parse_pair.second.message.empty()) {
+                dbms::parse_errors.push_back(parse_pair.second);
+            } else {
+                dbms::parser.clean_error();
+                std::pair<std::vector<column>, execution_error>
+                        execution_pair = dbms::execute_query(parse_pair.first);
+                if (!execution_pair.second.message.empty()) {
+                    dbms::execution_errors.push_back(execution_pair.second);
+                } else {
+                    fmt::println("proceeding...");
+                }
+            }
         }
         fmt::println("You have exited the program");
     }

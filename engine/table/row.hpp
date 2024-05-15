@@ -10,7 +10,9 @@
 struct row {
 private:
     std::string data;
-    data_type type;
+    // maybe I do not need the type right now, maybe I will need it after some time
+    // for example for inserting
+     data_type type;
 public:
     auto get_data() {
         return row::data;
