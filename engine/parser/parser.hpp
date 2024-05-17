@@ -11,7 +11,7 @@
 #include <vector>
 #include <deque>
 #include "../query/query.hpp"
-#include "parse_error.hpp"
+#include "structs/parse_error.hpp"
 
 enum struct step {
     type,
@@ -89,7 +89,7 @@ public:
     explicit parser()
             : sql(std::string()), index(0), step(step::type), pop_flag(false) {}
 
-    auto make_error_pair(std::string const &message);
+    std::pair<query, parse_error> make_error_pair(std::string const &message);
 
     void clean();
 
@@ -109,100 +109,115 @@ public:
 
     void pop_whitespace();
 
-    struct query parse();
+    query parse();
 
     std::pair<struct query, struct parse_error> do_parse();
 
     [[nodiscard]] parse_error get_error();
 
-    auto split_string_in_words();
+    std::vector<std::string> split_string_in_words();
 
     // complementary functions:
     bool peek_is_comma(std::string const &message);
+
+    bool peek_is_table_name(std::string const &message);
 
     bool is_index_at_end();
 
     bool is_peek_empty();
 
-    auto parser_switch();
+    std::pair<query, parse_error> parser_switch();
+
+    bool peek_is_operator(std::string const &message);
 
     //switch case functions
-    auto step_type();
+    void step_type();
 
-    auto step_select_field();
+    void step_select_field();
 
-    auto step_select_from();
+    void step_select_from();
 
-    auto step_select_comma();
+    void step_select_comma();
 
-    auto step_select_from_table();
+    void step_select_from_table();
 
-    auto step_insert_table();
+    void step_insert_table();
 
-    auto step_insert_fields_opening_parens();
+    void step_insert_fields_opening_parens();
 
-    auto step_insert_fields();
+    void step_insert_fields();
 
-    auto step_insert_fields_comma_or_closing_parens();
+    void step_insert_fields_comma_or_closing_parens();
 
-    auto step_insert_values_opening_parens();
+    void step_insert_values_opening_parens();
 
-    auto step_insert_values_rword();
+    void step_insert_values_rword();
 
-    auto step_insert_values();
+    void step_insert_values();
 
-    auto step_insert_values_comma_or_closing_parens();
+    void step_insert_values_comma_or_closing_parens();
 
-    auto step_insert_values_comma_before_opening_parens();
+    void step_insert_values_comma_before_opening_parens();
 
-    auto step_update_table();
+    void step_update_table();
 
-    auto step_update_set();
+    void step_update_set();
 
-    auto step_update_field();
+    void step_update_field();
 
-    auto step_update_equals();
+    void step_update_equals();
 
-    auto step_update_value();
+    void step_update_value();
 
-    auto step_update_comma();
+    void step_update_comma();
 
-    auto step_delete_from_table();
+    void step_delete_from_table();
 
-    auto step_where();
+    void step_where();
 
-    auto step_where_field();
+    void step_where_field();
 
-    auto step_where_operator();
+    void step_where_operator();
 
-    auto step_where_value();
+    void step_where_value();
 
-    auto step_where_and();
+    void step_where_and();
 
-    auto step_create_table();
+    void step_create_table();
 
-    auto step_create_table_opening_parens();
+    void step_create_table_opening_parens();
 
-    auto step_create_table_field_name();
+    void step_create_table_field_name();
 
-    auto step_create_table_field_type();
+    void step_create_table_field_type();
 
-    auto step_create_table_comma_or_closing_parens();
+    void step_create_table_comma_or_closing_parens();
 
-    auto step_group_by();
-    auto step_group_by_field();
-    auto step_having();
-    auto step_having_field();
-    auto step_having_operator();
-    auto step_having_value();
-    auto step_join();
-    auto step_join_table();
-    auto step_join_on();
-    auto step_join_on_field1();
-    auto step_join_on_equal();
-    auto step_join_on_field2();
+    void step_group_by();
 
-    auto step_error();
+    void step_group_by_field();
+
+    void step_having();
+
+    void step_having_field();
+
+    void step_having_operator();
+
+    void step_having_value();
+
+    void step_join();
+
+    void step_join_table();
+
+    void step_join_on();
+
+    void step_join_on_field1();
+
+    void step_join_on_equal();
+
+    void step_join_on_field2();
+
+    std::pair<query, parse_error> step_error();
 };
 
 

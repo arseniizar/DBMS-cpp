@@ -5,8 +5,8 @@
 #ifndef DATABASEPROJECT_EXECUTOR_HPP
 #define DATABASEPROJECT_EXECUTOR_HPP
 
-#include "execution_result.hpp"
-#include "execution_error.hpp"
+#include "structs/execution_result.hpp"
+#include "structs/execution_error.hpp"
 #include "../query/query.hpp"
 
 // q looks like that:

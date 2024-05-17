@@ -6,9 +6,7 @@
 // https://marianogappa.github.io/software/2019/06/05/lets-build-a-sql-parser-in-go/
 
 #include "parser.hpp"
-#include <bits/stdc++.h>
 #include "fmt/core.h"
-#include "parser_switch.hpp"
 
 parse_error parser::get_error() {
     return error;
@@ -27,8 +25,8 @@ void parser::clean_error() {
     parser::error = parse_error();
 }
 
-void parser::input(std::string const &sql) {
-    parser::sql = sql;
+void parser::input(std::string const &s) {
+    parser::sql = s;
 }
 
 std::pair<struct query, struct parse_error> parser::do_parse() {
