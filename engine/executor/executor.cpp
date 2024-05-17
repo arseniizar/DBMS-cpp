@@ -87,7 +87,7 @@ std::vector<column> executor::update() {
 void executor::execute() {
     // depending on the type of the query I will do something from above
     auto query = executor::q;
-    auto query_type = query_type_str[static_cast<int>(query.get_type())];
+    auto query_type = query_type_str[static_cast<int>(query.get_query_type())];
     if (query_type == "Select") {
         executor::tmp_cols = executor::select();
     } else if (query_type == "Update") {

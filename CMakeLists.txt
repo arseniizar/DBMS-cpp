@@ -45,5 +45,8 @@ add_executable(DatabaseProject main.cpp
         engine/utils/ut_is_identifier/ut_is_identifier.hpp
         engine/utils/ut_str_toupper/ut_str_toupper.cpp
         engine/utils/ut_str_toupper/ut_str_toupper.hpp
+        engine/utils/ut_return_join_type/ut_return_join_type.cpp
+        engine/utils/ut_return_join_type/ut_return_join_type.hpp
+        engine/utils/ut_find_in_vector/ut_find_in_vector.hpp
 )
 target_link_libraries(DatabaseProject fmt)

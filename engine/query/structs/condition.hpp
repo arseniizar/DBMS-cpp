@@ -15,7 +15,7 @@ struct condition {
 public:
     std::string operand1;
     bool operand1_is_field;
-    query_operator query_operator;
+    query_operator _operator;
     std::string operand2;
     bool operand2_is_field;
 
@@ -25,13 +25,13 @@ public:
     }
 
     auto to_string() {
-        return std::string("operand1: " + condition::operand1 + "query_operator: " +
-                           query_operator_str[static_cast<int>(query_operator)] + "operand2: " +
+        return std::string("operand1: " + condition::operand1 + "_operator: " +
+                           query_operator_str[static_cast<int>(_operator)] + "operand2: " +
                            condition::operand2);
     }
 
     auto get_operator() {
-        return condition::query_operator;
+        return condition::_operator;
     }
 
     auto get_operand1() {

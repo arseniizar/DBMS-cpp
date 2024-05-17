@@ -7,12 +7,24 @@ void query::set_p_table(table *p_t) {
     query::p_table = p_t;
 }
 
-void query::set_type(query_type t) {
-    query::type = t;
+void query::set_join_type(join_type j_t) {
+    query::j_type = j_t;
 }
 
-query_type query::get_type() {
-    return query::type;
+join_type query::get_join_type() {
+    return query::j_type;
+}
+
+void query::set_joined_table_name(std::string const& name) {
+    query::joined_table_name = name;
+}
+
+void query::set_query_type(query_type q_t) {
+    query::q_type = q_t;
+}
+
+query_type query::get_query_type() {
+    return query::q_type;
 }
 
 std::vector<condition> query::get_conditions() {

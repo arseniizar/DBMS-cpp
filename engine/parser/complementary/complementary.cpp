@@ -13,26 +13,44 @@ bool parser::peek_is_table_name(const std::string &message) {
         parser::error_message = message;
         return false;
     }
-    parser::q.set_table_name(table_name);
+    if (parser::step == step::join_table) parser::q.set_joined_table_name(table_name);
+    else parser::q.set_table_name(table_name);
     parser::pop();
     return true;
+}
+
+void parser::set_additional_step() {
+    // group by, where, join
+    auto peeked = parser::peek();
+    str_toupper(peeked);
+    if (peeked == "WHERE") {
+        parser::step = step::where;
+    } else if (peeked == "JOIN") {
+        parser::step = step::join;
+    } else if (peeked == "GROUP BY") {
+        parser::step = step::group_by;
+    } else {
+        parser::step = step::error;
+        parser::error_message = "inappropriate continuation of the statement";
+    }
 }
 
 bool parser::peek_is_operator(std::string const &message) {
     auto op = parser::peek();
     auto curr_cond = parser::q.get_current_condition();
-    if (op == "=") curr_cond.query_operator = query_operator::eq;
-    else if (op == ">") curr_cond.query_operator = query_operator::gt;
-    else if (op == ">=") curr_cond.query_operator = query_operator::gte;
-    else if (op == "<") curr_cond.query_operator = query_operator::lt;
-    else if (op == "<=") curr_cond.query_operator = query_operator::lte;
-    else if (op == "!=") curr_cond.query_operator = query_operator::ne;
+    if (op == "=") curr_cond._operator = query_operator::eq;
+    else if (op == ">") curr_cond._operator = query_operator::gt;
+    else if (op == ">=") curr_cond._operator = query_operator::gte;
+    else if (op == "<") curr_cond._operator = query_operator::lt;
+    else if (op == "<=") curr_cond._operator = query_operator::lte;
+    else if (op == "!=") curr_cond._operator = query_operator::ne;
     else {
         parser::step = step::error;
         parser::error_message = message;
         return false;
     }
     parser::q.set_current_condition(curr_cond);
+    parser::pop();
     return true;
 }
 
@@ -68,7 +86,7 @@ std::string parser::pop() {
 
 void parser::pop_whitespace() {
     for (;
-            parser::index<parser::sql.size() && parser::sql.at(parser::index) == ' ';
+            parser::index < parser::sql.size() && parser::sql.at(parser::index) == ' ';
             parser::index++);
 }
 

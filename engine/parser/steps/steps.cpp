@@ -9,23 +9,23 @@ void parser::step_type() {
     auto peeked = parser::peek();
     str_toupper(peeked);
     if (peeked == "SELECT") {
-        parser::q.set_type(query_type::Select);
+        parser::q.set_query_type(query_type::Select);
         parser::pop();
         parser::step = step::select_field;
     } else if (peeked == "INSERT INTO") {
-        parser::q.set_type(query_type::Insert);
+        parser::q.set_query_type(query_type::Insert);
         parser::pop();
         parser::step = step::insert_table;
     } else if (peeked == "UPDATE") {
-        parser::q.set_type(query_type::Update);
+        parser::q.set_query_type(query_type::Update);
         parser::pop();
         parser::step = step::update_table;
     } else if (peeked == "DELETE FROM") {
-        parser::q.set_type(query_type::Delete);
+        parser::q.set_query_type(query_type::Delete);
         parser::pop();
         parser::step = step::delete_from_table;
     } else if (peeked == "CREATE TABLE") {
-        parser::q.set_type(query_type::Create);
+        parser::q.set_query_type(query_type::Create);
         parser::pop();
         parser::step = step::create_table;
     } else {
@@ -87,14 +87,12 @@ void parser::step_select_from() {
 void parser::step_select_from_table() {
     auto is_table_name = parser::peek_is_table_name("at SELECT: expected a name of the table");
     if (!is_table_name) return;
-    parser::pop();
-    parser::step = step::where;
+    parser::set_additional_step();
 }
 
 void parser::step_insert_table() {
     auto is_table_name = parser::peek_is_table_name("at INSERT: expected a table name");
     if (!is_table_name) return;
-    parser::pop();
     parser::step = step::insert_fields_opening_parens;
 }
 
@@ -209,7 +207,6 @@ void parser::step_insert_values_comma_before_opening_parens() {
 void parser::step_update_table() {
     auto is_table_name = parser::peek_is_table_name("at UPDATE: expected a table name");
     if (!is_table_name) return;
-    parser::pop();
     parser::step = step::update_set;
 }
 
@@ -257,14 +254,8 @@ void parser::step_update_value() {
     parser::q.append_update(parser::next_update_field, pair.first);
     parser::next_update_field.erase();
     parser::pop();
-    auto where = parser::peek();
-    str_toupper(where);
-    if (where == "WHERE") {
-        parser::step = step::where;
-        return;
-    }
     if (is_peek_empty()) parser::pop_flag = true;
-    parser::step = step::update_comma;
+    else parser::set_additional_step();
 }
 
 void parser::step_update_comma() {
@@ -276,7 +267,6 @@ void parser::step_update_comma() {
 void parser::step_delete_from_table() {
     auto is_table_name = parser::peek_is_table_name("at DELETE: expected the name of the table");
     if (!is_table_name) return;
-    parser::pop();
     parser::step = step::where;
 }
 
@@ -307,7 +297,6 @@ void parser::step_where_field() {
 void parser::step_where_operator() {
     auto is_op = peek_is_operator("at WHERE: expected a WHERE operator");
     if (!is_op) return;
-    parser::pop();
     parser::step = step::where_value;
 }
 
@@ -347,7 +336,6 @@ void parser::step_where_and() {
 void parser::step_create_table() {
     auto is_table_name = parser::peek_is_table_name("at CREATE: expected a table name");
     if (!is_table_name) return;
-    parser::pop();
     parser::step = step::create_table_opening_parens;
 }
 
@@ -472,7 +460,6 @@ void parser::step_having_field() {
 void parser::step_having_operator() {
     auto is_op = peek_is_operator("at HAVING: expected an operator");
     if (!is_op) return;
-    parser::pop();
     parser::step = step::having_value;
 }
 
@@ -494,6 +481,10 @@ void parser::step_join() {
         parser::error_message = "expected a JOIN after the end of the previous statement";
         return;
     }
+    str_toupper(join);
+    auto join_str = return_join_type_str(join);
+    join_type j_t = return_join_type(join_str);
+    parser::q.set_join_type(j_t);
     parser::pop();
     parser::step = step::join_table;
 }
@@ -501,7 +492,6 @@ void parser::step_join() {
 void parser::step_join_table() {
     auto is_table_name = parser::peek_is_table_name("at JOIN: expected a table name");
     if (!is_table_name) return;
-    parser::pop();
     parser::step = step::join_on;
 }
 
@@ -509,7 +499,7 @@ void parser::step_join_on() {
     auto on = parser::peek();
     if (on != "ON") {
         parser::step = step::error;
-        parser::error_message = "at JOIN: expected on";
+        parser::error_message = "at JOIN: expected a keyword ON";
         return;
     }
     parser::pop();
@@ -523,28 +513,28 @@ void parser::step_join_on_field1() {
         parser::error_message = "at JOIN: expected a field";
         return;
     }
+    parser::q.append_condition(condition(identifier, true));
     parser::pop();
     parser::step = step::join_on_equal;
 }
 
 void parser::step_join_on_equal() {
-    auto equals = parser::peek();
-    if (equals != "=") {
-        parser::step = step::error;
-        parser::error_message = "at JOIN: expected an '=' between the fields";
-        return;
-    }
-    parser::pop();
+    auto is_op = peek_is_operator("at WHERE: expected a WHERE operator");
+    if (!is_op) return;
     parser::step = step::join_on_field2;
 }
 
 void parser::step_join_on_field2() {
     auto identifier = parser::peek();
+    auto curr_cond = parser::q.get_current_condition();
     if (!is_identifier(identifier)) {
         parser::step = step::error;
         parser::error_message = "at JOIN: expected a field";
         return;
     }
+    curr_cond.operand2 = identifier;
+    curr_cond.operand2_is_field = true;
+    parser::q.set_current_condition(curr_cond);
     parser::pop();
     parser::pop_flag = true;
 }

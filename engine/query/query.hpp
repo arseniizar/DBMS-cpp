@@ -10,6 +10,7 @@
 #include <map>
 #include "../table/table.hpp"
 #include "structs/condition.hpp"
+#include "../utils/ut_return_join_type/ut_return_join_type.hpp"
 
 enum struct query_type {
     UnknownType,
@@ -31,8 +32,10 @@ inline std::string query_type_str[] = {
 
 struct query {
 private:
-    query_type type;
+    query_type q_type;
+    join_type j_type;
     std::string table_name;
+    std::string joined_table_name;
     table *p_table;
     std::map<std::string, data_type> fields;
     std::map<std::string, std::string> updates;
@@ -44,9 +47,15 @@ public:
 
     void set_p_table(table *p_t);
 
-    void set_type(query_type t);
+    void set_query_type(query_type q_t);
 
-    query_type get_type();
+    void set_join_type(join_type j_t);
+
+    void set_joined_table_name(std::string const &name);
+
+    query_type get_query_type();
+
+    join_type get_join_type();
 
     std::vector<condition> get_conditions();
 
@@ -69,13 +78,14 @@ public:
     struct condition get_current_condition();
 
     void set_current_condition(condition const &condition);
+
     void set_table_name(const std::string &name);
 
     std::map<std::string, data_type> get_fields();
 
     std::string get_table_name();
 
-    table* get_table_pointer();
+    table *get_table_pointer();
 
     std::map<std::string, std::string> get_aliases();
 

@@ -67,9 +67,7 @@ inline std::vector<std::string> reserved_words{
         "DELETE FROM", "CREATE TABLE", "WHERE",
         "FROM", "SET", "AS", "NVARCHAR2",
         "DATE", "INTEGER", "GROUP BY", "HAVING",
-        "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN",
-        "INNER JOIN", "LEFT OUTER JOIN", "RIGHT OUTER JOIN",
-        "FULL OUTER JOIN", "ON"
+        "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "ON"
 };
 
 struct parser {
@@ -129,6 +127,8 @@ public:
     std::pair<query, parse_error> parser_switch();
 
     bool peek_is_operator(std::string const &message);
+
+    void set_additional_step();
 
     //switch case functions
     void step_type();
