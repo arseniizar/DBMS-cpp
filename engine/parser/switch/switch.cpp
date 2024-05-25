@@ -179,6 +179,66 @@ std::pair<query, parse_error> parser::parser_switch() {
                 parser::step_insert_values_comma_before_opening_parens();
                 break;
             }
+            case step::primary_key_as_type: {
+                parser::step_primary_key_as_type();
+                break;
+            }
+            case step::primary_key_at_end: {
+                parser::step_primary_key_at_end();
+                break;
+            }
+            case step::primary_key_opening_parens: {
+                parser::step_primary_key_opening_parens();
+                break;
+            }
+            case step::primary_key_field: {
+                parser::step_primary_key_field();
+                break;
+            }
+            case step::primary_key_comma_or_closing_parens: {
+                parser::step_primary_key_comma_or_closing_parens();
+                break;
+            }
+            case step::foreign_key: {
+                parser::step_foreign_key();
+                break;
+            }
+            case step::foreign_key_as_type: {
+                parser::step_foreign_key_as_type();
+                break;
+            }
+            case step::references: {
+                parser::step_references();
+                break;
+            }
+            case step::references_table: {
+                parser::step_references_table();
+                break;
+            }
+            case step::references_table_opening_parens: {
+                parser::step_references_table_opening_parens();
+                break;
+            }
+            case step::references_field: {
+                parser::step_references_field();
+                break;
+            }
+            case step::references_comma_or_closing_parens: {
+                parser::step_references_comma_or_closing_parens();
+                break;
+            }
+            case step::foreign_key_opening_parens: {
+                parser::step_foreign_key_opening_parens();
+                break;
+            }
+            case step::foreign_key_field: {
+                parser::step_foreign_key_field();
+                break;
+            }
+            case step::foreign_key_comma_or_closing_parens: {
+                parser::step_foreign_key_comma_or_closing_parens();
+                break;
+            }
             case step::error: {
                 return parser::step_error();
             }

@@ -11,6 +11,7 @@
 #include "../table/table.hpp"
 #include "structs/condition.hpp"
 #include "../utils/ut_return_join_type/ut_return_join_type.hpp"
+#include "structs/field.hpp"
 
 enum struct query_type {
     UnknownType,
@@ -32,18 +33,31 @@ inline std::string query_type_str[] = {
 
 struct query {
 private:
-    query_type q_type;
-    join_type j_type;
+    query_type q_type = query_type::UnknownType;
+    join_type j_type = join_type::UNKNOWN;
     std::string table_name;
     std::string joined_table_name;
-    table *p_table;
-    std::map<std::string, data_type> fields;
+    table *p_table = nullptr;
+    std::vector<field *> referencing_fields;
+    std::string current_referenced_table;
+    std::vector<field> fields;
     std::map<std::string, std::string> updates;
     std::map<std::string, std::string> aliases;
     std::vector<condition> conditions;
     std::vector<std::vector<std::string>> inserts;
 public:
     query() = default;
+
+    const std::string &get_joined_table_name() const;
+//    std::vector<field *> get_referencing_fields();
+
+    void set_referencing_fields(std::vector<field *> const &p_fields);
+
+    void append_referencing_field(field* const& p_f);
+
+    void set_current_referencing_field(field *const &p_f);
+
+    field *get_current_referencing_field();
 
     void set_p_table(table *p_t);
 
@@ -61,7 +75,7 @@ public:
 
     size_t get_fields_size();
 
-    void append_field(std::string const &field, data_type const &type);
+    void append_field(const field &f);
 
     void append_alias(std::string const &key, std::string const &value);
 
@@ -81,7 +95,7 @@ public:
 
     void set_table_name(const std::string &name);
 
-    std::map<std::string, data_type> get_fields();
+    std::vector<field> get_fields();
 
     std::string get_table_name();
 
@@ -91,7 +105,13 @@ public:
 
     std::vector<std::vector<std::string>> get_inserts();
 
-    std::pair<std::string, data_type> get_current_select_field();
+    field get_current_select_field();
+
+    field get_current_field();
+
+    void set_current_field(field const &f);
+
+    size_t get_inserts_size();
 };
 
 

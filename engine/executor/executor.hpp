@@ -27,11 +27,6 @@ inline std::string q_action_str[]{
         "INSERT", "UPDATE", "CREATE"
 };
 
-// I will obtain this from the optimizer as the return type;
-struct executable {
-
-};
-
 struct executor {
     query q;
     execution_result result;
@@ -48,7 +43,7 @@ struct executor {
 
     [[nodiscard]] query get_query() const;
 
-    void set_error(execution_error const& err);
+    void set_error(execution_error const &err);
 
     void set_query(const query &que);
 
@@ -61,6 +56,14 @@ struct executor {
     std::vector<column> insert();
 
     std::vector<column> update();
+
+    std::vector<column> join();
+
+    std::vector<column> left_join();
+
+    std::vector<column> right_join();
+
+    std::vector<column> full_join();
 
     void execute();
 

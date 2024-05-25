@@ -56,3 +56,7 @@ std::string table::get_table_name() {
 void table::insert_column(const column &column) {
     table::columns.push_back(column);
 }
+
+bool table::empty() {
+    return table::table_name.empty() && columns.empty();
+}

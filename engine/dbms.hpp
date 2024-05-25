@@ -48,9 +48,12 @@ private:
 
     std::pair<std::vector<column>, execution_error> execute_query(query &q);
 
+    void make_relation();
+
 
 public:
     void run();
+    void print_query(query const& q);
 };
 
 #endif //DATABASEPROJECT_DBMS_HPP

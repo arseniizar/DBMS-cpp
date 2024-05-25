@@ -183,3 +183,25 @@ bool parser::is_peek_empty() {
     }
     return false;
 }
+
+__gnu_cxx::__normal_iterator<field *, std::vector<field>>
+parser::get_field_by_name(const std::string &name) {
+    return std::ranges::find_if(
+            parser::q.get_fields().begin(),
+            parser::q.get_fields().end(),
+            [&name](field const &f) {
+                return f.value == name;
+            }
+    );
+}
+
+bool parser::peek_is_opening_parens(const std::string &message) {
+    auto opening_parens = parser::peek();
+    if (opening_parens != "(") {
+        parser::step = step::error;
+        parser::error_message = message;
+        return false;
+    }
+    parser::pop();
+    return true;
+}

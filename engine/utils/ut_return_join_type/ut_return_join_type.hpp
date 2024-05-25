@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-inline std::vector<std::string> joins{
+inline std::vector<std::string> join_str{
         "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "UNKNOWN"
 };
 

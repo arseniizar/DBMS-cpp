@@ -57,6 +57,21 @@ enum struct step {
     join_on_field1,
     join_on_equal,
     join_on_field2,
+    primary_key_as_type,
+    primary_key_at_end,
+    primary_key_opening_parens,
+    primary_key_field,
+    primary_key_comma_or_closing_parens,
+    foreign_key,
+    foreign_key_as_type,
+    foreign_key_opening_parens,
+    foreign_key_field,
+    foreign_key_comma_or_closing_parens,
+    references,
+    references_table,
+    references_table_opening_parens,
+    references_field,
+    references_comma_or_closing_parens,
     error,
 };
 
@@ -75,7 +90,8 @@ private:
     std::string error_message;
     std::string sql;
     std::string next_update_field;
-    std::string current_create_table_field;
+    std::string current_create_table_field_val;
+    std::string current_references_table_name;
     std::string current_peeked;
     query q;
     size_t index;
@@ -118,7 +134,12 @@ public:
     // complementary functions:
     bool peek_is_comma(std::string const &message);
 
+    __gnu_cxx::__normal_iterator<field *, std::vector<field>>
+    get_field_by_name(std::string const &name);
+
     bool peek_is_table_name(std::string const &message);
+
+    bool peek_is_opening_parens(std::string const &message);
 
     bool is_index_at_end();
 
@@ -216,6 +237,36 @@ public:
     void step_join_on_equal();
 
     void step_join_on_field2();
+
+    void step_primary_key_as_type();
+
+    void step_primary_key_at_end();
+
+    void step_primary_key_opening_parens();
+
+    void step_primary_key_field();
+
+    void step_primary_key_comma_or_closing_parens();
+
+    void step_foreign_key();
+
+    void step_foreign_key_as_type();
+
+    void step_foreign_key_opening_parens();
+
+    void step_foreign_key_field();
+
+    void step_foreign_key_comma_or_closing_parens();
+
+    void step_references();
+
+    void step_references_table();
+
+    void step_references_table_opening_parens();
+
+    void step_references_field();
+
+    void step_references_comma_or_closing_parens();
 
     std::pair<query, parse_error> step_error();
 };

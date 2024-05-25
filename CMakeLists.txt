@@ -48,5 +48,13 @@ add_executable(DatabaseProject main.cpp
         engine/utils/ut_return_join_type/ut_return_join_type.cpp
         engine/utils/ut_return_join_type/ut_return_join_type.hpp
         engine/utils/ut_find_in_vector/ut_find_in_vector.hpp
+        engine/executor/actions/insert/insert.cpp
+        engine/executor/actions/select/select.cpp
+        engine/executor/actions/update/update.cpp
+        engine/executor/actions/delete/delete_f.cpp
+        engine/executor/actions/create/create_table.cpp
+        engine/query/structs/field.hpp
+        engine/query/structs/key_attr.hpp
+        engine/query/structs/reference.hpp
 )
 target_link_libraries(DatabaseProject fmt)

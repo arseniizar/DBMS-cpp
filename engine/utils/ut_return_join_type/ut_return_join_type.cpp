@@ -11,13 +11,13 @@ std::string return_join_type_str(std::string const &join) {
     auto s = join;
     auto index = 0;
     str_toupper(s);
-    for (auto const &j: joins)
+    for (auto const &j: join_str)
         if (j == s) {
-            auto pair = ut_find_in_vector(joins, j);
+            auto pair = ut_find_in_vector(join_str, j);
             index = pair.second;
         }
-    if (index == -1) return *joins.rend();
-    else return joins.at(index);
+    if (index == -1) return *join_str.rend();
+    else return join_str.at(index);
 }
 
 join_type return_join_type(std::string const &join) {

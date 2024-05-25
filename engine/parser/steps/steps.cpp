@@ -42,7 +42,7 @@ void parser::step_select_field() {
         parser::error_message = "at SELECT: expected a field to select";
         return;
     }
-    parser::q.append_field(identifier, data_type::TABLE_SELECT);
+    parser::q.append_field(field(identifier, data_type::TABLE_SELECT));
     parser::pop();
     auto from = parser::peek();
     str_toupper(from);
@@ -118,8 +118,7 @@ void parser::step_insert_fields() {
         parser::error_message = "at INSERT: expected a field to insert";
         return;
     }
-    data_type d_type = data_type::INSERT_COL;
-    parser::q.append_field(identifier, d_type);
+    parser::q.append_field(field(identifier, data_type::INSERT_COL));
     parser::pop();
     parser::step = step::insert_fields_comma_or_closing_parens;
 }
@@ -188,7 +187,7 @@ void parser::step_insert_values_comma_or_closing_parens() {
         return;
     }
     auto curr_insert_row = parser::q.get_current_inserts();
-    if (curr_insert_row.size() < parser::q.get_fields_size()) {
+    if (curr_insert_row.size() < parser::q.get_inserts_size()) {
         parser::step = step::error;
         parser::error_message = "at INSERT: expected a group of inserts";
         return;
@@ -357,7 +356,7 @@ void parser::step_create_table_field_name() {
         parser::error_message = "at CREATE: expected a field name";
         return;
     }
-    parser::current_create_table_field = identifier;
+    parser::current_create_table_field_val = identifier;
     parser::pop();
     parser::step = step::create_table_field_type;
 }
@@ -376,8 +375,8 @@ void parser::step_create_table_field_type() {
         return;
     }
     for (auto &field: parser::q.get_fields()) {
-        auto name = field.first;
-        auto current_field_name = parser::current_create_table_field;
+        auto name = field.value;
+        auto current_field_name = parser::current_create_table_field_val;
         str_toupper(name);
         str_toupper(current_field_name);
         if (current_field_name == name) {
@@ -388,8 +387,12 @@ void parser::step_create_table_field_type() {
     }
     // maybe I should add field in the upper case, or IDK, because in IDE like
     // DATAGRIP it works even with lowercase names of the tables
-    parser::q.append_field(current_create_table_field, d_type);
     parser::pop();
+    if (parser::peek() == "PRIMARY KEY") {
+        parser::step = step::primary_key_as_type;
+        return;
+    }
+    parser::q.append_field(field(current_create_table_field_val, d_type));
     parser::step = step::create_table_comma_or_closing_parens;
 }
 
@@ -424,8 +427,8 @@ void parser::step_group_by() {
 void parser::step_group_by_field() {
     auto identifier = parser::peek();
     str_toupper(identifier);
-    auto current_select_field = parser::q.get_current_select_field().first;
-    if (!is_identifier(identifier) or identifier == current_select_field) {
+    std::string current_select_field_val = parser::q.get_current_select_field().value;
+    if (!is_identifier(identifier) or identifier == current_select_field_val) {
         parser::step = step::error;
         parser::error_message = "at GROUP BY: expected a field to group by";
         return;
@@ -537,6 +540,199 @@ void parser::step_join_on_field2() {
     parser::q.set_current_condition(curr_cond);
     parser::pop();
     parser::pop_flag = true;
+}
+
+void parser::step_primary_key_as_type() {
+    auto primary_key = parser::peek();
+    if (primary_key != "PRIMARY KEY") {
+        parser::step = step::error;
+        parser::error_message = "expected a keyword PRIMARY KEY after the type of the field";
+        return;
+    }
+    parser::q.append_field(field(parser::current_create_table_field_val,
+                                 return_data_type(parser::current_create_table_field_val),
+                                 key_attr(key_type::PK)));
+    parser::pop();
+    parser::step = step::create_table_comma_or_closing_parens;
+}
+
+void parser::step_primary_key_at_end() {
+    auto primary_key = parser::peek();
+    if (primary_key != "PRIMARY KEY") {
+        parser::step = step::error;
+        parser::error_message = "expected a keyword PRIMARY KEY after the type of the field";
+        return;
+    }
+    parser::pop();
+    parser::step = step::primary_key_opening_parens;
+}
+
+void parser::step_primary_key_opening_parens() {
+    auto is_opening_parens =
+            peek_is_opening_parens("expected an opening parens after the PRIMARY KEY keyword");
+    if (!is_opening_parens) return;
+    parser::step = step::primary_key_field;
+}
+
+void parser::step_primary_key_field() {
+    auto identifier = parser::peek();
+    if (!is_identifier(identifier)) {
+        parser::step = step::error;
+        parser::error_message = "expected a proper name of one of the fields from the table";
+        return;
+    }
+    bool is_field_present = std::any_of(parser::q.get_fields().begin(),
+                                        parser::q.get_fields().end(),
+                                        [&identifier](field const &field) {
+                                            return field.value == identifier;
+                                        });
+    if (!is_field_present) {
+        parser::step = step::error;
+        parser::error_message = "field with the name " + identifier + " doesn't exist in this table";
+        return;
+    }
+    auto field_iter = get_field_by_name(identifier);
+    field_iter->k_a = key_attr(key_type::PK);
+    parser::pop();
+    parser::step = step::primary_key_comma_or_closing_parens;
+}
+
+void parser::step_primary_key_comma_or_closing_parens() {
+    auto comma_or_closing_parens = parser::peek();
+    if (comma_or_closing_parens != "," and comma_or_closing_parens != ")") {
+        parser::step = step::error;
+        parser::error_message = "expected a closing parens or comma after the field inside PRIMARY KEY()";
+        return;
+    }
+    if (comma_or_closing_parens == ",") {
+        parser::step = step::primary_key_field;
+        return;
+    }
+    parser::pop_flag = true;
+    parser::step = step::create_table_comma_or_closing_parens;
+}
+
+void parser::step_foreign_key() {
+    auto foreign_key = parser::peek();
+    if (foreign_key != "FOREIGN KEY") {
+        parser::step = step::error;
+        parser::error_message = "expected a FOREIGN KEY keyword!";
+        return;
+    }
+    parser::pop();
+    parser::step = step::foreign_key_opening_parens;
+}
+
+void parser::step_foreign_key_as_type() {
+    auto foreign_key = parser::peek();
+    if (foreign_key != "FOREIGN KEY") {
+        parser::step = step::error;
+        parser::error_message = "expected a keyword FOREIGN KEY after the type of the field";
+        return;
+    }
+    parser::q.append_field(field(parser::current_create_table_field_val,
+                                 return_data_type(parser::current_create_table_field_val),
+                                 key_attr(key_type::FK)));
+    parser::pop();
+    parser::step = step::references;
+}
+
+void parser::step_references() {
+    auto references = parser::peek();
+    if (references != "REFERENCES") {
+        parser::step = step::error;
+        parser::error_message = "expected a keyword REFERENCES after the FOREIGN KEY keyword";
+        return;
+    }
+    parser::pop();
+    parser::step = step::references_table;
+}
+
+void parser::step_references_table() {
+    auto is_table_name = peek_is_table_name("at REFERENCES: expected the name a the table");
+    if (!is_table_name) return;
+    parser::step = step::references_table_opening_parens;
+}
+
+void parser::step_references_table_opening_parens() {
+    auto is_opening_parens = parser::peek_is_opening_parens(
+            "at REFERENCES: expected an opening parens after the table name");
+    if (!is_opening_parens) return;
+    parser::step = step::references_field;
+}
+
+void parser::step_references_field() {
+    auto identifier = parser::peek();
+    if (!is_identifier(identifier)) {
+        parser::step = step::error;
+        parser::error_message = "at REFERENCES: expected a proper name for the the field";
+        return;
+    }
+    auto f = std::find_if(
+            parser::q.get_fields().begin(),
+            parser::q.get_fields().end(),
+            [&identifier](field const &f) {
+                return f.value == identifier;
+            }
+    );
+    parser::q.append_referencing_field(&*f);
+    parser::pop();
+    parser::step = step::references_comma_or_closing_parens;
+}
+
+void parser::step_references_comma_or_closing_parens() {
+    auto comma_or_closing_parens = parser::peek();
+    if (comma_or_closing_parens != "," and comma_or_closing_parens != ")") {
+        parser::step = step::error;
+        parser::error_message = "at REFERENCES: expected a comma or a closing parens";
+    }
+    if (comma_or_closing_parens == ",") {
+        parser::step = step::references_field;
+        return;
+    }
+    parser::pop_flag = true;
+    parser::pop();
+}
+
+void parser::step_foreign_key_opening_parens() {
+    auto is_opening_parens = parser::peek_is_opening_parens(
+            "at FOREIGN KEY: expected an opening parens");
+    if (!is_opening_parens) return;
+    parser::step = step::foreign_key_field;
+}
+
+void parser::step_foreign_key_field() {
+    auto identifier = parser::peek();
+    if (!is_identifier(identifier)) {
+        parser::step = step::error;
+        parser::error_message = "at FOREIGN KEY: expected a field that will be a foreign key";
+        return;
+    }
+    auto f = std::find_if(
+            parser::q.get_fields().begin(),
+            parser::q.get_fields().end(),
+            [&identifier](field const &f) {
+                return f.value == identifier;
+            }
+    );
+    f->k_a = key_attr(key_type::FK, reference(current_references_table_name));
+    parser::pop();
+    parser::step = step::foreign_key_comma_or_closing_parens;
+}
+
+void parser::step_foreign_key_comma_or_closing_parens() {
+    auto comma_or_closing_parens = parser::peek();
+    if (comma_or_closing_parens != "," and comma_or_closing_parens != ")") {
+        parser::step = step::error;
+        parser::error_message = "at FOREIGN KEY: expected a comma or a closing parens";
+        return;
+    }
+    if (comma_or_closing_parens == ",") {
+        parser::step = step::foreign_key_field;
+        return;
+    }
+    parser::pop();
+    parser::step = step::references;
 }
 
 std::pair<query, parse_error> parser::step_error() {

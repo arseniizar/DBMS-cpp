@@ -3,6 +3,8 @@
 //
 #include "query.hpp"
 
+#include <ranges>
+
 void query::set_p_table(table *p_t) {
     query::p_table = p_t;
 }
@@ -35,8 +37,16 @@ size_t query::get_fields_size() {
     return query::fields.size();
 }
 
-void query::append_field(std::string const &field, data_type const &type) {
-    query::fields[field] = type;
+size_t query::get_inserts_size() {
+    return query::inserts.size();
+}
+
+void query::append_field(const field& f) {
+    query::fields.push_back(f);
+}
+
+field query::get_current_field() {
+    return query::fields.back();
 }
 
 void query::append_alias(std::string const &key, std::string const &value) {
@@ -72,11 +82,16 @@ void query::set_current_condition(condition const &condition) {
     query::conditions.push_back(condition);
 }
 
+void query::set_current_field(field const &f) {
+    query::fields.pop_back();
+    query::fields.push_back(f);
+}
+
 void query::set_table_name(const std::string &name) {
     query::table_name = name;
 }
 
-std::map<std::string, data_type> query::get_fields() {
+std::vector<field> query::get_fields() {
     return query::fields;
 }
 
@@ -96,9 +111,25 @@ std::vector<std::vector<std::string>> query::get_inserts() {
     return query::inserts;
 }
 
-std::pair<std::string, data_type> query::get_current_select_field() {
+field query::get_current_select_field() {
     auto current_select_field = std::pair<std::string, data_type>();
-    for (auto i = query::fields.rbegin(); i != fields.rend(); ++i)
-        if (i->second == data_type::TABLE_SELECT) return *i;
-    return std::make_pair("", data_type::UNKNOWN);
+    for (auto & field : std::ranges::reverse_view(query::fields))
+        if (field.d_t == data_type::TABLE_SELECT) return field;
+    return {};
+}
+
+void query::append_referencing_field(field *const &p_f) {
+    query::referencing_fields.push_back(p_f);
+}
+
+void query::set_referencing_fields(std::vector<field *> const &p_fields) {
+    query::referencing_fields = p_fields;
+}
+
+field * query::get_current_referencing_field() {
+    return query::referencing_fields.back();
+}
+
+const std::string &query::get_joined_table_name() const {
+    return joined_table_name;
 }

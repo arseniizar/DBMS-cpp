@@ -6,20 +6,12 @@
 #define DATABASEPROJECT_UT_PRINT_HPP
 
 // so in order to print the columns I selected or deleted or inserted I will
-// print them in some kind of table using <iomanip>
+// print them in some kind of table using <iomanip> or using fmt println
 
-#include <iomanip>
-#include <vector>
-#include "../../table/column/column.hpp"
-#include "../../table/table.hpp"
-
-static void print_table(table t) {
-    fmt::println("table printed");
-};
-
-static void print_columns(std::vector<column> cols) {
-    fmt::println("column print");
-};
+void ut_print();
+void ut_print(table t);
+void ut_print(std::vector<column> cols);
+void ut_print(query q);
 
 
 #endif //DATABASEPROJECT_UT_PRINT_HPP

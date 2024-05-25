@@ -15,7 +15,7 @@ parse_error parser::get_error() {
 void parser::clean() {
     parser::sql = std::string();
     parser::next_update_field = std::string();
-    parser::current_create_table_field = std::string();
+    parser::current_create_table_field_val = std::string();
     parser::q = query();
     parser::index = std::size_t(0);
     parser::step = step::type;

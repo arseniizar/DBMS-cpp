@@ -35,15 +35,15 @@ std::pair<std::vector<column>, execution_error> dbms::execute_query(query &q) {
     dbms::executor.execute();
     execution_result rec = dbms::executor.get_execution_res();
     if (dbms::executor.action == q_action::SELECT) {
-        print_columns(dbms::executor.tmp_cols);
+        ut_print(dbms::executor.tmp_cols);
     } else if (dbms::executor.action == q_action::DELETE) {
-        print_columns(dbms::executor.tmp_cols);
+        ut_print(dbms::executor.tmp_cols);
     } else if (dbms::executor.action == q_action::INSERT) {
-        print_columns(dbms::executor.tmp_cols);
+        ut_print(dbms::executor.tmp_cols);
     } else if (dbms::executor.action == q_action::UPDATE) {
-        print_columns(dbms::executor.tmp_cols);
+        ut_print(dbms::executor.tmp_cols);
     } else if (dbms::executor.action == q_action::CREATE) {
-        print_table(dbms::executor.tmp_t);
+        ut_print(dbms::executor.tmp_t);
         auto table_name = dbms::executor.tmp_t.get_table_name();
         if (is_table_already_exist(table_name)) {
             return executor_error("at EXECUTION: table with name already exists");
@@ -107,4 +107,16 @@ bool dbms::is_table_already_exist(std::string const &table_name) {
                        [&table_name](std::string const &str) {
                            return str == table_name;
                        });
+}
+
+void dbms::print_query(query const& q) {
+    ut_print(q);
+}
+
+// so in order to make a relation I should check the column for the
+// PRIMARY KEY and FOREIGN KEY or inside the CREATE TABLE
+// or in ALTER TABLE, but I do not have it currently, so let`s make it universal
+// for all cases
+void dbms::make_relation() {
+
 }

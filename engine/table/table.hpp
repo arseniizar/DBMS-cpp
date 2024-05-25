@@ -40,6 +40,8 @@ public:
     std::string get_table_name();
 
     void insert_column(const column &column);
+
+    bool empty();
 };
 
 #endif //DATABASEPROJECT_TABLE_HPP

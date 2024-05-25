@@ -30,58 +30,23 @@ execution_result executor::get_execution_res() const {
     return executor::result;
 }
 
-table executor::create_table() {
-    executor::action = q_action::CREATE;
-    table created_table = table();
-    created_table.set_table_name(executor::q.get_table_name());
-    for(auto [name, type] : executor::q.get_fields()) {
-        column col = column(std::vector<row>(), name, type);
-        created_table.insert_column(col);
-    }
-    return created_table;
+// I need to check whether this table exists
+// I need to check whether the inserts are proper fields of the table
+
+std::vector<column> executor::join() {
+    return std::vector<column>();
 }
 
-std::vector<column> executor::select() {
-    auto fields = executor::q.get_fields();
-    auto query_table = *(q.get_table_pointer());
-    auto vec = std::vector<column>();
-    if (fields.begin()->first == "*") {
-        return query_table.get_columns();
-    } else {
-        for (auto [col_name, _]: fields)
-            for (auto &column: query_table.get_columns())
-                if (column.get_name() == col_name) vec.push_back(column);
-    }
-    executor::action = q_action::SELECT;
-    return vec;
+std::vector<column> executor::left_join() {
+    return std::vector<column>();
 }
 
-std::vector<column> executor::delete_f() {
-    auto conditions = executor::q.get_conditions();
-    auto query_table_pointer = q.get_table_pointer();
-    // if the conditions vector is empty then it means that it deletes the whole table
-    if (conditions.empty()) {
-        // delete every field from the table, additionally put it in the backup
-        auto rec_change = query_table_pointer->erase();
-        executor::action = q_action::DELETE;
-        return rec_change;
-    } else {
-        auto rec_change = query_table_pointer->erase(conditions);
-        executor::action = q_action::DELETE;
-        return rec_change;
-    }
+std::vector<column> executor::right_join() {
+    return std::vector<column>();
 }
 
-std::vector<column> executor::insert() {
-    auto vec = std::vector<column>();
-    executor::action = q_action::INSERT;
-    return vec;
-}
-
-std::vector<column> executor::update() {
-    auto vec = std::vector<column>();
-    executor::action = q_action::UPDATE;
-    return vec;
+std::vector<column> executor::full_join() {
+    return std::vector<column>();
 }
 
 void executor::execute() {
@@ -98,7 +63,8 @@ void executor::execute() {
         // also could be the whole table!
         executor::tmp_cols = executor::delete_f();
     } else if (query_type == "Create") {
-       executor::tmp_t = executor::create_table();
+        executor::tmp_t = executor::create_table();
     }
     executor::result = execution_result("Executed!", &query);
 }
+
