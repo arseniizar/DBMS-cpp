@@ -14,6 +14,7 @@ bool parser::peek_is_table_name(const std::string &message) {
         return false;
     }
     if (parser::step == step::join_table) parser::q.set_joined_table_name(table_name);
+    else if (parser::step == step::references_table) parser::q.set_referenced_table(table_name);
     else parser::q.set_table_name(table_name);
     parser::pop();
     return true;

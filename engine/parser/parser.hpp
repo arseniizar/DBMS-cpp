@@ -82,7 +82,8 @@ inline std::vector<std::string> reserved_words{
         "DELETE FROM", "CREATE TABLE", "WHERE",
         "FROM", "SET", "AS", "NVARCHAR2",
         "DATE", "INTEGER", "GROUP BY", "HAVING",
-        "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "ON"
+        "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "ON",
+        "PRIMARY KEY", "FOREIGN KEY", "REFERENCES"
 };
 
 struct parser {
@@ -93,6 +94,7 @@ private:
     std::string current_create_table_field_val;
     std::string current_references_table_name;
     std::string current_peeked;
+    data_type current_field_data_type;
     query q;
     size_t index;
     step step;
@@ -101,7 +103,8 @@ private:
 
 public:
     explicit parser()
-            : sql(std::string()), index(0), step(step::type), pop_flag(false) {}
+            : sql(std::string()), index(0), step(step::type), pop_flag(false),
+              current_field_data_type(data_type::UNKNOWN) {}
 
     std::pair<query, parse_error> make_error_pair(std::string const &message);
 

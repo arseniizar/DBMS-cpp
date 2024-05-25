@@ -351,6 +351,12 @@ void parser::step_create_table_opening_parens() {
 
 void parser::step_create_table_field_name() {
     auto identifier = parser::peek();
+//    ! in case of an alternative for the primary key !
+//    if(identifier == "PRIMARY KEY") {
+//        parser::step = step::primary_key_opening_parens;
+//        parser::pop();
+//        return;
+//    }
     if (!is_identifier(identifier)) {
         parser::step = step::error;
         parser::error_message = "at CREATE: expected a field name";
@@ -374,6 +380,7 @@ void parser::step_create_table_field_type() {
         parser::error_message = "at CREATE: data type provided for the field is invalid";
         return;
     }
+    parser::current_field_data_type = d_type;
     for (auto &field: parser::q.get_fields()) {
         auto name = field.value;
         auto current_field_name = parser::current_create_table_field_val;
@@ -388,8 +395,13 @@ void parser::step_create_table_field_type() {
     // maybe I should add field in the upper case, or IDK, because in IDE like
     // DATAGRIP it works even with lowercase names of the tables
     parser::pop();
-    if (parser::peek() == "PRIMARY KEY") {
+    auto next_peek = parser::peek();
+    if (next_peek == "PRIMARY KEY") {
         parser::step = step::primary_key_as_type;
+        return;
+    }
+    if (next_peek == "FOREIGN KEY") {
+        parser::step = step::foreign_key_as_type;
         return;
     }
     parser::q.append_field(field(current_create_table_field_val, d_type));
@@ -485,8 +497,8 @@ void parser::step_join() {
         return;
     }
     str_toupper(join);
-    auto join_str = return_join_type_str(join);
-    join_type j_t = return_join_type(join_str);
+    auto join_type_str = return_join_type_str(join);
+    join_type j_t = return_join_type(join_type_str);
     parser::q.set_join_type(j_t);
     parser::pop();
     parser::step = step::join_table;
@@ -550,7 +562,7 @@ void parser::step_primary_key_as_type() {
         return;
     }
     parser::q.append_field(field(parser::current_create_table_field_val,
-                                 return_data_type(parser::current_create_table_field_val),
+                                 parser::current_field_data_type,
                                  key_attr(key_type::PK)));
     parser::pop();
     parser::step = step::create_table_comma_or_closing_parens;
@@ -631,7 +643,7 @@ void parser::step_foreign_key_as_type() {
         return;
     }
     parser::q.append_field(field(parser::current_create_table_field_val,
-                                 return_data_type(parser::current_create_table_field_val),
+                                 parser::current_field_data_type,
                                  key_attr(key_type::FK)));
     parser::pop();
     parser::step = step::references;
@@ -668,14 +680,8 @@ void parser::step_references_field() {
         parser::error_message = "at REFERENCES: expected a proper name for the the field";
         return;
     }
-    auto f = std::find_if(
-            parser::q.get_fields().begin(),
-            parser::q.get_fields().end(),
-            [&identifier](field const &f) {
-                return f.value == identifier;
-            }
-    );
-    parser::q.append_referencing_field(&*f);
+    // I will check this referencing fields in the dbms before putting it into the executor
+    parser::q.append_referencing_field_name(identifier);
     parser::pop();
     parser::step = step::references_comma_or_closing_parens;
 }

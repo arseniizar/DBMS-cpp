@@ -133,3 +133,16 @@ field * query::get_current_referencing_field() {
 const std::string &query::get_joined_table_name() const {
     return joined_table_name;
 }
+
+void query::append_referencing_field_name(const std::string &name) {
+    query::referencing_fields_names.push_back(name);
+}
+
+std::vector<std::string> query::get_referencing_fields_names(const std::string &name) {
+    return query::referencing_fields_names;
+}
+
+void query::set_referenced_table(const std::string &name) {
+    query::referenced_table = name;
+}
+

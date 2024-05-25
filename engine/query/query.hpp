@@ -39,7 +39,8 @@ private:
     std::string joined_table_name;
     table *p_table = nullptr;
     std::vector<field *> referencing_fields;
-    std::string current_referenced_table;
+    std::vector<std::string> referencing_fields_names;
+    std::string referenced_table;
     std::vector<field> fields;
     std::map<std::string, std::string> updates;
     std::map<std::string, std::string> aliases;
@@ -47,15 +48,15 @@ private:
     std::vector<std::vector<std::string>> inserts;
 public:
     query() = default;
+    [[nodiscard]] const std::string &get_joined_table_name() const;
 
-    const std::string &get_joined_table_name() const;
 //    std::vector<field *> get_referencing_fields();
 
     void set_referencing_fields(std::vector<field *> const &p_fields);
 
     void append_referencing_field(field* const& p_f);
 
-    void set_current_referencing_field(field *const &p_f);
+//    void set_current_referencing_field(field *const &p_f);
 
     field *get_current_referencing_field();
 
@@ -112,6 +113,12 @@ public:
     void set_current_field(field const &f);
 
     size_t get_inserts_size();
+
+    void append_referencing_field_name(std::string const& name);
+
+    std::vector<std::string> get_referencing_fields_names(std::string const& name);
+
+    void set_referenced_table(std::string const& name);
 };
 
 
