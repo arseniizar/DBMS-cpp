@@ -2,7 +2,6 @@
 // Created by Altezza on 17.05.2024.
 //
 #include "query.hpp"
-
 #include <ranges>
 
 void query::set_p_table(table *p_t) {
@@ -82,7 +81,7 @@ void query::set_current_condition(condition const &condition) {
     query::conditions.push_back(condition);
 }
 
-void query::set_current_field(field const &f) {
+void query::set_current_field(field f) {
     query::fields.pop_back();
     query::fields.push_back(f);
 }
@@ -138,11 +137,33 @@ void query::append_referencing_field_name(const std::string &name) {
     query::referencing_fields_names.push_back(name);
 }
 
-std::vector<std::string> query::get_referencing_fields_names(const std::string &name) {
+std::vector<std::string> query::get_referencing_fields_names() {
     return query::referencing_fields_names;
 }
 
 void query::set_referenced_table(const std::string &name) {
     query::referenced_table = name;
+}
+
+std::string query::get_referenced_table_name() {
+    return query::referenced_table;
+}
+
+std::vector<field> query::get_primary_keys() {
+    std::vector<field> primary_keys;
+    std::for_each(query::fields.begin(), query::fields.end(),
+                  [&primary_keys](field &f){
+        if(f.k_a.k_t == key_type::PK) primary_keys.push_back(f);
+    });
+    return primary_keys;
+}
+
+std::vector<field> query::get_foreign_keys() {
+    std::vector<field> foreign_keys;
+    std::for_each(query::fields.begin(), query::fields.end(),
+                  [&foreign_keys](field &f){
+        if(f.k_a.k_t == key_type::FK) foreign_keys.push_back(f);
+    });
+    return foreign_keys;
 }
 

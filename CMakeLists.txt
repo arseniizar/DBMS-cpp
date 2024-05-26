@@ -28,13 +28,13 @@ add_executable(DatabaseProject main.cpp
         engine/query/structs/query_operator.hpp
         engine/table/structs/data_type.hpp
         engine/query/complementary/get_operator.hpp
-        engine/table/column/column.hpp
-        engine/table/row/row.hpp
+        engine/table/structs/column/column.hpp
+        engine/table/structs/row/row.hpp
         engine/utils/ut_print/ut_print.hpp
         engine/backup/recent_change.hpp
         engine/dbms.cpp
-        engine/table/column/column.cpp
-        engine/table/row/row.cpp
+        engine/table/structs/column/column.cpp
+        engine/table/structs/row/row.cpp
         engine/table/table.cpp
         engine/query/query.cpp
         engine/parser/switch/switch.cpp
@@ -55,6 +55,12 @@ add_executable(DatabaseProject main.cpp
         engine/executor/actions/create/create_table.cpp
         engine/query/structs/field.hpp
         engine/query/structs/key_attr.hpp
-        engine/query/structs/reference.hpp
+        engine/query/structs/ref.hpp
+        engine/table/structs/foreign_key/foreign_key.cpp
+        engine/table/structs/foreign_key/foreign_key.hpp
+        engine/table/structs/primary_key/primary_key.cpp
+        engine/table/structs/primary_key/primary_key.hpp
+        engine/table/structs/key/key.cpp
+        engine/table/structs/key/key.hpp
 )
 target_link_libraries(DatabaseProject fmt)

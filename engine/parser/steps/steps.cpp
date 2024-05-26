@@ -692,11 +692,16 @@ void parser::step_references_comma_or_closing_parens() {
         parser::step = step::error;
         parser::error_message = "at REFERENCES: expected a comma or a closing parens";
     }
+    auto current_field = parser::q.get_current_field();
+    current_field.k_a.add_ref(ref(parser::q.get_referenced_table_name(),
+                                  parser::q.get_referencing_fields_names().back()));
+    parser::q.set_current_field(current_field);
     if (comma_or_closing_parens == ",") {
         parser::step = step::references_field;
         return;
     }
     parser::pop_flag = true;
+    parser::step = step::create_table_comma_or_closing_parens;
     parser::pop();
 }
 
@@ -721,7 +726,8 @@ void parser::step_foreign_key_field() {
                 return f.value == identifier;
             }
     );
-    f->k_a = key_attr(key_type::FK, reference(current_references_table_name));
+    f->k_a = key_attr(key_type::FK, ref(current_references_table_name,
+                                        f->value));
     parser::pop();
     parser::step = step::foreign_key_comma_or_closing_parens;
 }

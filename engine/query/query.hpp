@@ -48,13 +48,14 @@ private:
     std::vector<std::vector<std::string>> inserts;
 public:
     query() = default;
+
     [[nodiscard]] const std::string &get_joined_table_name() const;
 
 //    std::vector<field *> get_referencing_fields();
 
     void set_referencing_fields(std::vector<field *> const &p_fields);
 
-    void append_referencing_field(field* const& p_f);
+    void append_referencing_field(field *const &p_f);
 
 //    void set_current_referencing_field(field *const &p_f);
 
@@ -110,15 +111,21 @@ public:
 
     field get_current_field();
 
-    void set_current_field(field const &f);
+    void set_current_field(field f);
 
     size_t get_inserts_size();
 
-    void append_referencing_field_name(std::string const& name);
+    void append_referencing_field_name(std::string const &name);
 
-    std::vector<std::string> get_referencing_fields_names(std::string const& name);
+    std::vector<std::string> get_referencing_fields_names();
 
-    void set_referenced_table(std::string const& name);
+    void set_referenced_table(std::string const &name);
+
+    std::string get_referenced_table_name();
+
+    std::vector<field> get_foreign_keys();
+
+    std::vector<field> get_primary_keys();
 };
 
 

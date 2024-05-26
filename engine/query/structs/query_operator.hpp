@@ -7,7 +7,7 @@
 
 
 #include <string>
-#include "../../table/row/row.hpp"
+#include "../../table/structs/row/row.hpp"
 #include "../../table/structs/data_type.hpp"
 
 enum struct query_operator {

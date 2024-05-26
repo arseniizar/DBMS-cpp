@@ -1,6 +1,7 @@
 //
 // Created by Altezza on 17.05.2024.
 //
+#include <algorithm>
 #include "table.hpp"
 
 std::vector<column> table::get_columns() {
@@ -11,7 +12,7 @@ void table::set_table_name(std::string const &name) {
     table::table_name = name;
 }
 
-column table::get_column_by_name(std::string const &col_name) {
+column table::find_column_by_name(std::string const &col_name) {
     for (auto &column: columns)
         if (column.get_name() == col_name) return column;
     return {};
@@ -23,7 +24,7 @@ std::vector<column> table::erase(std::vector<condition> &conditions) {
     auto erased_rows = std::vector<row>();
     auto type = data_type::UNKNOWN;
     for (auto &condition: conditions) {
-        auto col = table::get_column_by_name(condition.get_operand1());
+        auto col = table::find_column_by_name(condition.get_operand1());
         type = col.get_type();
         for (auto i = 0; i < col.get_rows().size(); i++) {
             auto op = get_operator(condition);
@@ -59,4 +60,24 @@ void table::insert_column(const column &column) {
 
 bool table::empty() {
     return table::table_name.empty() && columns.empty();
+}
+
+std::vector<std::string> table::get_columns_names() {
+    auto vec = std::vector<std::string>();
+    std::for_each(table::columns.begin(), table::columns.end(), [&vec](column &col){
+        vec.push_back(col.get_name());
+    });
+    return vec;
+}
+
+void table::add_foreign_key(foreign_key const &fk) {
+    table::foreign_keys.push_back(fk);
+}
+
+void table::add_primary_key(primary_key const &pk) {
+    table::primary_keys.push_back(pk);
+}
+
+bool table::contains_cols_names(const std::vector<std::string> &names) {
+    return std::ranges::is_permutation(names, table::get_columns_names());
 }

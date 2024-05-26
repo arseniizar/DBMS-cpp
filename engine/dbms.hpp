@@ -16,6 +16,7 @@
 #include "executor/executor.hpp"
 #include "utils/ut_print/ut_print.hpp"
 #include "backup/recent_change.hpp"
+#include "utils/ut_find_in_vector/ut_find_in_vector.hpp"
 
 struct dbms {
 private:
@@ -48,12 +49,15 @@ private:
 
     std::pair<std::vector<column>, execution_error> execute_query(query &q);
 
-    void make_relation();
+    bool check_relations();
 
+    void populate_keys();
+
+    void print_query(query const &q);
 
 public:
     void run();
-    void print_query(query const& q);
+
 };
 
 #endif //DATABASEPROJECT_DBMS_HPP

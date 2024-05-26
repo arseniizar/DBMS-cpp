@@ -48,6 +48,9 @@ std::pair<std::vector<column>, execution_error> dbms::execute_query(query &q) {
         if (is_table_already_exist(table_name)) {
             return executor_error("at EXECUTION: table with name already exists");
         }
+//        if (!dbms::executor.q.get_referenced_table_name().empty()) {
+//            dbms::make_relation();
+//        }
         dbms::add_table(dbms::executor.tmp_t);
     }
     std::string table_name = dbms::executor.tmp_t.get_table_name();
@@ -109,14 +112,24 @@ bool dbms::is_table_already_exist(std::string const &table_name) {
                        });
 }
 
-void dbms::print_query(query const& q) {
+void dbms::print_query(query const &q) {
     ut_print(q);
 }
 
 // so in order to make a relation I should check the column for the
 // PRIMARY KEY and FOREIGN KEY or inside the CREATE TABLE
-// or in ALTER TABLE, but I do not have it currently, so let`s make it universal
-// for all cases
-void dbms::make_relation() {
+bool dbms::check_relations() {
+    query q = dbms::executor.q;
+    // fields from another table
+    auto ref_fields = q.get_referencing_fields_names();
+    auto is_referenced_table_exists = dbms::is_table_already_exist
+            (q.get_referenced_table_name());
+    if (!is_referenced_table_exists) return false;
+    auto ref_table = *dbms::find_table_by_name(q.get_referenced_table_name());
+    if (!ref_table.contains_cols_names(ref_fields)) return false;
+    return true;
+}
 
+void dbms::populate_keys() {
+    // here I will add all the primary and foreign keys to the table fields
 }
