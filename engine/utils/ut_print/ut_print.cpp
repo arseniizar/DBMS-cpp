@@ -1,8 +1,8 @@
-#include "../../query/query.hpp"
+#include "../../query/Query.hpp"
 #include <iomanip>
 #include <iostream>
 
-void ut_print(query q) {
+void ut_print(Query q) {
     using namespace std;
     cout
             << left
@@ -39,10 +39,26 @@ void ut_print() {
 
 }
 
-void ut_print(table t) {
-
+void ut_print(Table t) {
+    using namespace std;
+    auto cols = t.get_columns();
+    fmt::println("-----------------------");
+    cout
+            << left
+            << setw(18)
+            << t.get_table_name() + " columns:"
+            << "\n";
+    fmt::println("-----------------------");
+    std::for_each(cols.begin(), cols.end(), [](Column &col) {
+        auto setw_size = col.get_name().size() + 5;
+        cout
+                << left
+                << setw(static_cast<int>(setw_size))
+                << col.get_name() + "\n";
+    });
+    fmt::println("-----------------------");
 }
 
-void ut_print(std::vector<column> cols) {
+void ut_print(std::vector<Column> cols) {
 
 }

@@ -3,12 +3,12 @@
 //
 
 #include <fmt/core.h>
-#include "../../executor.hpp"
+#include "../../Executor.hpp"
 
-std::vector<column> executor::select() {
-    auto fields = executor::q.get_fields();
-    auto query_table = *(q.get_table_pointer());
-    auto vec = std::vector<column>();
+std::vector<Column> Executor::select() {
+    auto fields = Executor::q.get_fields();
+    auto query_table = *(q.get_p_table());
+    auto vec = std::vector<Column>();
     if (fields.begin()->value == "*") {
         return query_table.get_columns();
     } else {
@@ -16,6 +16,6 @@ std::vector<column> executor::select() {
             for (auto &column: query_table.get_columns())
                 if (column.get_name() == field.value) vec.push_back(column);
     }
-    executor::action = q_action::SELECT;
+    Executor::action = Q_action::SELECT;
     return vec;
 }

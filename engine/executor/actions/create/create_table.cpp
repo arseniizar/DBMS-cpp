@@ -3,15 +3,25 @@
 //
 
 #include <fmt/core.h>
-#include "../../executor.hpp"
+#include <fstream>
+#include "../../Executor.hpp"
 
-table executor::create_table() {
-    executor::action = q_action::CREATE;
-    table created_table = table();
-    created_table.set_table_name(executor::q.get_table_name());
-    for (auto const& field: executor::q.get_fields()) {
-        column col = column(std::vector<row>(), field.value, field.d_t);
+Table Executor::create_table() {
+    Executor::action = Q_action::CREATE;
+    Table created_table;
+    auto pk = Executor::q.get_primary_key();
+    created_table.set_table_name(Executor::q.get_table_name());
+    for (auto const &field: Executor::q.get_fields()) {
+        Column col = Column(std::vector<Row>(), field.value, field.d_t);
         created_table.insert_column(col);
+        if (col.get_name() == pk.value) created_table.set_primary_key(Primary_key(pk.k_a));
     }
+    std::ofstream binary_file(R"(D:\Coding\Cpp\DBMS-cpp\engine\binsaves\tables\)"
+                              + created_table.get_table_name() + ".bin", std::ios::binary);
+    if (!binary_file) {
+        fmt::println("Cannot save the table into the binary file");
+    }
+    binary_file.write(reinterpret_cast<const char *>(&created_table), sizeof(Table));
+    binary_file.close();
     return created_table;
 }

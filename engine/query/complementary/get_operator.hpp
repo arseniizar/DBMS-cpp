@@ -6,9 +6,9 @@
 #define DATABASEPROJECT_GET_OPERATOR_HPP
 
 
-#include "../structs/condition.hpp"
+#include "../structs/Condition.hpp"
 
-static auto get_operator(condition &cond) {
+static auto get_operator(Condition &cond) {
     return query_operator_str[static_cast<int>(cond.get_operator())];
 }
 

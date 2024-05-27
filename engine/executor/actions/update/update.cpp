@@ -3,10 +3,10 @@
 //
 
 #include <fmt/core.h>
-#include "../../executor.hpp"
+#include "../../Executor.hpp"
 
-std::vector<column> executor::update() {
-    auto vec = std::vector<column>();
-    executor::action = q_action::UPDATE;
+std::vector<Column> Executor::update() {
+    auto vec = std::vector<Column>();
+    Executor::action = Q_action::UPDATE;
     return vec;
 }

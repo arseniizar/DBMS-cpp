@@ -14,29 +14,29 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fmt)
 
 add_executable(DatabaseProject main.cpp
-        engine/table/table.hpp
-        engine/parser/parser.cpp
-        engine/parser/parser.hpp
-        engine/query/query.hpp
-        engine/parser/structs/parse_error.hpp
-        engine/dbms.hpp
-        engine/executor/structs/execution_error.hpp
-        engine/executor/structs/execution_result.hpp
-        engine/executor/executor.cpp
-        engine/executor/executor.cpp
-        engine/query/structs/condition.hpp
-        engine/query/structs/query_operator.hpp
-        engine/table/structs/data_type.hpp
+        engine/table/Table.hpp
+        engine/parser/Parser.cpp
+        engine/parser/Parser.hpp
+        engine/query/Query.hpp
+        engine/parser/structs/Parse_error.hpp
+        engine/Dbms.hpp
+        engine/executor/structs/Execution_error.hpp
+        engine/executor/structs/Execution_result.hpp
+        engine/executor/Executor.cpp
+        engine/executor/Executor.cpp
+        engine/query/structs/Condition.hpp
+        engine/query/structs/Query_operator.hpp
+        engine/table/structs/Data_type.hpp
         engine/query/complementary/get_operator.hpp
-        engine/table/structs/column/column.hpp
-        engine/table/structs/row/row.hpp
+        engine/table/structs/column/Column.hpp
+        engine/table/structs/row/Row.hpp
         engine/utils/ut_print/ut_print.hpp
         engine/backup/recent_change.hpp
-        engine/dbms.cpp
-        engine/table/structs/column/column.cpp
-        engine/table/structs/row/row.cpp
-        engine/table/table.cpp
-        engine/query/query.cpp
+        engine/Dbms.cpp
+        engine/table/structs/column/Column.cpp
+        engine/table/structs/row/Row.cpp
+        engine/table/Table.cpp
+        engine/query/Query.cpp
         engine/parser/switch/switch.cpp
         engine/parser/steps/steps.cpp
         engine/parser/complementary/complementary.cpp
@@ -53,14 +53,14 @@ add_executable(DatabaseProject main.cpp
         engine/executor/actions/update/update.cpp
         engine/executor/actions/delete/delete_f.cpp
         engine/executor/actions/create/create_table.cpp
-        engine/query/structs/field.hpp
-        engine/query/structs/key_attr.hpp
-        engine/query/structs/ref.hpp
-        engine/table/structs/foreign_key/foreign_key.cpp
-        engine/table/structs/foreign_key/foreign_key.hpp
-        engine/table/structs/primary_key/primary_key.cpp
-        engine/table/structs/primary_key/primary_key.hpp
-        engine/table/structs/key/key.cpp
-        engine/table/structs/key/key.hpp
+        engine/query/structs/Field.hpp
+        engine/query/structs/Key_attr.hpp
+        engine/query/structs/Ref.hpp
+        engine/table/structs/foreign_key/Foreign_key.cpp
+        engine/table/structs/foreign_key/Foreign_key.hpp
+        engine/table/structs/primary_key/Primary_key.cpp
+        engine/table/structs/primary_key/Primary_key.hpp
+        engine/table/structs/key/Key.cpp
+        engine/table/structs/key/Key.hpp
 )
 target_link_libraries(DatabaseProject fmt)

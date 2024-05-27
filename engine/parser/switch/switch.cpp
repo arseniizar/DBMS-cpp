@@ -1,246 +1,246 @@
 //
 // Created by Altezza on 17.05.2024.
 //
-#include "../parser.hpp"
+#include "../Parser.hpp"
 
-std::pair<query, parse_error> parser::parser_switch() {
+std::pair<Query, Parse_error> Parser::parser_switch() {
     while (true) {
-        if (is_index_at_end()) return std::make_pair(parser::q, parser::error);
-        switch (parser::step) {
-            case step::type: {
-                parser::step_type();
+        if (is_index_at_end()) return std::make_pair(Parser::q, Parser::error);
+        switch (Parser::step) {
+            case Step::type: {
+                Parser::step_type();
                 break;
             }
-            case step::select_field: {
-                parser::step_select_field();
+            case Step::select_field: {
+                Parser::step_select_field();
                 break;
             }
-            case step::select_comma: {
-                parser::step_select_comma();
+            case Step::select_comma: {
+                Parser::step_select_comma();
                 break;
             }
-            case step::select_from : {
-                parser::step_select_from();
+            case Step::select_from : {
+                Parser::step_select_from();
                 break;
             }
-            case step::select_from_table: {
-                parser::step_select_from_table();
+            case Step::select_from_table: {
+                Parser::step_select_from_table();
                 break;
             }
-            case step::insert_table: {
-                parser::step_insert_table();
+            case Step::insert_table: {
+                Parser::step_insert_table();
                 break;
             }
-            case step::delete_from_table: {
-                parser::step_delete_from_table();
+            case Step::delete_from_table: {
+                Parser::step_delete_from_table();
                 break;
             }
-            case step::create_table: {
-                parser::step_create_table();
+            case Step::create_table: {
+                Parser::step_create_table();
                 break;
             }
-            case step::create_table_opening_parens: {
-                parser::step_create_table_opening_parens();
+            case Step::create_table_opening_parens: {
+                Parser::step_create_table_opening_parens();
                 break;
             }
-            case step::create_table_field_name: {
-                parser::step_create_table_field_name();
+            case Step::create_table_field_name: {
+                Parser::step_create_table_field_name();
                 break;
             }
-            case step::create_table_field_type: {
-                parser::step_create_table_field_type();
+            case Step::create_table_field_type: {
+                Parser::step_create_table_field_type();
                 break;
             }
-            case step::create_table_comma_or_closing_parens: {
-                parser::step_create_table_comma_or_closing_parens();
+            case Step::create_table_comma_or_closing_parens: {
+                Parser::step_create_table_comma_or_closing_parens();
                 break;
             }
-            case step::update_table: {
-                parser::step_update_table();
+            case Step::update_table: {
+                Parser::step_update_table();
                 break;
             }
-            case step::update_set: {
-                parser::step_update_set();
+            case Step::update_set: {
+                Parser::step_update_set();
                 break;
             }
-            case step::update_field: {
-                parser::step_update_field();
+            case Step::update_field: {
+                Parser::step_update_field();
                 break;
             }
-            case step::update_equals: {
-                parser::step_update_equals();
+            case Step::update_equals: {
+                Parser::step_update_equals();
                 break;
             }
-            case step::update_value: {
-                parser::step_update_value();
+            case Step::update_value: {
+                Parser::step_update_value();
                 break;
             }
-            case step::update_comma: {
-                parser::step_update_comma();
+            case Step::update_comma: {
+                Parser::step_update_comma();
                 break;
             }
-            case step::where: {
-                parser::step_where();
+            case Step::where: {
+                Parser::step_where();
                 break;
             }
-            case step::where_field: {
-                parser::step_where_field();
+            case Step::where_field: {
+                Parser::step_where_field();
                 break;
             }
-            case step::where_operator: {
-                parser::step_where_operator();
+            case Step::where_operator: {
+                Parser::step_where_operator();
                 break;
             }
-            case step::where_value: {
-                parser::step_where_value();
+            case Step::where_value: {
+                Parser::step_where_value();
                 break;
             }
-            case step::where_and: {
-                parser::step_where_and();
+            case Step::where_and: {
+                Parser::step_where_and();
                 break;
             }
-            case step::group_by: {
-                parser::step_group_by();
+            case Step::group_by: {
+                Parser::step_group_by();
                 break;
             }
-            case step::group_by_field: {
-                parser::step_group_by_field();
+            case Step::group_by_field: {
+                Parser::step_group_by_field();
                 break;
             }
-            case step::having: {
-                parser::step_having();
+            case Step::having: {
+                Parser::step_having();
                 break;
             }
-            case step::having_field: {
-                parser::step_having_field();
+            case Step::having_field: {
+                Parser::step_having_field();
                 break;
             }
-            case step::having_operator: {
-                parser::step_having_operator();
+            case Step::having_operator: {
+                Parser::step_having_operator();
                 break;
             }
-            case step::having_value: {
-                parser::step_having_value();
+            case Step::having_value: {
+                Parser::step_having_value();
                 break;
             }
-            case step::join: {
-                parser::step_join();
+            case Step::join: {
+                Parser::step_join();
                 break;
             }
-            case step::join_table: {
-                parser::step_join_table();
+            case Step::join_table: {
+                Parser::step_join_table();
                 break;
             }
-            case step::join_on: {
-                parser::step_join_on();
+            case Step::join_on: {
+                Parser::step_join_on();
                 break;
             }
-            case step::join_on_field1: {
-                parser::step_join_on_field1();
+            case Step::join_on_field1: {
+                Parser::step_join_on_field1();
                 break;
             }
-            case step::join_on_equal: {
-                parser::step_join_on_equal();
+            case Step::join_on_equal: {
+                Parser::step_join_on_equal();
                 break;
             }
-            case step::join_on_field2: {
-                parser::step_join_on_field2();
+            case Step::join_on_field2: {
+                Parser::step_join_on_field2();
                 break;
             }
-            case step::insert_fields_opening_parens: {
-                parser::step_insert_fields_opening_parens();
+            case Step::insert_fields_opening_parens: {
+                Parser::step_insert_fields_opening_parens();
                 break;
             }
-            case step::insert_fields: {
-                parser::step_insert_fields();
+            case Step::insert_fields: {
+                Parser::step_insert_fields();
                 break;
             }
-            case step::insert_fields_comma_or_closing_parens: {
-                parser::step_insert_fields_comma_or_closing_parens();
+            case Step::insert_fields_comma_or_closing_parens: {
+                Parser::step_insert_fields_comma_or_closing_parens();
                 break;
             }
-            case step::insert_values_rword: {
-                parser::step_insert_values_rword();
+            case Step::insert_values_rword: {
+                Parser::step_insert_values_rword();
                 break;
             }
-            case step::insert_values_opening_parens: {
-                parser::step_insert_values_opening_parens();
+            case Step::insert_values_opening_parens: {
+                Parser::step_insert_values_opening_parens();
                 break;
             }
-            case step::insert_values: {
-                parser::step_insert_values();
+            case Step::insert_values: {
+                Parser::step_insert_values();
                 break;
             }
-            case step::insert_values_comma_or_closing_parens: {
-                parser::step_insert_values_comma_or_closing_parens();
+            case Step::insert_values_comma_or_closing_parens: {
+                Parser::step_insert_values_comma_or_closing_parens();
                 break;
             }
-            case step::insert_values_comma_before_opening_parens: {
-                parser::step_insert_values_comma_before_opening_parens();
+            case Step::insert_values_comma_before_opening_parens: {
+                Parser::step_insert_values_comma_before_opening_parens();
                 break;
             }
-            case step::primary_key_as_type: {
-                parser::step_primary_key_as_type();
+            case Step::primary_key_as_type: {
+                Parser::step_primary_key_as_type();
                 break;
             }
-            case step::primary_key_at_end: {
-                parser::step_primary_key_at_end();
+            case Step::primary_key_at_end: {
+                Parser::step_primary_key_at_end();
                 break;
             }
-            case step::primary_key_opening_parens: {
-                parser::step_primary_key_opening_parens();
+            case Step::primary_key_opening_parens: {
+                Parser::step_primary_key_opening_parens();
                 break;
             }
-            case step::primary_key_field: {
-                parser::step_primary_key_field();
+            case Step::primary_key_field: {
+                Parser::step_primary_key_field();
                 break;
             }
-            case step::primary_key_comma_or_closing_parens: {
-                parser::step_primary_key_comma_or_closing_parens();
+            case Step::primary_key_comma_or_closing_parens: {
+                Parser::step_primary_key_comma_or_closing_parens();
                 break;
             }
-            case step::foreign_key: {
-                parser::step_foreign_key();
+            case Step::foreign_key: {
+                Parser::step_foreign_key();
                 break;
             }
-            case step::foreign_key_as_type: {
-                parser::step_foreign_key_as_type();
+            case Step::foreign_key_as_type: {
+                Parser::step_foreign_key_as_type();
                 break;
             }
-            case step::references: {
-                parser::step_references();
+            case Step::references: {
+                Parser::step_references();
                 break;
             }
-            case step::references_table: {
-                parser::step_references_table();
+            case Step::references_table: {
+                Parser::step_references_table();
                 break;
             }
-            case step::references_table_opening_parens: {
-                parser::step_references_table_opening_parens();
+            case Step::references_table_opening_parens: {
+                Parser::step_references_table_opening_parens();
                 break;
             }
-            case step::references_field: {
-                parser::step_references_field();
+            case Step::references_field: {
+                Parser::step_references_field();
                 break;
             }
-            case step::references_comma_or_closing_parens: {
-                parser::step_references_comma_or_closing_parens();
+            case Step::references_comma_or_closing_parens: {
+                Parser::step_references_comma_or_closing_parens();
                 break;
             }
-            case step::foreign_key_opening_parens: {
-                parser::step_foreign_key_opening_parens();
+            case Step::foreign_key_opening_parens: {
+                Parser::step_foreign_key_opening_parens();
                 break;
             }
-            case step::foreign_key_field: {
-                parser::step_foreign_key_field();
+            case Step::foreign_key_field: {
+                Parser::step_foreign_key_field();
                 break;
             }
-            case step::foreign_key_comma_or_closing_parens: {
-                parser::step_foreign_key_comma_or_closing_parens();
+            case Step::foreign_key_comma_or_closing_parens: {
+                Parser::step_foreign_key_comma_or_closing_parens();
                 break;
             }
-            case step::error: {
-                return parser::step_error();
+            case Step::error: {
+                return Parser::step_error();
             }
         }
     }

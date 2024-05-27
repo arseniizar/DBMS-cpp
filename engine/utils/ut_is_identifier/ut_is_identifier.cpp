@@ -3,7 +3,7 @@
 //
 
 #include "ut_is_identifier.hpp"
-#include "../../parser/parser.hpp"
+#include "../../parser/Parser.hpp"
 
 bool is_identifier(std::string str) {
     std::transform(str.begin(), str.end(), str.begin(), ::toupper);

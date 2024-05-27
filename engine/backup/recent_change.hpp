@@ -7,14 +7,14 @@
 
 #include <string>
 #include <iomanip>
-#include "../table/table.hpp"
-#include "../query/query.hpp"
+#include "../table/Table.hpp"
+#include "../query/Query.hpp"
 
 struct recent_change {
     std::string time;
-    query* p_query;
+    Query* p_query;
 
-    explicit recent_change(query *p_q) {
+    explicit recent_change(Query *p_q) {
         // https://www.tutorialspoint.com/cplusplus/cpp_date_time.htm
         // https://stackoverflow.com/questions/16357999/current-date-and-time-as-string
         recent_change::p_query = p_q;

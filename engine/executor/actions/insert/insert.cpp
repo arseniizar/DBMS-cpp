@@ -3,10 +3,10 @@
 //
 
 #include "fmt/core.h"
-#include "../../executor.hpp"
+#include "../../Executor.hpp"
 
-std::vector<column> executor::insert() {
-    auto vec = std::vector<column>();
-    executor::action = q_action::INSERT;
+std::vector<Column> Executor::insert() {
+    auto vec = std::vector<Column>();
+    Executor::action = Q_action::INSERT;
     return vec;
 }

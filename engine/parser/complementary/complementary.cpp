@@ -2,70 +2,70 @@
 // Created by Altezza on 17.05.2024.
 //
 #include <algorithm>
-#include "../parser.hpp"
+#include "../Parser.hpp"
 #include "../../utils/ut_is_identifier/ut_is_identifier.hpp"
 #include "../../utils/ut_str_toupper/ut_str_toupper.hpp"
 
-bool parser::peek_is_table_name(const std::string &message) {
-    auto table_name = parser::peek();
+bool Parser::peek_is_table_name(const std::string &message) {
+    auto table_name = Parser::peek();
     if (table_name.empty() || table_name == "(") {
-        parser::step = step::error;
-        parser::error_message = message;
+        Parser::step = Step::error;
+        Parser::error_message = message;
         return false;
     }
-    if (parser::step == step::join_table) parser::q.set_joined_table_name(table_name);
-    else if (parser::step == step::references_table) parser::q.set_referenced_table(table_name);
-    else parser::q.set_table_name(table_name);
-    parser::pop();
+    if (Parser::step == Step::join_table) Parser::q.set_joined_table_name(table_name);
+    else if (Parser::step == Step::references_table) Parser::q.set_referenced_table(table_name);
+    else Parser::q.set_table_name(table_name);
+    Parser::pop();
     return true;
 }
 
-void parser::set_additional_step() {
+void Parser::set_additional_step() {
     // group by, where, join
-    auto peeked = parser::peek();
+    auto peeked = Parser::peek();
     str_toupper(peeked);
     if (peeked == "WHERE") {
-        parser::step = step::where;
+        Parser::step = Step::where;
     } else if (peeked == "JOIN") {
-        parser::step = step::join;
+        Parser::step = Step::join;
     } else if (peeked == "GROUP BY") {
-        parser::step = step::group_by;
+        Parser::step = Step::group_by;
     } else {
-        parser::step = step::error;
-        parser::error_message = "inappropriate continuation of the statement";
+        Parser::step = Step::error;
+        Parser::error_message = "inappropriate continuation of the statement";
     }
 }
 
-bool parser::peek_is_operator(std::string const &message) {
-    auto op = parser::peek();
-    auto curr_cond = parser::q.get_current_condition();
-    if (op == "=") curr_cond._operator = query_operator::eq;
-    else if (op == ">") curr_cond._operator = query_operator::gt;
-    else if (op == ">=") curr_cond._operator = query_operator::gte;
-    else if (op == "<") curr_cond._operator = query_operator::lt;
-    else if (op == "<=") curr_cond._operator = query_operator::lte;
-    else if (op == "!=") curr_cond._operator = query_operator::ne;
+bool Parser::peek_is_operator(std::string const &message) {
+    auto op = Parser::peek();
+    auto curr_cond = Parser::q.get_current_condition();
+    if (op == "=") curr_cond._operator = Query_operator::eq;
+    else if (op == ">") curr_cond._operator = Query_operator::gt;
+    else if (op == ">=") curr_cond._operator = Query_operator::gte;
+    else if (op == "<") curr_cond._operator = Query_operator::lt;
+    else if (op == "<=") curr_cond._operator = Query_operator::lte;
+    else if (op == "!=") curr_cond._operator = Query_operator::ne;
     else {
-        parser::step = step::error;
-        parser::error_message = message;
+        Parser::step = Step::error;
+        Parser::error_message = message;
         return false;
     }
-    parser::q.set_current_condition(curr_cond);
-    parser::pop();
+    Parser::q.set_current_condition(curr_cond);
+    Parser::pop();
     return true;
 }
 
-std::pair<query, parse_error>
-parser::make_error_pair(std::string const &message) {
-    return std::make_pair(parser::q, parse_error(message));
+std::pair<Query, Parse_error>
+Parser::make_error_pair(std::string const &message) {
+    return std::make_pair(Parser::q, Parse_error(message));
 }
 
-std::vector<std::string> parser::split_string_in_words() {
+std::vector<std::string> Parser::split_string_in_words() {
     auto comma = ',';
     auto space = ' ';
     auto words = std::vector<std::string>();
     auto word = std::string();
-    for (auto const &c: parser::sql) {
+    for (auto const &c: Parser::sql) {
         if (c == comma || c == space) {
             words.push_back(word);
             word.erase();
@@ -76,90 +76,90 @@ std::vector<std::string> parser::split_string_in_words() {
     return words;
 }
 
-// so I will try to make my own LL(1) parser!
-std::string parser::pop() {
-    auto pair = parser::peek_with_length();
-    if (pair.first.empty()) parser::pop_flag = true;
-    parser::index += pair.second;
-    parser::pop_whitespace();
+// so I will try to make my own LL(1) Parser!
+std::string Parser::pop() {
+    auto pair = Parser::peek_with_length();
+    if (pair.first.empty()) Parser::pop_flag = true;
+    Parser::index += pair.second;
+    Parser::pop_whitespace();
     return pair.first;
 }
 
-void parser::pop_whitespace() {
+void Parser::pop_whitespace() {
     for (;
-            parser::index < parser::sql.size() && parser::sql.at(parser::index) == ' ';
-            parser::index++);
+            Parser::index < Parser::sql.size() && Parser::sql.at(Parser::index) == ' ';
+            Parser::index++);
 }
 
-std::string parser::peek() {
-    auto peeked = parser::peek_with_length();
+std::string Parser::peek() {
+    auto peeked = Parser::peek_with_length();
     return peeked.first;
 }
 
-std::pair<std::string, int> parser::peek_with_length() {
-    if (parser::index >= parser::sql.size()) return std::make_pair("", 0);
+std::pair<std::string, int> Parser::peek_with_length() {
+    if (Parser::index >= Parser::sql.size()) return std::make_pair("", 0);
     for (auto const &word: reserved_words) {
-        auto end_index = std::min(parser::sql.size(), parser::index + word.size());
-        auto token = parser::sql.substr(parser::index, end_index - parser::index);
+        auto end_index = std::min(Parser::sql.size(), Parser::index + word.size());
+        auto token = Parser::sql.substr(Parser::index, end_index - Parser::index);
         str_toupper(token);
         if (token == word) return std::make_pair(token, token.size());
     }
     // quoted string
-    if (parser::sql[parser::index] == '\'') {
-        return parser::peek_quoted_with_length();
+    if (Parser::sql[Parser::index] == '\'') {
+        return Parser::peek_quoted_with_length();
     }
     // identifier
-    return parser::peek_identifier_with_length();
+    return Parser::peek_identifier_with_length();
 }
 
-std::pair<std::string, int> parser::peek_quoted_with_length() {
-    if (parser::sql.size() < parser::index || parser::sql.at(index) != '\'')
+std::pair<std::string, int> Parser::peek_quoted_with_length() {
+    if (Parser::sql.size() < Parser::index || Parser::sql.at(index) != '\'')
         return std::make_pair("", 0);
-    for (auto i = parser::index + 1; i < parser::sql.size(); i++) {
-        if (parser::sql.at(i) == '\'') {
-            auto substr = parser::sql.substr(parser::index + 1, i - parser::index - 1);
+    for (auto i = Parser::index + 1; i < Parser::sql.size(); i++) {
+        if (Parser::sql.at(i) == '\'') {
+            auto substr = Parser::sql.substr(Parser::index + 1, i - Parser::index - 1);
             return std::make_pair(substr, substr.size() + 2);
         }
     }
     return std::make_pair("", 0);
 }
 
-std::pair<std::string, int> parser::peek_identifier_with_length() {
-    for (auto i = parser::index; i < parser::sql.size(); ++i) {
+std::pair<std::string, int> Parser::peek_identifier_with_length() {
+    for (auto i = Parser::index; i < Parser::sql.size(); ++i) {
         auto regex = std::regex("[a-zA-Z0-9_*]");
         auto match = std::smatch();
-        auto str = std::string(1, parser::sql.at(i));
+        auto str = std::string(1, Parser::sql.at(i));
         auto matched = std::regex_match(str, match, regex);
         if (!matched) {
-            auto substr = parser::sql.substr(parser::index, i - parser::index);
+            auto substr = Parser::sql.substr(Parser::index, i - Parser::index);
             return std::make_pair(substr, substr.size());
         }
     }
-    auto substr = parser::sql.substr(parser::index);
+    auto substr = Parser::sql.substr(Parser::index);
     return std::make_pair(substr, substr.size());
 }
 
-query parser::parse() {
-    auto pair = parser::do_parse();
-    parser::error = pair.second;
+Query Parser::parse() {
+    auto pair = Parser::do_parse();
+    Parser::error = pair.second;
     return pair.first;
 }
 
 // complementary functions for the switch-case functions:
-bool parser::peek_is_comma(std::string const &message) {
-    auto comma = parser::peek();
+bool Parser::peek_is_comma(std::string const &message) {
+    auto comma = Parser::peek();
     if (comma != ",") {
-        parser::step = step::error;
-        parser::error_message = message;
+        Parser::step = Step::error;
+        Parser::error_message = message;
         return false;
     }
-    parser::pop();
+    Parser::pop();
     return true;
 }
 
-bool parser::is_index_at_end() {
-    if (parser::index >= parser::sql.size() and pop_flag) {
-        auto sql_upper = parser::sql;
+bool Parser::is_index_at_end() {
+    if (Parser::index >= Parser::sql.size() and pop_flag) {
+        auto sql_upper = Parser::sql;
         str_toupper(sql_upper);
         auto words = split_string_in_words();
         auto bound = words.size();
@@ -168,8 +168,8 @@ bool parser::is_index_at_end() {
             for (auto const &rword: reserved_words)
                 if (word == rword) counter++;
         if (counter == bound) {
-            parser::step = step::error;
-            parser::error_message = "expected a continuation of the statement";
+            Parser::step = Step::error;
+            Parser::error_message = "expected a continuation of the statement";
             return false;
         }
         return true;
@@ -177,32 +177,32 @@ bool parser::is_index_at_end() {
     return false;
 }
 
-bool parser::is_peek_empty() {
-    if (parser::peek().empty()) {
-        parser::pop_flag = true;
+bool Parser::is_peek_empty() {
+    if (Parser::peek().empty()) {
+        Parser::pop_flag = true;
         return true;
     }
     return false;
 }
 
-__gnu_cxx::__normal_iterator<field *, std::vector<field>>
-parser::get_field_by_name(const std::string &name) {
+__gnu_cxx::__normal_iterator<Field *, std::vector<Field>>
+Parser::get_field_by_name(const std::string &name) {
     return std::ranges::find_if(
-            parser::q.get_fields().begin(),
-            parser::q.get_fields().end(),
-            [&name](field const &f) {
+            Parser::q.get_fields().begin(),
+            Parser::q.get_fields().end(),
+            [&name](Field const &f) {
                 return f.value == name;
             }
     );
 }
 
-bool parser::peek_is_opening_parens(const std::string &message) {
-    auto opening_parens = parser::peek();
+bool Parser::peek_is_opening_parens(const std::string &message) {
+    auto opening_parens = Parser::peek();
     if (opening_parens != "(") {
-        parser::step = step::error;
-        parser::error_message = message;
+        Parser::step = Step::error;
+        Parser::error_message = message;
         return false;
     }
-    parser::pop();
+    Parser::pop();
     return true;
 }
