@@ -14,3 +14,7 @@ Data_type Row::get_type() {
 void Row::insert_data(std::string const &ins_data) {
     Row::data = ins_data;
 }
+
+void Row::set_type(Data_type d_t) {
+    Row::type = d_t;
+}

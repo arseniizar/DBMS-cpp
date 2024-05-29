@@ -8,6 +8,7 @@
 #include <vector>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include <fmt/chrono.h>
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
@@ -57,30 +58,14 @@ private:
 
     void print_query(Query const &q);
 
-public:
-    Dbms() {
-        namespace fs = std::filesystem;
-        auto p = fs::path(R"(D:\Coding\Cpp\DBMS-cpp\engine\binsaves\tables)");
-        // checking whether the folder is empty (c) chatgpt
-        if (!(fs::directory_iterator(p) == fs::end(fs::directory_iterator()))) {
-            std::vector<Table> loaded_tables;
-            for (auto &entry: fs::directory_iterator(p)) {
-                std::ifstream binary_file(entry.path().string(),
-                                          std::ios::binary);
-                if(!binary_file) {
-                    fmt::println("error in table loading");
-                    return;
-                }
-                Table read_table;
-                binary_file.read(reinterpret_cast<char *>(&read_table), sizeof(Table));
-                binary_file.close();
-                loaded_tables.push_back(read_table);
-            }
-            Dbms::tables = loaded_tables;
-        }
-    }
+    void make_save();
 
+    void load_save();
+
+public:
     void run();
+    Dbms();
+    ~Dbms();
 };
 
 #endif //DATABASEPROJECT_DBMS_HPP

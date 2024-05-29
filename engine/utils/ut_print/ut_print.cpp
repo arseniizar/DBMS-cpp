@@ -54,7 +54,8 @@ void ut_print(Table t) {
         cout
                 << left
                 << setw(static_cast<int>(setw_size))
-                << col.get_name() + "\n";
+                << col.get_name() + " " + data_types_str[static_cast<int>(col.get_type())]
+                << "\n";
     });
     fmt::println("-----------------------");
 }

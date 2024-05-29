@@ -2,9 +2,10 @@
 // Created by Altezza on 03.05.2024.
 //
 #include <bits/stdc++.h>
+
+#include <utility>
 #include "fmt/core.h"
 #include "Executor.hpp"
-#include "../query/Query.hpp"
 
 Q_action Executor::get_action() const {
     return Executor::action;
@@ -70,6 +71,6 @@ void Executor::execute() {
 }
 
 void Executor::set_tmp_t(Table t) {
-    Executor::tmp_t = t;
+    Executor::tmp_t = std::move(t);
 }
 

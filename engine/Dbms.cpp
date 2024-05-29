@@ -18,6 +18,7 @@ void Dbms::run() {
             Dbms::parse_errors.push_back(parse_pair.second);
         } else {
             Dbms::parser.clean_error();
+            Dbms::queries.push_back(parse_pair.first);
             std::pair<std::vector<Column>, Execution_error>
                     execution_pair = Dbms::execute_query(parse_pair.first);
             if (!execution_pair.second.message.empty()) {
@@ -137,6 +138,56 @@ void Dbms::populate_keys() {
     auto foreign_keys = q.get_foreign_keys();
     std::for_each(foreign_keys.begin(), foreign_keys.end(),
                   [&q, this](Field const &fk) {
-                      Dbms::executor.tmp_t.add_foreign_key(Foreign_key(fk.k_a));
+                      Dbms::executor.tmp_t.add_foreign_key(
+                              Foreign_key(fk.value, q.get_table_name(), fk.k_a));
                   });
+}
+
+void Dbms::make_save() {
+    if (Dbms::tables.empty()) return;
+    namespace fs = std::filesystem;
+    auto table_txt = std::string();
+    auto path = std::string(R"(D:\Coding\Cpp\DBMS-cpp\engine\binsaves\tables\)");
+    auto tp = std::chrono::system_clock::now();
+    // but it does not count second, what I can do about it?
+    auto folder_name = fmt::format("{:%Y_%m_%d %H_%M}", tp);
+    auto fs_path = fs::path(path + folder_name);
+    if (!fs::exists(fs::path(fs_path))) {
+        fs::create_directory(fs::path(path + folder_name));
+    }
+    for (auto &table: Dbms::tables) {
+        std::ofstream ofs(fs_path.string() + R"(\)" + table.get_table_name() + ".txt", std::ofstream::out);
+        if (ofs.is_open()) {
+            ofs << "create table " + table.get_table_name() + "( ";
+            for (auto &col: table.get_columns()) {
+                ofs << col.get_name() + " " + data_types_str[static_cast<int>(col.get_type())];
+                if (table.get_primary_key().curr_col_name == col.get_name()) {
+                    ofs << " primary key";
+                } else if (!table.get_foreign_keys().empty()) {
+                    for (auto &fk: table.get_foreign_keys()) {
+                        if (fk.curr_col_name == col.get_name())
+                            ofs << "foreign key references " + fk.k_a.reference.table_name
+                                   + "(" + fk.k_a.reference.column_name + ")";
+                    }
+                }
+                ofs << ", ";
+            }
+            ofs << " )";
+        }
+        ofs.close();
+    }
+    // do not forget about \n at the end
+}
+
+void Dbms::load_save() {
+    namespace fs = std::filesystem;
+
+}
+
+Dbms::Dbms() {
+//    Dbms::load_save();
+}
+
+Dbms::~Dbms() {
+    Dbms::make_save();
 }

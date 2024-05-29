@@ -52,6 +52,14 @@ public:
     void set_primary_key(Primary_key const &pk);
 
     bool contains_cols_names(const std::vector<std::string> &names);
+
+    Primary_key get_primary_key();
+
+    std::vector<Foreign_key> get_foreign_keys();
+
+    void set_columns(std::vector<Column> const& cols);
+
+    void set_foreign_keys(std::vector<Foreign_key> const& fks);
 };
 
 #endif //DATABASEPROJECT_TABLE_HPP

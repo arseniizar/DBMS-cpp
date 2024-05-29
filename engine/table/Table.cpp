@@ -81,3 +81,19 @@ void Table::set_primary_key(Primary_key const &pk) {
 bool Table::contains_cols_names(const std::vector<std::string> &names) {
     return std::ranges::is_permutation(names, Table::get_columns_names());
 }
+
+Primary_key Table::get_primary_key() {
+    return Table::primary_key;
+}
+
+std::vector<Foreign_key> Table::get_foreign_keys() {
+    return Table::foreign_keys;
+}
+
+void Table::set_columns(const std::vector<Column> &cols) {
+    Table::columns = cols;
+}
+
+void Table::set_foreign_keys(const std::vector<Foreign_key> &fks) {
+    Table::foreign_keys = fks;
+}

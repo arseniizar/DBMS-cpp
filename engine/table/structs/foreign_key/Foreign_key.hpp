@@ -9,7 +9,12 @@
 #include "../key/Key.hpp"
 
 struct Foreign_key : Key {
-    explicit Foreign_key(Key_attr k_a) {
+    Foreign_key() = default;
+    explicit Foreign_key(std::string const &col_name,
+                         std::string const &table_name,
+                         Key_attr k_a) {
+        Foreign_key::curr_col_name = col_name;
+        Foreign_key::curr_table_name = table_name;
         Foreign_key::k_a = std::move(k_a);
     }
 };

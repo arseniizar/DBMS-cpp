@@ -10,13 +10,13 @@
 struct Row {
 private:
     std::string data;
-    // maybe I do not need the type right now, maybe I will need it after some time
-    // for example for inserting
-     Data_type type;
+    Data_type type;
 public:
     std::string get_data();
 
     Data_type get_type();
+
+    void set_type(Data_type d_t);
 
     void insert_data(std::string const &ins_data);
 };
