@@ -25,6 +25,7 @@ struct Dbms {
 private:
     std::vector<Query> queries;
     std::vector<Table> tables;
+    std::string table_saves_path = R"(D:\Coding\Cpp\DBMS-cpp\engine\saves\tables\)";
     // for the logs, maybe UNDO in the future
     std::vector<recent_change> recent_changes;
     std::vector<std::string> table_names;
@@ -33,6 +34,8 @@ private:
     // vectors of errors in order to log data etc.
     std::vector<Parse_error> parse_errors;
     std::vector<Execution_error> execution_errors;
+    bool is_dbms_changed;
+    bool is_loading;
 
     std::pair<std::vector<Column>, Execution_error> executor_error(std::string const &message);
 
@@ -58,13 +61,26 @@ private:
 
     void print_query(Query const &q);
 
+    std::vector<Query> get_create_queries();
+
+    std::vector<Query> get_insert_queries();
+
+    // just load create and insert queries
     void make_save();
 
     void load_save();
 
+    void parse_and_execute_with_print(std::string const &input);
+
+    void parse_and_execute(std::string const &input);
+
 public:
     void run();
+
+    void print_table_names();
+
     Dbms();
+
     ~Dbms();
 };
 

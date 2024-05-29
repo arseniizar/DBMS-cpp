@@ -16,11 +16,11 @@ void Query::set_joined_table_name(std::string const& name) {
     Query::joined_table_name = name;
 }
 
-void Query::set_query_type(query_type q_t) {
+void Query::set_query_type(Query_type q_t) {
     Query::q_type = q_t;
 }
 
-query_type Query::get_query_type() {
+Query_type Query::get_query_type() {
     return Query::q_type;
 }
 
@@ -153,5 +153,13 @@ Table *Query::get_p_table() {
 
 void Query::set_p_table(Table *p_t) {
     Query::p_table = p_t;
+}
+
+void Query::set_command(const std::string &comm) {
+    Query::command = comm;
+}
+
+std::string Query::get_command() {
+    return Query::command;
 }
 

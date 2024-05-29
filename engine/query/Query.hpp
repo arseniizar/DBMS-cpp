@@ -13,7 +13,7 @@
 #include "../utils/ut_return_join_type/ut_return_join_type.hpp"
 #include "structs/Field.hpp"
 
-enum struct query_type {
+enum struct Query_type {
     UnknownType,
     Select,
     Update,
@@ -33,9 +33,10 @@ inline std::string query_type_str[] = {
 
 struct Query {
 private:
-    query_type q_type = query_type::UnknownType;
+    Query_type q_type = Query_type::UnknownType;
     join_type j_type = join_type::UNKNOWN;
     Table* p_table = nullptr;
+    std::string command;
     std::string table_name;
     std::string joined_table_name;
     std::vector<std::string> referenced_fields_names;
@@ -50,13 +51,13 @@ public:
 
     [[nodiscard]] const std::string &get_joined_table_name() const;
 
-    void set_query_type(query_type q_t);
+    void set_query_type(Query_type q_t);
 
     void set_join_type(join_type j_t);
 
     void set_joined_table_name(std::string const &name);
 
-    query_type get_query_type();
+    Query_type get_query_type();
 
     join_type get_join_type();
 
@@ -115,6 +116,10 @@ public:
     Table* get_p_table();
 
     Field get_primary_key();
+
+    void set_command(std::string const& comm);
+
+    std::string get_command();
 };
 
 

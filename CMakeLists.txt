@@ -62,5 +62,18 @@ add_executable(DatabaseProject main.cpp
         engine/table/structs/primary_key/Primary_key.hpp
         engine/table/structs/key/Key.cpp
         engine/table/structs/key/Key.hpp
+        engine/parser/steps/step_type.cpp
+        engine/parser/steps/step_select.cpp
+        engine/parser/steps/step_insert.cpp
+        engine/parser/steps/step_update.cpp
+        engine/parser/steps/step_delete_from.cpp
+        engine/parser/steps/step_where.cpp
+        engine/parser/steps/step_create_table.cpp
+        engine/parser/steps/step_group_by.cpp
+        engine/parser/steps/step_having.cpp
+        engine/parser/steps/step_join.cpp
+        engine/parser/steps/step_primary_key.cpp
+        engine/parser/steps/step_foreign_key.cpp
+        engine/parser/steps/step_error.cpp
 )
 target_link_libraries(DatabaseProject fmt)

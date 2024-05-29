@@ -23,6 +23,7 @@ void Parser::clean() {
 
 void Parser::clean_error() {
     Parser::error = Parse_error();
+    Parser::error_message = "";
 }
 
 void Parser::input(std::string const &s) {
@@ -30,6 +31,5 @@ void Parser::input(std::string const &s) {
 }
 
 std::pair<struct Query, struct Parse_error> Parser::do_parse() {
-    Parser::error_message = "";
     return Parser::parser_switch();
 }

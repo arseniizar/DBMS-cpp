@@ -5,7 +5,10 @@
 
 std::pair<Query, Parse_error> Parser::parser_switch() {
     while (true) {
-        if (is_index_at_end()) return std::make_pair(Parser::q, Parser::error);
+        if (is_index_at_end()) {
+            Parser::q.set_command(Parser::sql);
+            return std::make_pair(Parser::q, Parser::error);
+        }
         switch (Parser::step) {
             case Step::type: {
                 Parser::step_type();

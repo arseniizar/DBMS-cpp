@@ -10,7 +10,7 @@
 #include "../query/Query.hpp"
 
 // q looks like that:
-// type - I can use inline array of query_type strings
+// type - I can use inline array of Query_type strings
 // table_name
 // fields
 // updates
