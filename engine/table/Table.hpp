@@ -60,6 +60,10 @@ public:
     void set_columns(std::vector<Column> const& cols);
 
     void set_foreign_keys(std::vector<Foreign_key> const& fks);
+
+    bool are_table_rows_empty();
+
+    std::vector<std::vector<Row>> get_rows_groups();
 };
 
 #endif //DATABASEPROJECT_TABLE_HPP

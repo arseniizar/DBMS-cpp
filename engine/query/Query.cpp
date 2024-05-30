@@ -12,7 +12,7 @@ join_type Query::get_join_type() {
     return Query::j_type;
 }
 
-void Query::set_joined_table_name(std::string const& name) {
+void Query::set_joined_table_name(std::string const &name) {
     Query::joined_table_name = name;
 }
 
@@ -36,7 +36,7 @@ size_t Query::get_inserts_size() {
     return Query::inserts.size();
 }
 
-void Query::append_field(const Field& f) {
+void Query::append_field(const Field &f) {
     Query::fields.push_back(f);
 }
 
@@ -56,15 +56,15 @@ void Query::append_condition(const Condition &condition) {
     Query::conditions.push_back(condition);
 }
 
-void Query::append_inserts_vec(std::vector<std::string> const &vec) {
+void Query::append_inserts_vec(std::vector<Insert> const &vec) {
     Query::inserts.push_back(vec);
 }
 
-void Query::append_insert(std::string const &insert) {
+void Query::append_insert(Insert const &insert) {
     Query::inserts.back().push_back(insert);
 }
 
-std::vector<std::string> Query::get_current_inserts() {
+std::vector<Insert> Query::get_current_inserts() {
     return Query::inserts.back();
 }
 
@@ -98,13 +98,13 @@ std::map<std::string, std::string> Query::get_aliases() {
     return Query::aliases;
 }
 
-std::vector<std::vector<std::string>> Query::get_inserts() {
+std::vector<std::vector<Insert>> Query::get_inserts() {
     return Query::inserts;
 }
 
 Field Query::get_current_select_field() {
     auto current_select_field = std::pair<std::string, Data_type>();
-    for (auto & field : std::ranges::reverse_view(Query::fields))
+    for (auto &field: std::ranges::reverse_view(Query::fields))
         if (field.d_t == Data_type::TABLE_SELECT) return field;
     return {};
 }
@@ -132,18 +132,18 @@ std::string Query::get_referenced_table_name() {
 Field Query::get_primary_key() {
     Field pk;
     std::for_each(Query::fields.begin(), Query::fields.end(),
-                  [&pk](Field &f){
-        if(f.k_a.k_t == Key_type::PK) pk = f;
-    });
+                  [&pk](Field &f) {
+                      if (f.k_a.k_t == Key_type::PK) pk = f;
+                  });
     return pk;
 }
 
 std::vector<Field> Query::get_foreign_keys() {
     std::vector<Field> foreign_keys;
     std::for_each(Query::fields.begin(), Query::fields.end(),
-                  [&foreign_keys](Field &f){
-        if(f.k_a.k_t == Key_type::FK) foreign_keys.push_back(f);
-    });
+                  [&foreign_keys](Field &f) {
+                      if (f.k_a.k_t == Key_type::FK) foreign_keys.push_back(f);
+                  });
     return foreign_keys;
 }
 
@@ -161,5 +161,22 @@ void Query::set_command(const std::string &comm) {
 
 std::string Query::get_command() {
     return Query::command;
+}
+
+std::vector<Field> Query::get_insert_fields() {
+    auto vec = std::vector<Field>();
+    for (auto &field: Query::fields)
+        if (field.d_t == Data_type::INSERT_COL)
+            vec.push_back(field);
+    return vec;
+}
+
+Field Query::get_next_insert_field() {
+    if (Query::insert_field_count <= Query::get_insert_fields().size() - 1)
+        return Query::get_insert_fields()[Query::insert_field_count++];
+    else {
+        Query::insert_field_count = 0;
+        return Query::get_insert_fields()[Query::insert_field_count++];
+    }
 }
 

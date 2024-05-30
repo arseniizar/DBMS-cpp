@@ -64,7 +64,7 @@ bool Table::empty() {
 
 std::vector<std::string> Table::get_columns_names() {
     auto vec = std::vector<std::string>();
-    std::for_each(Table::columns.begin(), Table::columns.end(), [&vec](Column &col){
+    std::for_each(Table::columns.begin(), Table::columns.end(), [&vec](Column &col) {
         vec.push_back(col.get_name());
     });
     return vec;
@@ -97,3 +97,31 @@ void Table::set_columns(const std::vector<Column> &cols) {
 void Table::set_foreign_keys(const std::vector<Foreign_key> &fks) {
     Table::foreign_keys = fks;
 }
+
+bool Table::are_table_rows_empty() {
+    return std::all_of(Table::columns.begin(), Table::columns.end(),
+                       [](Column &col) {
+                           return std::all_of(col.get_rows().begin(), col.get_rows().end(),
+                                              [](Row &row) {
+                                                  return row.empty();
+                                              });
+                       });
+}
+
+std::vector<std::vector<Row>> Table::get_rows_groups() {
+    auto vec = std::vector<std::vector<Row>>();
+    auto row_group = std::vector<Row>();
+    size_t row_index = 0;
+    for (auto i = 0; i < Table::columns.size(); ++i) {
+        for (auto &col: Table::columns) {
+            row_group.push_back(col.get_rows()[row_index]);
+        }
+        vec.push_back(row_group);
+        row_group.erase(row_group.begin(), row_group.end());
+        row_index++;
+    }
+    return vec;
+}
+
+// cols -> col -> rows -> row
+// every first row from every col

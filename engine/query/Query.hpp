@@ -12,6 +12,7 @@
 #include "structs/Condition.hpp"
 #include "../utils/ut_return_join_type/ut_return_join_type.hpp"
 #include "structs/Field.hpp"
+#include "structs/Insert.hpp"
 
 enum struct Query_type {
     UnknownType,
@@ -45,7 +46,8 @@ private:
     std::map<std::string, std::string> updates;
     std::map<std::string, std::string> aliases;
     std::vector<Condition> conditions;
-    std::vector<std::vector<std::string>> inserts;
+    std::vector<std::vector<Insert>> inserts;
+    int insert_field_count = 0;
 public:
     Query() = default;
 
@@ -73,13 +75,13 @@ public:
 
     void append_condition(const Condition &condition);
 
-    void append_inserts_vec(std::vector<std::string> const &vec);
+    void append_inserts_vec(std::vector<Insert> const &vec);
 
-    void append_insert(std::string const &insert);
+    void append_insert(Insert const &insert);
 
-    std::vector<std::string> get_current_inserts();
+    std::vector<Insert> get_current_inserts();
 
-    struct Condition get_current_condition();
+    Condition get_current_condition();
 
     void set_current_condition(Condition const &condition);
 
@@ -91,7 +93,7 @@ public:
 
     std::map<std::string, std::string> get_aliases();
 
-    std::vector<std::vector<std::string>> get_inserts();
+    std::vector<std::vector<Insert>> get_inserts();
 
     Field get_current_select_field();
 
@@ -120,6 +122,10 @@ public:
     void set_command(std::string const& comm);
 
     std::string get_command();
+
+    std::vector<Field> get_insert_fields();
+
+    Field get_next_insert_field();
 };
 
 

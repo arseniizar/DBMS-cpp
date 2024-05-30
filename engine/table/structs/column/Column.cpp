@@ -17,8 +17,7 @@ void Column::remove_row(Row &r) {
             Column::rows.erase(iter);
 }
 
-void Column::insert_row(Row row, std::string const &data) {
-    row.insert_data(data);
+void Column::add_row(Row row) {
     Column::rows.push_back(row);
 }
 

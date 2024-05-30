@@ -18,3 +18,7 @@ void Row::insert_data(std::string const &ins_data) {
 void Row::set_type(Data_type d_t) {
     Row::type = d_t;
 }
+
+bool Row::empty() {
+    return Row::data.empty() and Row::type == Data_type::UNKNOWN;
+}

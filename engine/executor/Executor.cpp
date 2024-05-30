@@ -64,8 +64,7 @@ void Executor::execute() {
         // also could be the whole Table!
         Executor::tmp_cols = Executor::delete_f();
     } else if (query_type == "Create") {
-        auto created_table = Executor::create_table();
-        Executor::tmp_t = created_table;
+        Executor::tmp_t = Executor::create_table();
     }
     Executor::result = Execution_result("Executed!", &query);
 }

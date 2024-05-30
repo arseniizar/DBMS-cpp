@@ -19,7 +19,7 @@ add_executable(DatabaseProject main.cpp
         engine/parser/Parser.hpp
         engine/query/Query.hpp
         engine/parser/structs/Parse_error.hpp
-        engine/Dbms.hpp
+        engine/Dbms/Dbms.hpp
         engine/executor/structs/Execution_error.hpp
         engine/executor/structs/Execution_result.hpp
         engine/executor/Executor.cpp
@@ -32,7 +32,7 @@ add_executable(DatabaseProject main.cpp
         engine/table/structs/row/Row.hpp
         engine/utils/ut_print/ut_print.hpp
         engine/backup/recent_change.hpp
-        engine/Dbms.cpp
+        engine/Dbms/Dbms.cpp
         engine/table/structs/column/Column.cpp
         engine/table/structs/row/Row.cpp
         engine/table/Table.cpp
@@ -75,5 +75,9 @@ add_executable(DatabaseProject main.cpp
         engine/parser/steps/step_primary_key.cpp
         engine/parser/steps/step_foreign_key.cpp
         engine/parser/steps/step_error.cpp
+        engine/query/structs/Insert.hpp
+        engine/Dbms/complementary/load_save.cpp
+        engine/Dbms/complementary/make_save.cpp
+        engine/Dbms/complementary/execute_query.cpp
 )
 target_link_libraries(DatabaseProject fmt)

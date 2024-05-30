@@ -30,7 +30,7 @@ public:
 
     void remove_row(Row &r);
 
-    void insert_row(Row row, std::string const &data);
+    void add_row(Row row);
 
     void set_name(const std::string &name);
 

@@ -57,7 +57,7 @@ void Parser::step_insert_values_opening_parens() {
         Parser::error_message = "at INSERT: expected an opening parens";
         return;
     }
-    Parser::q.append_inserts_vec(std::vector<std::string>());
+    Parser::q.append_inserts_vec(std::vector<Insert>());
     Parser::pop();
     Parser::step = Step::insert_values;
 }
@@ -81,7 +81,11 @@ void Parser::step_insert_values() {
         Parser::error_message = "at INSERT: expected a value to insert";
         return;
     }
-    Parser::q.append_insert(pair.first);
+    auto curr_insert_field = Parser::q.get_next_insert_field();
+    Parser::q.append_insert(
+            Insert(curr_insert_field.value,
+                   pair.first,
+                   return_data_type(pair.first)));
     Parser::pop();
     Parser::step = Step::insert_values_comma_or_closing_parens;
 }
@@ -93,15 +97,15 @@ void Parser::step_insert_values_comma_or_closing_parens() {
         Parser::error_message = "at INSERT: expected a comma or a closing parens";
         return;
     }
-    Parser::pop();
     if (comma_or_closing_parens == ",") {
+        Parser::pop();
         Parser::step = Step::insert_values;
         return;
     }
     auto curr_insert_row = Parser::q.get_current_inserts();
-    if (curr_insert_row.size() < Parser::q.get_inserts_size()) {
+    if (curr_insert_row.size() != Parser::q.get_fields_size()) {
         Parser::step = Step::error;
-        Parser::error_message = "at INSERT: expected a group of inserts";
+        Parser::error_message = "at INSERT: size of inserts doesn't correspond to a number of fields in the table";
         return;
     }
     Parser::pop();

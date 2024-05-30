@@ -1,7 +1,3 @@
-//
-// Created by Altezza on 18.05.2024.
-//
-
 #include <fmt/core.h>
 #include <fstream>
 #include "../../Executor.hpp"
