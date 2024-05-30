@@ -69,6 +69,7 @@ struct Executor {
 
     void set_tmp_t(Table t);
 
+    void clean_error();
 };
 
 #endif //DATABASEPROJECT_EXECUTOR_HPP

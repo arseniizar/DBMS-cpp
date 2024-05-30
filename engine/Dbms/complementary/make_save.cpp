@@ -32,33 +32,33 @@ void Dbms::make_save() {
                 if (j < table.get_columns().size() - 1) ofs << ", ";
             }
             ofs << " )";
-            if (table.are_table_rows_empty()) return;
-            ofs << "\n";
-            // insert into ... values ...
-            ofs << "insert into " + table.get_table_name() + " ( ";
-            for (auto j = 0; j < table.get_columns().size(); ++j) {
-                auto col = table.get_columns()[j];
-                if (!col.get_rows().empty()) {
-                    ofs << col.get_name();
-                    if (j < table.get_columns().size() - 1) ofs << ", ";
-                }
-            }
-            ofs << " ) values ( ";
-            auto row_groups = table.get_rows_groups();
-            if (!row_groups.empty()) {
-                for (auto i = 0; i < row_groups.size(); ++i) {
-                    auto row_group = row_groups[i];
-                    for (auto j = 0; j < row_group.size(); ++j) {
-                        auto row = row_group[j];
-                        ofs << "'" + row.get_data() + "'";
-                        if(j < row_group.size() - 1) ofs << ", ";
+            if (!table.are_table_rows_empty()) {
+                ofs << "\n";
+                // insert into ... values ...
+                ofs << "insert into " + table.get_table_name() + " ( ";
+                for (auto j = 0; j < table.get_columns().size(); ++j) {
+                    auto col = table.get_columns()[j];
+                    if (!col.get_rows().empty()) {
+                        ofs << col.get_name();
+                        if (j < table.get_columns().size() - 1) ofs << ", ";
                     }
-                    ofs << ")";
-                    if(i < row_groups.size() -1) ofs << ", (";
+                }
+                ofs << " ) values ( ";
+                auto row_groups = table.get_rows_groups();
+                if (!row_groups.empty()) {
+                    for (auto i = 0; i < row_groups.size(); ++i) {
+                        auto row_group = row_groups[i];
+                        for (auto j = 0; j < row_group.size(); ++j) {
+                            auto row = row_group[j];
+                            ofs << "'" + row.get_data() + "'";
+                            if (j < row_group.size() - 1) ofs << ", ";
+                        }
+                        ofs << " )";
+                        if (i < row_groups.size() - 1) ofs << ", (";
+                    }
                 }
             }
         }
         ofs.close();
     }
-    // do not forget about \n at the end
 }

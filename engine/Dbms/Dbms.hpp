@@ -74,7 +74,7 @@ private:
 
     void parse_and_execute(std::string const &input);
 
-    void add_and_override_cols(std::string const& table_name, std::vector<Column>& cols);
+    Execution_error add_and_override_cols(std::string const& table_name, std::vector<Column>& cols);
 
     std::pair<std::vector<Column>, Execution_error> execute_create_table();
 

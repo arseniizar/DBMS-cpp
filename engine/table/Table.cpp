@@ -99,23 +99,23 @@ void Table::set_foreign_keys(const std::vector<Foreign_key> &fks) {
 }
 
 bool Table::are_table_rows_empty() {
-    return std::all_of(Table::columns.begin(), Table::columns.end(),
-                       [](Column &col) {
-                           return std::all_of(col.get_rows().begin(), col.get_rows().end(),
-                                              [](Row &row) {
-                                                  return row.empty();
-                                              });
-                       });
+    for (auto &col: Table::columns) {
+        if (!col.get_rows().empty()) return false;
+    }
+    return true;
 }
 
 std::vector<std::vector<Row>> Table::get_rows_groups() {
     auto vec = std::vector<std::vector<Row>>();
     auto row_group = std::vector<Row>();
     size_t row_index = 0;
-    for (auto i = 0; i < Table::columns.size(); ++i) {
+    while(true) {
         for (auto &col: Table::columns) {
-            row_group.push_back(col.get_rows()[row_index]);
+            if (row_index < col.get_rows().size() and !col.get_rows()[row_index].empty())
+                row_group.push_back(col.get_rows()[row_index]);
+            else break;
         }
+        if(row_group.empty()) break;
         vec.push_back(row_group);
         row_group.erase(row_group.begin(), row_group.end());
         row_index++;

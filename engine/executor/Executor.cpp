@@ -73,3 +73,7 @@ void Executor::set_tmp_t(Table t) {
     Executor::tmp_t = std::move(t);
 }
 
+void Executor::clean_error() {
+    Executor::error = Execution_error();
+}
+

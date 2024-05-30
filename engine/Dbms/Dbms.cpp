@@ -7,14 +7,21 @@ void Dbms::run() {
     fmt::println("Welcome to the Arsenii`s database!");
     fmt::println("Here you can to write some simple queries!");
     if (Dbms::tables.empty())
-        fmt::println("It looks like your database is empty, create some Table at first");
+        fmt::println("It looks like your database is empty, create a  table at first");
     fmt::println("If you want to exit, type EXIT :)");
     while (true) {
         auto input = std::string();
         std::getline(std::cin, input);
-        if (input == "EXIT") break;
+        if (input.empty()) continue;
+        if (input == "EXIT") {
+            fmt::println("Do you want to save the DBMS? (yes/no)");
+            std::getline(std::cin, input);
+            Dbms::is_dbms_changed = input == "yes";
+            break;
+        }
         Dbms::parse_and_execute_with_print(input);
         Dbms::parser.clean_error();
+        Dbms::executor.clean_error();
     }
     fmt::println("You have exited the program");
 }
@@ -144,6 +151,7 @@ Dbms::Dbms() {
     Dbms::is_dbms_changed = false;
     Dbms::is_loading = true;
     Dbms::load_save();
+    Dbms::is_dbms_changed = false;
     Dbms::is_loading = false;
 //    Dbms::print_table_names();
 }
@@ -152,13 +160,19 @@ Dbms::~Dbms() {
     if (Dbms::is_dbms_changed) Dbms::make_save();
 }
 
-void Dbms::add_and_override_cols(const std::string &table_name, std::vector<Column> &cols) {
+Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::vector<Column> &cols) {
     auto table = *Dbms::find_table_by_name(table_name);
     auto table_cols = table.get_columns();
     for (auto &t_col: table_cols) {
         for (auto &col: cols) {
             if (col.get_name() == t_col.get_name()) {
                 for (auto &row: col.get_rows()) {
+                    Data_type row_type = return_data_type(row.get_data());
+                    if (row_type != t_col.get_type()) {
+                        Dbms::executor.error =
+                                Execution_error("at INSERT: insert proper types to proper columns");
+                        return Execution_error("at INSERT: insert proper types to proper columns");
+                    }
                     t_col.add_row(row);
                 }
             }
@@ -168,4 +182,5 @@ void Dbms::add_and_override_cols(const std::string &table_name, std::vector<Colu
     for (auto &t: Dbms::tables)
         if (t.get_table_name() == table_name)
             t = table;
+    return {};
 }
