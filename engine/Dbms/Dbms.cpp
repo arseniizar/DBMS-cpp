@@ -2,6 +2,7 @@
 // Created by Altezza on 17.05.2024.
 //
 #include "Dbms.hpp"
+#include "../utils/ut_contains_elems/ut_contains_elems.hpp"
 
 void Dbms::run() {
     fmt::println("Welcome to the Arsenii`s database!");
@@ -160,18 +161,41 @@ Dbms::~Dbms() {
     if (Dbms::is_dbms_changed) Dbms::make_save();
 }
 
-Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::vector<Column> &cols) {
+Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::vector<Column> cols) {
     auto table = *Dbms::find_table_by_name(table_name);
+    // delete from with an empty where
+    if (Dbms::executor.q.get_query_type() == Query_type::Delete
+        and Table("Func", cols).are_table_rows_empty()) {
+        auto table_cols = table.get_columns();
+        for(auto &col : table_cols) {
+            // erase all rows
+            col.set_rows(std::vector<Row>());
+        }
+        table.set_columns(table_cols);
+        for (auto &t: Dbms::tables)
+            if (t.get_table_name() == table_name)
+                t = table;
+        return {};
+    }
     auto table_cols = table.get_columns();
+    bool are_cols_same = ut_contains_elems(
+            table.get_columns_names(),
+            Table("func", cols).get_columns_names());
+    if (!are_cols_same) {
+        std::string message = "at EXECUTION: unable to override nonexistent columns";
+        Dbms::executor.error = Execution_error(message);
+        return Execution_error(message);
+    }
     for (auto &t_col: table_cols) {
         for (auto &col: cols) {
             if (col.get_name() == t_col.get_name()) {
                 for (auto &row: col.get_rows()) {
                     Data_type row_type = return_data_type(row.get_data());
                     if (row_type != t_col.get_type()) {
-                        Dbms::executor.error =
-                                Execution_error("at INSERT: insert proper types to proper columns");
-                        return Execution_error("at INSERT: insert proper types to proper columns");
+                        std::string message = "at EXECUTION: unable to override "
+                                              "columns with improper data type";
+                        Dbms::executor.error = Execution_error(message);
+                        return Execution_error(message);
                     }
                     t_col.add_row(row);
                 }

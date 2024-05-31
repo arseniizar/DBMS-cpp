@@ -180,3 +180,10 @@ Field Query::get_next_insert_field() {
     }
 }
 
+Field Query::find_field_by_value(const std::string &value) {
+    for(auto const& field : Query::fields) {
+        if(field.value == value) return field;
+    }
+    return {};
+}
+

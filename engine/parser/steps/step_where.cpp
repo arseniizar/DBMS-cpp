@@ -1,6 +1,6 @@
 #include "../Parser.hpp"
 #include "../../utils/ut_is_identifier/ut_is_identifier.hpp"
-#include "../../utils/ut_str_toupper/ut_str_toupper.hpp"
+#include "../../utils/ut_find_in_vector/ut_find_in_vector.hpp"
 
 void Parser::step_where() {
     auto where = Parser::peek();
@@ -21,7 +21,14 @@ void Parser::step_where_field() {
         Parser::error_message = "at WHERE: expected a Field";
         return;
     }
-    Parser::q.append_condition(Condition(identifier, true));
+    auto found_field = Parser::q.find_field_by_value(identifier);
+    if (found_field.empty()) {
+        Parser::step = Step::error;
+        Parser::error_message = "at WHERE: expected an existing field";
+        return;
+    }
+    Parser::q.append_condition(
+            Condition(identifier, true, found_field.d_t));
     Parser::pop();
     Parser::step = Step::where_operator;
 }

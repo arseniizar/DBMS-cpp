@@ -126,6 +126,8 @@ public:
     std::vector<Field> get_insert_fields();
 
     Field get_next_insert_field();
+
+    Field find_field_by_value(std::string const& value);
 };
 
 

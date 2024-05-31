@@ -15,13 +15,20 @@ struct Condition {
 public:
     std::string operand1;
     bool operand1_is_field;
-    Query_operator _operator;
+    Query_operator _operator = Query_operator::UnknownOperator;
     std::string operand2;
     bool operand2_is_field;
+    Data_type d_t = Data_type::UNKNOWN;
 
     Condition(std::string const &identifier, bool b) {
         Condition::operand1 = identifier;
         Condition::operand1_is_field = b;
+    }
+
+    Condition(std::string const &identifier, bool b, Data_type t) {
+        Condition::operand1 = identifier;
+        Condition::operand1_is_field = b;
+        Condition::d_t = t;
     }
 
     auto to_string() {
@@ -41,6 +48,12 @@ public:
     auto get_operand2() {
         return Condition::operand2;
     };
+
+    auto get_field() {
+        if(Condition::operand1_is_field) return Condition::operand1;
+        if(Condition::operand2_is_field) return Condition::operand2;
+        return std::string("ERROR!");
+    }
 };
 
 #endif //DATABASEPROJECT_CONDITION_HPP

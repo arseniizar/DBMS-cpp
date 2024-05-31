@@ -79,5 +79,6 @@ add_executable(DatabaseProject main.cpp
         engine/Dbms/complementary/load_save.cpp
         engine/Dbms/complementary/make_save.cpp
         engine/Dbms/complementary/execute_query.cpp
+        engine/utils/ut_contains_elems/ut_contains_elems.hpp
 )
 target_link_libraries(DatabaseProject fmt)
