@@ -12,21 +12,7 @@ void Parser::step_select_field() {
     Parser::q.append_field(Field(identifier, Data_type::TABLE_SELECT));
     Parser::pop();
     auto from = Parser::peek();
-    str_toupper(from);
-    if (from == "AS") {
-        Parser::pop();
-        auto alias = Parser::peek();
-        if (!is_identifier(alias)) {
-            Parser::step = Step::error;
-            Parser::error_message = "at SELECT: expected an alias after AS";
-            return;
-        }
-        Parser::q.append_alias(identifier, alias);
-        Parser::pop();
-        from = Parser::peek();
-    }
-    str_toupper(from);
-    if (from == "FROM") {
+    if (from == "FROM" or identifier == "*") {
         Parser::step = Step::select_from;
     } else {
         Parser::step = Step::select_comma;

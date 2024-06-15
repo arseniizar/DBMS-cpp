@@ -1,6 +1,3 @@
-//
-// Created by Altezza on 17.05.2024.
-//
 #include <algorithm>
 #include "Table.hpp"
 
@@ -105,17 +102,19 @@ bool Table::are_table_rows_empty() {
     return true;
 }
 
+// cols -> col -> rows -> row
+// every first row from every col
 std::vector<std::vector<Row>> Table::get_rows_groups() {
     auto vec = std::vector<std::vector<Row>>();
     auto row_group = std::vector<Row>();
     size_t row_index = 0;
-    while(true) {
+    while (true) {
         for (auto &col: Table::columns) {
             if (row_index < col.get_rows().size() and !col.get_rows()[row_index].empty())
                 row_group.push_back(col.get_rows()[row_index]);
             else break;
         }
-        if(row_group.empty()) break;
+        if (row_group.empty()) break;
         vec.push_back(row_group);
         row_group.erase(row_group.begin(), row_group.end());
         row_index++;
@@ -123,5 +122,55 @@ std::vector<std::vector<Row>> Table::get_rows_groups() {
     return vec;
 }
 
-// cols -> col -> rows -> row
-// every first row from every col
+std::vector<Column> Table::find_cols_by_conditions(std::vector<Condition> conditions) {
+    auto operand_fields = std::vector<std::string>();
+    auto operand_values = std::vector<std::string>();
+    auto operators = std::vector<Query_operator>();
+    auto found_cols = std::vector<Column>();
+    for (auto const &condition: conditions) {
+        operators.push_back(condition._operator);
+        if (condition.operand1_is_field) operand_fields.push_back(condition.operand1);
+        else if (condition.operand2_is_field) operand_fields.push_back(condition.operand2);
+
+    }
+    for (auto &col: Table::get_columns()) {
+        auto index_op = 0;
+        auto index_val = 0;
+        for (auto const &o_f: operand_fields) {
+            std::vector<Row> found_rows;
+            if (o_f == col.get_name()) {
+                switch (operators.at(index_op)) {
+                    case Query_operator::eq: {
+                        for (auto &row: col.get_rows())
+                            if (row.get_data() == operand_values.at(index_val)) found_rows.push_back(row);
+                    }
+                    case Query_operator::ne: {
+                        for (auto &row: col.get_rows())
+                            if (row.get_data() != operand_values.at(index_val)) found_rows.push_back(row);
+                    }
+                    case Query_operator::lt: {
+                        for (auto &row: col.get_rows())
+                            if (row.get_data() < operand_values.at(index_val)) found_rows.push_back(row);
+                    }
+                    case Query_operator::lte: {
+                        for (auto &row: col.get_rows())
+                            if (row.get_data() <= operand_values.at(index_val)) found_rows.push_back(row);
+                    }
+                    case Query_operator::gt: {
+                        for (auto &row: col.get_rows())
+                            if (row.get_data() > operand_values.at(index_val)) found_rows.push_back(row);
+                    }
+                    case Query_operator::gte: {
+                        for (auto &row: col.get_rows())
+                            if (row.get_data() >= operand_values.at(index_val)) found_rows.push_back(row);
+                    }
+                }
+                index_op++;
+                index_val++;
+                Column new_col = Column(found_rows, col.get_name(), col.get_type());
+                found_cols.push_back(new_col);
+            }
+        }
+    }
+    return found_cols;
+}

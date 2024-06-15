@@ -80,5 +80,7 @@ add_executable(DatabaseProject main.cpp
         engine/Dbms/complementary/make_save.cpp
         engine/Dbms/complementary/execute_query.cpp
         engine/utils/ut_contains_elems/ut_contains_elems.hpp
+        engine/query/structs/Update.hpp
+        engine/Dbms/complementary/are_consistent.cpp
 )
 target_link_libraries(DatabaseProject fmt)

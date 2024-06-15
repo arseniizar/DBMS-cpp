@@ -13,6 +13,7 @@
 #include "../utils/ut_return_join_type/ut_return_join_type.hpp"
 #include "structs/Field.hpp"
 #include "structs/Insert.hpp"
+#include "structs/Update.hpp"
 
 enum struct Query_type {
     UnknownType,
@@ -43,7 +44,7 @@ private:
     std::vector<std::string> referenced_fields_names;
     std::string referenced_table;
     std::vector<Field> fields;
-    std::map<std::string, std::string> updates;
+    std::vector<Update> updates;
     std::map<std::string, std::string> aliases;
     std::vector<Condition> conditions;
     std::vector<std::vector<Insert>> inserts;
@@ -126,6 +127,8 @@ public:
     std::vector<Field> get_insert_fields();
 
     Field get_next_insert_field();
+
+    void set_current_update(Update const &u);
 
     Field find_field_by_value(std::string const& value);
 };

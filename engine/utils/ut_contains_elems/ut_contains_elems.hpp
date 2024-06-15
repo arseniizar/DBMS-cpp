@@ -8,11 +8,10 @@
 #include <vector>
 #include <unordered_set>
 
-// whether vec2 is a sub vec to vec1
 template <typename T>
-auto ut_contains_elems(std::vector<T> const& vec1, std::vector<T> const& vec2) -> bool {
-    auto un_set = std::unordered_set<T>(vec1.begin(), vec1.end());
-    for(auto const& el : vec2)
+auto ut_contains_elems(std::vector<T> const& vec, std::vector<T> const& subvec) -> bool {
+    auto un_set = std::unordered_set<T>(vec.begin(), vec.end());
+    for(auto const& el : subvec)
         if(un_set.find(el) == un_set.end())
             return false;
     return true;

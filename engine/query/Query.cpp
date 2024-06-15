@@ -49,7 +49,7 @@ void Query::append_alias(std::string const &key, std::string const &value) {
 }
 
 void Query::append_update(std::string const &key, std::string const &value) {
-    Query::updates[key] = value;
+//    Query::updates[key] = value;
 }
 
 void Query::append_condition(const Condition &condition) {
@@ -185,5 +185,10 @@ Field Query::find_field_by_value(const std::string &value) {
         if(field.value == value) return field;
     }
     return {};
+}
+
+void Query::set_current_update(Update const &u) {
+    Query::updates.pop_back();
+    Query::updates.push_back(u);
 }
 

@@ -1,6 +1,3 @@
-//
-// Created by Altezza on 03.05.2024.
-//
 
 #ifndef DATABASEPROJECT_EXECUTOR_HPP
 #define DATABASEPROJECT_EXECUTOR_HPP
@@ -49,21 +46,13 @@ struct Executor {
 
     Table create_table();
 
-    std::vector<Column> select();
-
     std::vector<Column> delete_f();
 
     std::vector<Column> insert();
 
     std::vector<Column> update();
 
-    std::vector<Column> join();
-
-    std::vector<Column> left_join();
-
-    std::vector<Column> right_join();
-
-    std::vector<Column> full_join();
+    std::vector<Column> select();
 
     void execute();
 

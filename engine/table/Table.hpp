@@ -64,6 +64,8 @@ public:
     bool are_table_rows_empty();
 
     std::vector<std::vector<Row>> get_rows_groups();
+
+    std::vector<Column> find_cols_by_conditions(std::vector<Condition> conditions);
 };
 
 #endif //DATABASEPROJECT_TABLE_HPP

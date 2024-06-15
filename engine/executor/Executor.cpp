@@ -1,8 +1,3 @@
-//
-// Created by Altezza on 03.05.2024.
-//
-#include <bits/stdc++.h>
-
 #include <utility>
 #include "fmt/core.h"
 #include "Executor.hpp"
@@ -29,25 +24,6 @@ Query Executor::get_query() const {
 
 Execution_result Executor::get_execution_res() const {
     return Executor::result;
-}
-
-// I need to check whether this Table exists
-// I need to check whether the inserts are proper fields of the Table
-
-std::vector<Column> Executor::join() {
-    return std::vector<Column>();
-}
-
-std::vector<Column> Executor::left_join() {
-    return std::vector<Column>();
-}
-
-std::vector<Column> Executor::right_join() {
-    return std::vector<Column>();
-}
-
-std::vector<Column> Executor::full_join() {
-    return std::vector<Column>();
 }
 
 void Executor::execute() {

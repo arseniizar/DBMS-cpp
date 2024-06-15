@@ -9,6 +9,8 @@
 #include "fmt/core.h"
 #include "fmt/ranges.h"
 #include "fmt/chrono.h"
+#include "fmt/color.h"
+#include "fmt/format.h"
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
@@ -36,12 +38,11 @@ private:
     std::vector<Execution_error> execution_errors;
     bool is_dbms_changed;
     bool is_loading;
+    std::string error_message;
 
     std::pair<std::vector<Column>, Execution_error> make_executor_error(std::string const &message);
 
-    // cool data type, just tried to write it like that :)
-    __gnu_cxx::__normal_iterator<Table *, std::vector<Table>>
-    find_table_by_name(std::string const &name);
+    Table find_table_by_name(std::string const &name);
 
     bool is_table_already_exist(std::string const &table_name);
 
@@ -59,8 +60,6 @@ private:
 
     void populate_keys();
 
-    void print_query(Query const &q);
-
     std::vector<Query> get_create_queries();
 
     std::vector<Query> get_insert_queries();
@@ -70,11 +69,9 @@ private:
 
     void load_save();
 
-    void parse_and_execute_with_print(std::string const &input);
-
     void parse_and_execute(std::string const &input);
 
-    Execution_error add_and_override_cols(std::string const& table_name, std::vector<Column> cols);
+    Execution_error add_and_override_cols(std::string const &table_name, std::vector<Column> cols);
 
     std::pair<std::vector<Column>, Execution_error> execute_create_table();
 
@@ -84,7 +81,13 @@ private:
 
     std::pair<std::vector<Column>, Execution_error> execute_insert();
 
-    std::pair<std::vector<Column>, Execution_error> execute_update();
+    void start_print();
+
+    std::pair<std::vector<Column>, Execution_error> are_consistent();
+
+    std::pair<std::vector<Column>, Execution_error> are_cols_consistent();
+
+    std::pair<std::vector<Column>, Execution_error> are_conditions_consistent();
 
 public:
     void run();

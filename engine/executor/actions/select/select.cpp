@@ -1,20 +1,11 @@
-//
-// Created by Altezza on 18.05.2024.
-//
-
-#include <fmt/core.h>
 #include "../../Executor.hpp"
 
 std::vector<Column> Executor::select() {
     auto fields = Executor::q.get_fields();
-    auto query_table = *(q.get_p_table());
+    auto query = Executor::q;
     auto vec = std::vector<Column>();
-    if (fields.begin()->value == "*") {
-        return query_table.get_columns();
-    } else {
-        for (const auto& field: fields)
-            for (auto &column: query_table.get_columns())
-                if (column.get_name() == field.value) vec.push_back(column);
+    for(auto const &field : fields) {
+        vec.emplace_back(std::vector<Row>(), field.value, Data_type::TABLE_SELECT);
     }
     Executor::action = Q_action::SELECT;
     return vec;

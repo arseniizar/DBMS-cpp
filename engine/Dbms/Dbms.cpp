@@ -1,36 +1,54 @@
-//
-// Created by Altezza on 17.05.2024.
-//
 #include "Dbms.hpp"
 #include "../utils/ut_contains_elems/ut_contains_elems.hpp"
 
 void Dbms::run() {
-    fmt::println("Welcome to the Arsenii`s database!");
-    fmt::println("Here you can to write some simple queries!");
-    if (Dbms::tables.empty())
-        fmt::println("It looks like your database is empty, create a  table at first");
-    fmt::println("If you want to exit, type EXIT :)");
+    Dbms::start_print();
     while (true) {
         auto input = std::string();
         std::getline(std::cin, input);
         if (input.empty()) continue;
+        if(input == "-tables") {
+            Dbms::print_table_names();
+            continue;
+        }
+        if(input == "-help") {
+            fmt::println("Available commands:");
+            fmt::println("SELECT, DROP, INSERT, CREATE, DELETE, WHERE (additionally to one of the commands)");
+            continue;
+        }
         if (input == "EXIT") {
             fmt::println("Do you want to save the DBMS? (yes/no)");
             std::getline(std::cin, input);
             Dbms::is_dbms_changed = input == "yes";
             break;
         }
-        Dbms::parse_and_execute_with_print(input);
+        Dbms::parse_and_execute(input);
         Dbms::parser.clean_error();
         Dbms::executor.clean_error();
     }
     fmt::println("You have exited the program");
 }
 
-void Dbms::parse_and_execute_with_print(std::string const &input) {
-    Dbms::parse_and_execute(input);
-    // maybe
+void Dbms::start_print() {
+    fmt::println("Welcome to the Arsenii`s database!");
+    fmt::println("Here you can to write some simple queries!");
+    if (Dbms::tables.empty())
+        fmt::println("It looks like your database is empty, create a table at first");
+    else {
+        fmt::println("Here are tables that are already present in the DBMS:");
+        Dbms::print_table_names();
+        fmt::println("Hints:\n"
+                     "If you want to check details about tables you can use:\n"
+                     "\"select * from [TABLE_NAME]\"\n"
+                     "If you want to check what tables are present in the DBMS:\n"
+                     "\"-tables\"\n"
+                     "If you need help:\n"
+                     "\"-help\""
+        );
+    }
+    fmt::println("If you want to exit, type EXIT :)");
 }
+
 
 void Dbms::parse_and_execute(const std::string &input) {
     std::pair<Query, Parse_error> parse_pair = Dbms::parse_query(input);
@@ -79,13 +97,11 @@ std::pair<std::vector<Column>, Execution_error> Dbms::make_executor_error(std::s
     return std::make_pair(Dbms::executor.tmp_cols, err);
 }
 
-// cool data type, just tried to write it like that :)
-__gnu_cxx::__normal_iterator<Table *, std::vector<Table>>
-Dbms::find_table_by_name(std::string const &name) {
-    return std::find_if(Dbms::tables.begin(), Dbms::tables.end(),
-                        [&name](Table t) {
-                            return t.get_table_name() == name;
-                        });
+Table Dbms::find_table_by_name(std::string const &name) {
+    return *std::find_if(Dbms::tables.begin(), Dbms::tables.end(),
+                         [&name](Table t) {
+                             return t.get_table_name() == name;
+                         });
 }
 
 bool Dbms::is_table_already_exist(std::string const &table_name) {
@@ -93,10 +109,6 @@ bool Dbms::is_table_already_exist(std::string const &table_name) {
                        [&table_name](std::string const &str) {
                            return str == table_name;
                        });
-}
-
-void Dbms::print_query(Query const &q) {
-    ut_print(q);
 }
 
 // so in order to make a relation I should check the Column for the
@@ -108,7 +120,7 @@ bool Dbms::check_relations() {
     auto is_referenced_table_exists = Dbms::is_table_already_exist
             (q.get_referenced_table_name());
     if (!is_referenced_table_exists) return false;
-    auto ref_table = *Dbms::find_table_by_name(q.get_referenced_table_name());
+    auto ref_table = Dbms::find_table_by_name(q.get_referenced_table_name());
     if (!ref_table.contains_cols_names(ref_fields)) return false;
     return true;
 }
@@ -154,7 +166,6 @@ Dbms::Dbms() {
     Dbms::load_save();
     Dbms::is_dbms_changed = false;
     Dbms::is_loading = false;
-//    Dbms::print_table_names();
 }
 
 Dbms::~Dbms() {
@@ -162,12 +173,12 @@ Dbms::~Dbms() {
 }
 
 Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::vector<Column> cols) {
-    auto table = *Dbms::find_table_by_name(table_name);
+    auto table = Dbms::find_table_by_name(table_name);
     // delete from with an empty where
     if (Dbms::executor.q.get_query_type() == Query_type::Delete
         and Table("Func", cols).are_table_rows_empty()) {
         auto table_cols = table.get_columns();
-        for(auto &col : table_cols) {
+        for (auto &col: table_cols) {
             // erase all rows
             col.set_rows(std::vector<Row>());
         }
