@@ -1,7 +1,6 @@
 #include "../Dbms.hpp"
 
 void Dbms::make_save() {
-    if (Dbms::tables.empty()) return;
     namespace fs = std::filesystem;
     auto table_txt = std::string();
     auto path = std::string(Dbms::table_saves_path);
@@ -11,6 +10,9 @@ void Dbms::make_save() {
     auto fs_path = fs::path(path + folder_name);
     if (!fs::exists(fs::path(fs_path))) {
         fs::create_directory(fs::path(path + folder_name));
+    }
+    if (Dbms::tables.empty())  {
+        return;
     }
     for (auto &table: Dbms::tables) {
         std::ofstream ofs(fs_path.string() + R"(\)" + table.get_table_name() + ".txt", std::ofstream::out);

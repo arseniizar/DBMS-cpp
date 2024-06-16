@@ -16,12 +16,12 @@
 // inserts
 
 enum struct Q_action {
-    SELECT, DELETE, INSERT, UPDATE, CREATE
+    SELECT, DELETE, INSERT, UPDATE, CREATE, DROP
 };
 
 inline std::string q_action_str[]{
         "SELECT", "DELETE",
-        "INSERT", "UPDATE", "CREATE"
+        "INSERT", "UPDATE", "CREATE", "DROP"
 };
 
 struct Executor {
@@ -53,6 +53,8 @@ struct Executor {
     std::vector<Column> update();
 
     std::vector<Column> select();
+
+    void drop();
 
     void execute();
 

@@ -45,6 +45,7 @@ enum struct Step {
     create_table_field_name,
     create_table_field_type,
     create_table_comma_or_closing_parens,
+    drop_table,
     group_by,
     group_by_field,
     having,
@@ -75,16 +76,28 @@ enum struct Step {
     error,
 };
 
+//inline std::vector<std::string> reserved_words{
+//        "(", ")", ">=", "<=", "!=",
+//        ",", "=", ">", "<", "SELECT",
+//        "INSERT INTO", "VALUES", "UPDATE",
+//        "DELETE FROM", "CREATE TABLE", "WHERE",
+//        "FROM", "SET", "AS", "NVARCHAR2",
+//        "DATE", "INTEGER", "GROUP BY", "HAVING",
+//        "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "ON",
+//        "PRIMARY KEY", "FOREIGN KEY", "REFERENCES"
+//};
+
 inline std::vector<std::string> reserved_words{
         "(", ")", ">=", "<=", "!=",
         ",", "=", ">", "<", "SELECT",
         "INSERT INTO", "VALUES", "UPDATE",
         "DELETE FROM", "CREATE TABLE", "WHERE",
-        "FROM", "SET", "AS", "NVARCHAR2",
-        "DATE", "INTEGER", "GROUP BY", "HAVING",
-        "JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "ON",
+        "FROM", "NVARCHAR2",
+        "DATE", "INTEGER",
+        "DROP TABLE",
         "PRIMARY KEY", "FOREIGN KEY", "REFERENCES"
 };
+
 
 struct Parser {
 private:
@@ -270,6 +283,8 @@ public:
     void step_references_field();
 
     void step_references_comma_or_closing_parens();
+
+    void step_drop_table();
 
     std::pair<Query, Parse_error> step_error();
 };

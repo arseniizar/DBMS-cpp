@@ -10,7 +10,7 @@
 #include "../../utils/ut_str_toupper/ut_str_toupper.hpp"
 
 enum struct Data_type {
-    UNKNOWN, NVARCHAR2, DATE, INTEGER, NONE, TABLE_SELECT, INSERT_COL, UPDATE_COL
+    UNKNOWN, NVARCHAR2, DATE, INTEGER, NONE, TABLE_SELECT, INSERT_COL, UPDATE_COL, DELETE
 };
 
 inline std::string data_types_str[]{

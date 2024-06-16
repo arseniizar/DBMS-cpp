@@ -82,5 +82,6 @@ add_executable(DatabaseProject main.cpp
         engine/utils/ut_contains_elems/ut_contains_elems.hpp
         engine/query/structs/Update.hpp
         engine/Dbms/complementary/are_consistent.cpp
+        engine/parser/steps/step_drop_table.cpp
 )
 target_link_libraries(DatabaseProject fmt)

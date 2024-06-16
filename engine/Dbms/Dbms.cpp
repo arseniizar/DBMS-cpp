@@ -2,18 +2,22 @@
 #include "../utils/ut_contains_elems/ut_contains_elems.hpp"
 
 void Dbms::run() {
-    Dbms::start_print();
+    Dbms::start();
     while (true) {
         auto input = std::string();
         std::getline(std::cin, input);
         if (input.empty()) continue;
-        if(input == "-tables") {
+        if (input == "-tables") {
             Dbms::print_table_names();
             continue;
         }
-        if(input == "-help") {
+        if (input == "-help") {
             fmt::println("Available commands:");
-            fmt::println("SELECT, DROP, INSERT, CREATE, DELETE, WHERE (additionally to one of the commands)");
+            fmt::println("SELECT, DROP TABLE, INSERT INTO, CREATE TABLE, DELETE FROM");
+            continue;
+        }
+        if (input == "-load") {
+            load_prompt();
             continue;
         }
         if (input == "EXIT") {
@@ -29,24 +33,52 @@ void Dbms::run() {
     fmt::println("You have exited the program");
 }
 
-void Dbms::start_print() {
+void Dbms::start() {
     fmt::println("Welcome to the Arsenii`s database!");
     fmt::println("Here you can to write some simple queries!");
-    if (Dbms::tables.empty())
-        fmt::println("It looks like your database is empty, create a table at first");
-    else {
-        fmt::println("Here are tables that are already present in the DBMS:");
-        Dbms::print_table_names();
-        fmt::println("Hints:\n"
-                     "If you want to check details about tables you can use:\n"
-                     "\"select * from [TABLE_NAME]\"\n"
-                     "If you want to check what tables are present in the DBMS:\n"
-                     "\"-tables\"\n"
-                     "If you need help:\n"
-                     "\"-help\""
-        );
-    }
+    fmt::println("Here are tables that are already present in the DBMS:");
+    Dbms::print_table_names();
+    fmt::println("Hints:\n"
+                 "If you want to check details about tables you can use:\n"
+                 "\"select * from [TABLE_NAME]\"\n"
+                 "If you want to check what tables are present in the DBMS:\n"
+                 "\"-tables\"\n"
+                 "If you need help:\n"
+                 "\"-help\"\n"
+                 "If you want to save tables exit the DBMS\n"
+                 "If you want to load tables:\n"
+                 "\"-load\""
+    );
     fmt::println("If you want to exit, type EXIT :)");
+}
+
+void Dbms::load_prompt() {
+    while (true) {
+        fmt::println("What save do you want to load? (type corresponding number)");
+        fmt::println("1 - load newest");
+        fmt::println("2 - I want to load a particular save");
+        fmt::println("3 - load empty DBMS");
+        fmt::println("4 - exit loading menu");
+        auto input = std::string();
+        std::getline(std::cin, input);
+        if (input != "1" and input != "2" and input != "3" and input != "4") {
+            fmt::println("You need to write 1,2 or 3 or DONE in order to proceed");
+            continue;
+        } else {
+            if (input == "1") {
+                Dbms::load_save();
+            } else if (input == "2") {
+                Dbms::load_save_menu();
+            } else if (input == "3") {
+                fmt::println("You have loaded an empty DBMS");
+            } else if (input == "4") {
+                fmt::println("You have exited DBMS loading menu");
+                break;
+            } else {
+                fmt::println("You should type an appropriate number");
+            }
+        }
+    }
 }
 
 
@@ -154,7 +186,10 @@ std::vector<Query> Dbms::get_insert_queries() {
 
 
 void Dbms::print_table_names() {
-    if (Dbms::tables.empty()) return;
+    if (Dbms::tables.empty()) {
+        fmt::println("[ *empty* ]");
+        return;
+    }
     auto vec = std::vector<std::string>();
     for (auto &t: Dbms::tables) vec.push_back(t.get_table_name());
     fmt::println("{}", vec);
@@ -163,9 +198,7 @@ void Dbms::print_table_names() {
 Dbms::Dbms() {
     Dbms::is_dbms_changed = false;
     Dbms::is_loading = true;
-    Dbms::load_save();
-    Dbms::is_dbms_changed = false;
-    Dbms::is_loading = false;
+    load_save();
 }
 
 Dbms::~Dbms() {

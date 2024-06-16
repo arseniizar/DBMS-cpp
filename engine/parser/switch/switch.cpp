@@ -58,6 +58,10 @@ std::pair<Query, Parse_error> Parser::parser_switch() {
                 Parser::step_create_table_comma_or_closing_parens();
                 break;
             }
+            case Step::drop_table: {
+                Parser::step_drop_table();
+                break;
+            }
             case Step::update_table: {
                 Parser::step_update_table();
                 break;
@@ -80,74 +84,6 @@ std::pair<Query, Parse_error> Parser::parser_switch() {
             }
             case Step::update_comma: {
                 Parser::step_update_comma();
-                break;
-            }
-            case Step::where: {
-                Parser::step_where();
-                break;
-            }
-            case Step::where_field: {
-                Parser::step_where_field();
-                break;
-            }
-            case Step::where_operator: {
-                Parser::step_where_operator();
-                break;
-            }
-            case Step::where_value: {
-                Parser::step_where_value();
-                break;
-            }
-            case Step::where_and: {
-                Parser::step_where_and();
-                break;
-            }
-            case Step::group_by: {
-                Parser::step_group_by();
-                break;
-            }
-            case Step::group_by_field: {
-                Parser::step_group_by_field();
-                break;
-            }
-            case Step::having: {
-                Parser::step_having();
-                break;
-            }
-            case Step::having_field: {
-                Parser::step_having_field();
-                break;
-            }
-            case Step::having_operator: {
-                Parser::step_having_operator();
-                break;
-            }
-            case Step::having_value: {
-                Parser::step_having_value();
-                break;
-            }
-            case Step::join: {
-                Parser::step_join();
-                break;
-            }
-            case Step::join_table: {
-                Parser::step_join_table();
-                break;
-            }
-            case Step::join_on: {
-                Parser::step_join_on();
-                break;
-            }
-            case Step::join_on_field1: {
-                Parser::step_join_on_field1();
-                break;
-            }
-            case Step::join_on_equal: {
-                Parser::step_join_on_equal();
-                break;
-            }
-            case Step::join_on_field2: {
-                Parser::step_join_on_field2();
                 break;
             }
             case Step::insert_fields_opening_parens: {

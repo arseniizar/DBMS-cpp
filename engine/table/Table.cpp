@@ -123,15 +123,26 @@ std::vector<std::vector<Row>> Table::get_rows_groups() {
 }
 
 std::vector<Column> Table::find_cols_by_conditions(std::vector<Condition> conditions) {
+    if(conditions.empty()) {
+        for(auto &col : Table::columns) {
+            col.set_rows(std::vector<Row>());
+        }
+        return Table::columns;
+    }
     auto operand_fields = std::vector<std::string>();
     auto operand_values = std::vector<std::string>();
     auto operators = std::vector<Query_operator>();
     auto found_cols = std::vector<Column>();
     for (auto const &condition: conditions) {
         operators.push_back(condition._operator);
-        if (condition.operand1_is_field) operand_fields.push_back(condition.operand1);
-        else if (condition.operand2_is_field) operand_fields.push_back(condition.operand2);
-
+        if (condition.operand1_is_field) {
+            operand_fields.push_back(condition.operand1);
+            operand_values.push_back(condition.operand2);
+        }
+        else if (condition.operand2_is_field) {
+            operand_fields.push_back(condition.operand2);
+            operand_values.push_back(condition.operand1);
+        }
     }
     for (auto &col: Table::get_columns()) {
         auto index_op = 0;
@@ -143,26 +154,32 @@ std::vector<Column> Table::find_cols_by_conditions(std::vector<Condition> condit
                     case Query_operator::eq: {
                         for (auto &row: col.get_rows())
                             if (row.get_data() == operand_values.at(index_val)) found_rows.push_back(row);
+                        break;
                     }
                     case Query_operator::ne: {
                         for (auto &row: col.get_rows())
                             if (row.get_data() != operand_values.at(index_val)) found_rows.push_back(row);
+                        break;
                     }
                     case Query_operator::lt: {
                         for (auto &row: col.get_rows())
                             if (row.get_data() < operand_values.at(index_val)) found_rows.push_back(row);
+                        break;
                     }
                     case Query_operator::lte: {
                         for (auto &row: col.get_rows())
                             if (row.get_data() <= operand_values.at(index_val)) found_rows.push_back(row);
+                        break;
                     }
                     case Query_operator::gt: {
                         for (auto &row: col.get_rows())
                             if (row.get_data() > operand_values.at(index_val)) found_rows.push_back(row);
+                        break;
                     }
                     case Query_operator::gte: {
                         for (auto &row: col.get_rows())
                             if (row.get_data() >= operand_values.at(index_val)) found_rows.push_back(row);
+                        break;
                     }
                 }
                 index_op++;

@@ -12,10 +12,10 @@ void Parser::step_type() {
         Parser::q.set_query_type(Query_type::Insert);
         Parser::pop();
         Parser::step = Step::insert_table;
-    } else if (peeked == "UPDATE") {
-        Parser::q.set_query_type(Query_type::Update);
-        Parser::pop();
-        Parser::step = Step::update_table;
+//    } else if (peeked == "UPDATE") {
+//        Parser::q.set_query_type(Query_type::Update);
+//        Parser::pop();
+//        Parser::step = Step::update_table;
     } else if (peeked == "DELETE FROM") {
         Parser::q.set_query_type(Query_type::Delete);
         Parser::pop();
@@ -24,6 +24,10 @@ void Parser::step_type() {
         Parser::q.set_query_type(Query_type::Create);
         Parser::pop();
         Parser::step = Step::create_table;
+    } else if (peeked == "DROP TABLE") {
+        Parser::q.set_query_type(Query_type::Drop);
+        Parser::pop();
+        Parser::step = Step::drop_table;
     } else {
         Parser::step = Step::error;
         Parser::error_message = "Invalid Query type";

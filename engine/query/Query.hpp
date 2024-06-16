@@ -18,26 +18,27 @@
 enum struct Query_type {
     UnknownType,
     Select,
-    Update,
+    Drop,
     Insert,
     Delete,
-    Create
+    Create,
+    //Update
 };
 
 inline std::string query_type_str[] = {
         "UnknownType",
         "Select",
-        "Update",
         "Insert",
         "Delete",
-        "Create"
+        "Create",
+        "Drop"
 };
 
 struct Query {
 private:
     Query_type q_type = Query_type::UnknownType;
     join_type j_type = join_type::UNKNOWN;
-    Table* p_table = nullptr;
+    Table *p_table = nullptr;
     std::string command;
     std::string table_name;
     std::string joined_table_name;
@@ -114,13 +115,13 @@ public:
 
     std::vector<Field> get_foreign_keys();
 
-    void set_p_table(Table* p_t);
+    void set_p_table(Table *p_t);
 
-    Table* get_p_table();
+    Table *get_p_table();
 
     Field get_primary_key();
 
-    void set_command(std::string const& comm);
+    void set_command(std::string const &comm);
 
     std::string get_command();
 
@@ -130,7 +131,7 @@ public:
 
     void set_current_update(Update const &u);
 
-    Field find_field_by_value(std::string const& value);
+    Field find_field_by_value(std::string const &value);
 };
 
 

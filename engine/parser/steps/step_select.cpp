@@ -1,6 +1,5 @@
 #include "../Parser.hpp"
 #include "../../utils/ut_is_identifier/ut_is_identifier.hpp"
-#include "../../utils/ut_str_toupper/ut_str_toupper.hpp"
 
 void Parser::step_select_field() {
     auto identifier = Parser::peek();
@@ -40,5 +39,11 @@ void Parser::step_select_from() {
 void Parser::step_select_from_table() {
     auto is_table_name = Parser::peek_is_table_name("at SELECT: expected a name of the Table");
     if (!is_table_name) return;
-    Parser::set_additional_step();
+    Parser::pop();
+    if (!Parser::peek().empty()) {
+        Parser::error_message = "at DROP: improper continuation after name of the table";
+        Parser::step = Step::error;
+        return;
+    }
+    Parser::pop_flag = true;
 }

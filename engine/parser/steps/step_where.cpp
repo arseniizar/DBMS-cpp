@@ -21,14 +21,18 @@ void Parser::step_where_field() {
         Parser::error_message = "at WHERE: expected a Field";
         return;
     }
-    auto found_field = Parser::q.find_field_by_value(identifier);
-    if (found_field.empty()) {
-        Parser::step = Step::error;
-        Parser::error_message = "at WHERE: expected an existing field";
-        return;
+    if (Parser::q.get_query_type() != Query_type::Delete) {
+        auto found_field = Parser::q.find_field_by_value(identifier);
+        if (found_field.empty()) {
+            Parser::step = Step::error;
+            Parser::error_message = "at WHERE: expected an existing field";
+            return;
+        }
+        Parser::q.append_condition(
+                Condition(identifier, true, found_field.d_t));
     }
     Parser::q.append_condition(
-            Condition(identifier, true, found_field.d_t));
+                Condition(identifier, true, Data_type::DELETE));
     Parser::pop();
     Parser::step = Step::where_operator;
 }

@@ -27,7 +27,7 @@ struct Dbms {
 private:
     std::vector<Query> queries;
     std::vector<Table> tables;
-    std::string table_saves_path = R"(D:\Coding\Cpp\DBMS-cpp\engine\saves\tables\)";
+    std::string table_saves_path = R"(..\engine\saves\tables\)";
     // for the logs, maybe UNDO in the future
     std::vector<recent_change> recent_changes;
     std::vector<std::string> table_names;
@@ -64,10 +64,13 @@ private:
 
     std::vector<Query> get_insert_queries();
 
-    // just load create and insert queries
     void make_save();
 
     void load_save();
+
+    void load_save_menu();
+
+    void load_prompt();
 
     void parse_and_execute(std::string const &input);
 
@@ -81,13 +84,15 @@ private:
 
     std::pair<std::vector<Column>, Execution_error> execute_insert();
 
-    void start_print();
+    void start();
 
     std::pair<std::vector<Column>, Execution_error> are_consistent();
 
     std::pair<std::vector<Column>, Execution_error> are_cols_consistent();
 
     std::pair<std::vector<Column>, Execution_error> are_conditions_consistent();
+
+    std::pair<std::vector<Column>, Execution_error> drop_table(std::string const& table_name);
 
 public:
     void run();

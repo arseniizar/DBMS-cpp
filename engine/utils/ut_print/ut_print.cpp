@@ -5,7 +5,6 @@
 void print_line(int length) {
     for (auto i = 0; i < length; i++)
         fmt::print("-");
-    fmt::println("");
 }
 
 void ut_print(Query q) {
@@ -74,18 +73,26 @@ void ut_print(std::vector<Column> cols) {
             rows_length += 15;
     auto line_length = 30 + 25 + rows_length;
     print_line(line_length);
+    fmt::println("");
     cout
             << left
             << setw(30)
             << "Columns:"
             << left
             << setw(25)
-            << "Types:"
-            << left
-            << setw(25)
-            << "Rows:"
-            << "\n";
+            << "Types:";
+
+    if (rows_length != 0) {
+        cout
+                << left
+                << setw(25)
+                << "Rows:"
+                << "\n";
+    } else {
+        cout << "\n";
+    }
     print_line(line_length);
+    fmt::println("");
     std::for_each(cols.begin(), cols.end(), [](Column &col) {
         auto setw_size = col.get_name().size() + 5;
         auto rows = col.get_rows();
@@ -106,4 +113,5 @@ void ut_print(std::vector<Column> cols) {
         cout << "\n";
     });
     print_line(line_length);
+    fmt::println("");
 }
