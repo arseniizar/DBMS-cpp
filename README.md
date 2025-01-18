@@ -1,1 +1,1 @@
-PJATK DBMS CPP
+simple dbms in cpp
