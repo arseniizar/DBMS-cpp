@@ -1,5 +1,10 @@
 #include "Dbms.hpp"
+
+#include <iostream>
+#include <algorithm>
+#include <ranges>
 #include "../utils/ut_contains_elems/ut_contains_elems.hpp"
+#include <fmt/core.h>
 
 void Dbms::run() {
     Dbms::start();
@@ -255,4 +260,34 @@ Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::
         if (t.get_table_name() == table_name)
             t = table;
     return {};
+}
+
+
+std::string Dbms::process_query(const std::string &input) {
+    std::string lower_input = input;
+    std::ranges::transform(lower_input, lower_input.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+    if (lower_input == "-tables") {
+        std::stringstream ss;
+        if (tables.empty())
+            ss << "[ *empty* ]";
+        else {
+            for (auto &t : tables)
+                ss << t.get_table_name() << "\n";
+        }
+        return ss.str();
+    }
+    if (lower_input == "-help")
+        return "Available commands:\nSELECT, DROP TABLE, INSERT INTO, CREATE TABLE, DELETE FROM";
+    if (lower_input == "-load") {
+        load_prompt();
+        return "Load prompt executed";
+    }
+    if (lower_input == "exit") {
+        return "exit";
+    }
+    parse_and_execute(input);
+    parser.clean_error();
+    executor.clean_error();
+    return "Query executed";
 }

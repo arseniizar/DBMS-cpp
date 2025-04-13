@@ -1,4 +1,7 @@
 #include "../Dbms.hpp"
+#include <algorithm>
+#include <fstream>
+#include <iostream>
 
 void Dbms::load_save() {
     namespace fs = std::filesystem;

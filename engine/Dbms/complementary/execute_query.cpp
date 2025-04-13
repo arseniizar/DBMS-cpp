@@ -1,5 +1,6 @@
 #include "../Dbms.hpp"
 #include "../../utils/ut_contains_elems/ut_contains_elems.hpp"
+#include "../../utils/ut_print/ut_print.hpp"
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query &q) {
     Dbms::executor.set_query(q);

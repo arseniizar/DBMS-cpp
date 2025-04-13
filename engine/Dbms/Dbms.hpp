@@ -7,21 +7,13 @@
 
 #include <vector>
 #include "fmt/core.h"
-#include "fmt/ranges.h"
-#include "fmt/chrono.h"
-#include "fmt/color.h"
 #include "fmt/format.h"
-#include <iostream>
-#include <algorithm>
 #include <filesystem>
-#include <fstream>
 #include "../query/Query.hpp"
 #include "../table/Table.hpp"
 #include "../parser/Parser.hpp"
 #include "../executor/Executor.hpp"
-#include "../utils/ut_print/ut_print.hpp"
 #include "../backup/recent_change.hpp"
-#include "../utils/ut_find_in_vector/ut_find_in_vector.hpp"
 
 struct Dbms {
 private:
@@ -98,6 +90,8 @@ public:
     void run();
 
     void print_table_names();
+
+    std::string process_query(const std::string &input);
 
     Dbms();
 
