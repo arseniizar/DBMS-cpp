@@ -6,82 +6,57 @@ set(CMAKE_CXX_STANDARD 20)
 include(FetchContent)
 
 FetchContent_Declare(
-        fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt
-        GIT_TAG 10.2.1
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG 10.2.1
 )
-
 FetchContent_MakeAvailable(fmt)
 
-add_executable(DatabaseProject main.cpp
-        engine/table/Table.hpp
-        engine/parser/Parser.cpp
-        engine/parser/Parser.hpp
-        engine/query/Query.hpp
-        engine/parser/structs/Parse_error.hpp
-        engine/Dbms/Dbms.hpp
-        engine/executor/structs/Execution_error.hpp
-        engine/executor/structs/Execution_result.hpp
-        engine/executor/Executor.cpp
-        engine/executor/Executor.cpp
-        engine/query/structs/Condition.hpp
-        engine/query/structs/Query_operator.hpp
-        engine/table/structs/Data_type.hpp
-        engine/query/complementary/get_operator.hpp
-        engine/table/structs/column/Column.hpp
-        engine/table/structs/row/Row.hpp
-        engine/utils/ut_print/ut_print.hpp
-        engine/backup/recent_change.hpp
-        engine/Dbms/Dbms.cpp
-        engine/table/structs/column/Column.cpp
-        engine/table/structs/row/Row.cpp
-        engine/table/Table.cpp
-        engine/query/Query.cpp
-        engine/parser/switch/switch.cpp
-        engine/parser/steps/steps.cpp
-        engine/parser/complementary/complementary.cpp
-        engine/utils/ut_print/ut_print.cpp
-        engine/utils/ut_is_identifier/ut_is_identifier.cpp
-        engine/utils/ut_is_identifier/ut_is_identifier.hpp
-        engine/utils/ut_str_toupper/ut_str_toupper.cpp
-        engine/utils/ut_str_toupper/ut_str_toupper.hpp
-        engine/utils/ut_return_join_type/ut_return_join_type.cpp
-        engine/utils/ut_return_join_type/ut_return_join_type.hpp
-        engine/utils/ut_find_in_vector/ut_find_in_vector.hpp
-        engine/executor/actions/insert/insert.cpp
-        engine/executor/actions/select/select.cpp
-        engine/executor/actions/update/update.cpp
-        engine/executor/actions/delete/delete_f.cpp
-        engine/executor/actions/create/create_table.cpp
-        engine/query/structs/Field.hpp
-        engine/query/structs/Key_attr.hpp
-        engine/query/structs/Ref.hpp
-        engine/table/structs/foreign_key/Foreign_key.cpp
-        engine/table/structs/foreign_key/Foreign_key.hpp
-        engine/table/structs/primary_key/Primary_key.cpp
-        engine/table/structs/primary_key/Primary_key.hpp
-        engine/table/structs/key/Key.cpp
-        engine/table/structs/key/Key.hpp
-        engine/parser/steps/step_type.cpp
-        engine/parser/steps/step_select.cpp
-        engine/parser/steps/step_insert.cpp
-        engine/parser/steps/step_update.cpp
-        engine/parser/steps/step_delete_from.cpp
-        engine/parser/steps/step_where.cpp
-        engine/parser/steps/step_create_table.cpp
-        engine/parser/steps/step_group_by.cpp
-        engine/parser/steps/step_having.cpp
-        engine/parser/steps/step_join.cpp
-        engine/parser/steps/step_primary_key.cpp
-        engine/parser/steps/step_foreign_key.cpp
-        engine/parser/steps/step_error.cpp
-        engine/query/structs/Insert.hpp
-        engine/Dbms/complementary/load_save.cpp
-        engine/Dbms/complementary/make_save.cpp
-        engine/Dbms/complementary/execute_query.cpp
-        engine/utils/ut_contains_elems/ut_contains_elems.hpp
-        engine/query/structs/Update.hpp
-        engine/Dbms/complementary/are_consistent.cpp
-        engine/parser/steps/step_drop_table.cpp
+FetchContent_Declare(
+    googletest
+    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
-target_link_libraries(DatabaseProject fmt)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+add_library(DatabaseLib STATIC
+    engine/parser/Parser.cpp
+    engine/query/Query.cpp
+    engine/executor/Executor.cpp
+    engine/table/Table.cpp
+    engine/table/structs/column/Column.cpp
+    engine/table/structs/row/Row.cpp
+    engine/executor/actions/insert/insert.cpp
+    engine/executor/actions/select/select.cpp
+    engine/executor/actions/update/update.cpp
+    engine/executor/actions/delete/delete_f.cpp
+    engine/executor/actions/create/create_table.cpp
+    engine/parser/switch/switch.cpp
+    engine/parser/steps/steps.cpp
+    engine/parser/complementary/complementary.cpp
+    engine/utils/ut_print/ut_print.cpp
+    engine/utils/ut_is_identifier/ut_is_identifier.cpp
+    engine/utils/ut_str_toupper/ut_str_toupper.cpp
+    engine/utils/ut_return_join_type/ut_return_join_type.cpp
+    engine/Dbms/Dbms.cpp
+    engine/Dbms/complementary/load_save.cpp
+    engine/Dbms/complementary/make_save.cpp
+    engine/Dbms/complementary/execute_query.cpp
+    engine/Dbms/complementary/are_consistent.cpp
+    engine/parser/steps/step_drop_table.cpp
+)
+target_include_directories(DatabaseLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/engine)
+target_link_libraries(DatabaseLib PRIVATE fmt)
+
+add_executable(DatabaseProject main.cpp)
+target_link_libraries(DatabaseProject PRIVATE DatabaseLib)
+
+enable_testing()
+
+add_executable(unit_tests
+    tests/test_parser.cpp
+)
+target_link_libraries(unit_tests PRIVATE DatabaseLib gtest_main fmt)
+
+include(GoogleTest)
+gtest_discover_tests(unit_tests)
