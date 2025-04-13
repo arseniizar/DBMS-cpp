@@ -29,8 +29,7 @@ Execution_result Executor::get_execution_res() const {
 void Executor::execute() {
     // depending on the type of the Query I will do something from above
     auto query = Executor::q;
-    auto query_type = query.get_query_type();
-    switch (query_type) {
+    switch (auto query_type = query.get_query_type()) {
         case Query_type::Select: {
             Executor::tmp_cols = Executor::select();
             break;

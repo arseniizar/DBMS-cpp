@@ -14,4 +14,4 @@ Values
 and that should create me a table with values that I had
 
 create table test(id integer primary key, hello nvarchar2)
-insert into test(id, hello) values ('1', 'world'), ('2', 'arina')
+insert into test(id, hello) values ('1', 'world'), ('2', 'arsenii')

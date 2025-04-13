@@ -6,7 +6,12 @@ void Dbms::run() {
     while (true) {
         auto input = std::string();
         std::getline(std::cin, input);
-        if (input.empty()) continue;
+        if (input.empty())
+            continue;
+
+        std::ranges::transform(input, input.begin(),
+                               [](const unsigned char c) { return std::tolower(c); });
+
         if (input == "-tables") {
             Dbms::print_table_names();
             continue;
@@ -20,7 +25,7 @@ void Dbms::run() {
             load_prompt();
             continue;
         }
-        if (input == "EXIT") {
+        if (input == "exit") {
             fmt::println("Do you want to save the DBMS? (yes/no)");
             std::getline(std::cin, input);
             Dbms::is_dbms_changed = input == "yes";
@@ -39,16 +44,15 @@ void Dbms::start() {
     fmt::println("Here are tables that are already present in the DBMS:");
     Dbms::print_table_names();
     fmt::println("Hints:\n"
-                 "If you want to check details about tables you can use:\n"
-                 "\"select * from [TABLE_NAME]\"\n"
-                 "If you want to check what tables are present in the DBMS:\n"
-                 "\"-tables\"\n"
-                 "If you need help:\n"
-                 "\"-help\"\n"
-                 "If you want to save tables exit the DBMS\n"
-                 "If you want to load tables:\n"
-                 "\"-load\""
-    );
+        "If you want to check details about tables you can use:\n"
+        "\"select * from [TABLE_NAME]\"\n"
+        "If you want to check what tables are present in the DBMS:\n"
+        "\"-tables\"\n"
+        "If you need help:\n"
+        "\"-help\"\n"
+        "If you want to save tables exit the DBMS\n"
+        "If you want to load tables:\n"
+        "\"-load\"");
     fmt::println("If you want to exit, type EXIT :)");
 }
 
@@ -64,23 +68,22 @@ void Dbms::load_prompt() {
         if (input != "1" and input != "2" and input != "3" and input != "4") {
             fmt::println("You need to write 1,2 or 3 or DONE in order to proceed");
             continue;
+        }
+
+        if (input == "1") {
+            Dbms::load_save();
+        } else if (input == "2") {
+            Dbms::load_save_menu();
+        } else if (input == "3") {
+            fmt::println("You have loaded an empty DBMS");
+        } else if (input == "4") {
+            fmt::println("You have exited DBMS loading menu");
+            break;
         } else {
-            if (input == "1") {
-                Dbms::load_save();
-            } else if (input == "2") {
-                Dbms::load_save_menu();
-            } else if (input == "3") {
-                fmt::println("You have loaded an empty DBMS");
-            } else if (input == "4") {
-                fmt::println("You have exited DBMS loading menu");
-                break;
-            } else {
-                fmt::println("You should type an appropriate number");
-            }
+            fmt::println("You should type an appropriate number");
         }
     }
 }
-
 
 void Dbms::parse_and_execute(const std::string &input) {
     std::pair<Query, Parse_error> parse_pair = Dbms::parse_query(input);
@@ -103,7 +106,7 @@ std::pair<Query, Parse_error> Dbms::parse_query(std::string const &str) {
     Query q = Dbms::parser.parse();
     if (!Dbms::parser.get_error().message.empty())
         fmt::println("{}", Dbms::parser.get_error().message);
-//    else fmt::println("SUCCESSFUL QUERY!");
+    //    else fmt::println("SUCCESSFUL QUERY!");
     Dbms::parser.clean();
     return std::make_pair(q, parser.get_error());
 }
@@ -149,11 +152,12 @@ bool Dbms::check_relations() {
     Query q = Dbms::executor.q;
     // fields from another Table
     auto ref_fields = q.get_referenced_fields_names();
-    auto is_referenced_table_exists = Dbms::is_table_already_exist
-            (q.get_referenced_table_name());
-    if (!is_referenced_table_exists) return false;
+    auto is_referenced_table_exists = Dbms::is_table_already_exist(q.get_referenced_table_name());
+    if (!is_referenced_table_exists)
+        return false;
     auto ref_table = Dbms::find_table_by_name(q.get_referenced_table_name());
-    if (!ref_table.contains_cols_names(ref_fields)) return false;
+    if (!ref_table.contains_cols_names(ref_fields))
+        return false;
     return true;
 }
 
@@ -164,14 +168,15 @@ void Dbms::populate_keys() {
     std::for_each(foreign_keys.begin(), foreign_keys.end(),
                   [&q, this](Field const &fk) {
                       Dbms::executor.tmp_t.add_foreign_key(
-                              Foreign_key(fk.value, q.get_table_name(), fk.k_a));
+                          Foreign_key(fk.value, q.get_table_name(), fk.k_a));
                   });
 }
 
 std::vector<Query> Dbms::get_create_queries() {
     auto res = std::vector<Query>();
     for (auto &q: Dbms::queries) {
-        if (q.get_query_type() == Query_type::Create) res.push_back(q);
+        if (q.get_query_type() == Query_type::Create)
+            res.push_back(q);
     }
     return res;
 }
@@ -179,11 +184,11 @@ std::vector<Query> Dbms::get_create_queries() {
 std::vector<Query> Dbms::get_insert_queries() {
     auto res = std::vector<Query>();
     for (auto &q: Dbms::queries) {
-        if (q.get_query_type() == Query_type::Insert) res.push_back(q);
+        if (q.get_query_type() == Query_type::Insert)
+            res.push_back(q);
     }
     return res;
 }
-
 
 void Dbms::print_table_names() {
     if (Dbms::tables.empty()) {
@@ -191,25 +196,25 @@ void Dbms::print_table_names() {
         return;
     }
     auto vec = std::vector<std::string>();
-    for (auto &t: Dbms::tables) vec.push_back(t.get_table_name());
+    for (auto &t: Dbms::tables)
+        vec.push_back(t.get_table_name());
     fmt::println("{}", vec);
 }
 
 Dbms::Dbms() {
     Dbms::is_dbms_changed = false;
     Dbms::is_loading = true;
-    load_save();
 }
 
 Dbms::~Dbms() {
-    if (Dbms::is_dbms_changed) Dbms::make_save();
+    if (Dbms::is_dbms_changed)
+        Dbms::make_save();
 }
 
 Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::vector<Column> cols) {
     auto table = Dbms::find_table_by_name(table_name);
     // delete from with an empty where
-    if (Dbms::executor.q.get_query_type() == Query_type::Delete
-        and Table("Func", cols).are_table_rows_empty()) {
+    if (Dbms::executor.q.get_query_type() == Query_type::Delete and Table("Func", cols).are_table_rows_empty()) {
         auto table_cols = table.get_columns();
         for (auto &col: table_cols) {
             // erase all rows
@@ -222,11 +227,11 @@ Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::
         return {};
     }
     auto table_cols = table.get_columns();
-    bool are_cols_same = ut_contains_elems(
-            table.get_columns_names(),
-            Table("func", cols).get_columns_names());
+    const bool are_cols_same = ut_contains_elems(
+        table.get_columns_names(),
+        Table("func", cols).get_columns_names());
     if (!are_cols_same) {
-        std::string message = "at EXECUTION: unable to override nonexistent columns";
+        const std::string message = "at EXECUTION: unable to override nonexistent columns";
         Dbms::executor.error = Execution_error(message);
         return Execution_error(message);
     }
@@ -234,10 +239,9 @@ Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::
         for (auto &col: cols) {
             if (col.get_name() == t_col.get_name()) {
                 for (auto &row: col.get_rows()) {
-                    Data_type row_type = return_data_type(row.get_data());
-                    if (row_type != t_col.get_type()) {
-                        std::string message = "at EXECUTION: unable to override "
-                                              "columns with improper data type";
+                    if (const Data_type row_type = return_data_type(row.get_data()); row_type != t_col.get_type()) {
+                        const std::string message = "at EXECUTION: unable to override "
+                                "columns with improper data type";
                         Dbms::executor.error = Execution_error(message);
                         return Execution_error(message);
                     }

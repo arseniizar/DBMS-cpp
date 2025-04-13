@@ -1,31 +1,36 @@
 ofs << "create table " + table.get_table_name() + "( ";
-            for (auto &col: table.get_columns()) {
-                ofs << col.get_name() + " " + data_types_str[static_cast<int>(col.get_type())];
-                if (table.get_primary_key().curr_col_name == col.get_name()) {
-                    ofs << " primary key";
-                } else if (!table.get_foreign_keys().empty()) {
-                    for (auto &fk: table.get_foreign_keys()) {
-                        if (fk.curr_col_name == col.get_name())
-                            ofs << "foreign key references " + fk.k_a.reference.table_name
-                                   + "(" + fk.k_a.reference.column_name + ")";
-                    }
-                }
-                ofs << ", ";
-            }
-            ofs << " )";
+for (auto &col : table.get_columns())
+{
+    ofs << col.get_name() + " " + data_types_str[static_cast<int>(col.get_type())];
+    if (table.get_primary_key().curr_col_name == col.get_name())
+    {
+        ofs << " primary key";
+    }
+    else if (!table.get_foreign_keys().empty())
+    {
+        for (auto &fk : table.get_foreign_keys())
+        {
+            if (fk.curr_col_name == col.get_name())
+                ofs << "foreign key references " + fk.k_a.reference.table_name + "(" + fk.k_a.reference.column_name + ")";
+        }
+    }
+    ofs << ", ";
+}
+ofs << " )";
 
-
-            //            auto create_queries = Dbms::get_create_queries();
-//            auto insert_queries = Dbms::get_insert_queries();
-//            if (!create_queries.empty()) {
-//                for (auto &c_q: create_queries)
-//                    if (c_q.get_table_name() == table.get_table_name())
-//                        ofs << c_q.get_command();
-//                ofs << "\n";
-//            }
-//            if (!insert_queries.empty()) {
-//                for (auto &i_q: insert_queries)
-//                    if (i_q.get_table_name() == table.get_table_name())
-//                        ofs << i_q.get_command();
-//                ofs << "\n";
-//            }
+// auto create_queries = Dbms::get_create_queries();
+// auto insert_queries = Dbms::get_insert_queries();
+// if (!create_queries.empty())
+// {
+//    for (auto &c_q : create_queries)
+//        if (c_q.get_table_name() == table.get_table_name())
+//            ofs << c_q.get_command();
+//    ofs << "\n";
+// }
+// if (!insert_queries.empty())
+// {
+//     for (auto &i_q : insert_queries)
+//        if (i_q.get_table_name() == table.get_table_name())
+//            ofs << i_q.get_command();
+//    ofs << "\n";
+// }
