@@ -9,6 +9,7 @@
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include <filesystem>
+#include <sstream>
 #include "../query/Query.hpp"
 #include "../table/Table.hpp"
 #include "../parser/Parser.hpp"

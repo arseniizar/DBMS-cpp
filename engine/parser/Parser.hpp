@@ -13,7 +13,8 @@
 #include "../query/Query.hpp"
 #include "structs/Parse_error.hpp"
 
-enum struct Step {
+enum struct Step
+{
     type,
     select_field,
     select_from,
@@ -88,18 +89,19 @@ enum struct Step {
 //};
 
 inline std::vector<std::string> reserved_words{
-        "(", ")", ">=", "<=", "!=",
-        ",", "=", ">", "<", "SELECT",
-        "INSERT INTO", "VALUES", "UPDATE",
-        "DELETE FROM", "CREATE TABLE", "WHERE",
-        "FROM", "NVARCHAR2",
-        "DATE", "INTEGER",
-        "DROP TABLE",
-        "PRIMARY KEY", "FOREIGN KEY", "REFERENCES"
+    "(", ")", ">=", "<=", "!=",
+    ",", "=", ">", "<", "SELECT",
+    "INSERT INTO", "VALUES", "UPDATE",
+    "DELETE FROM", "CREATE TABLE", "WHERE",
+    "FROM", "NVARCHAR2",
+    "DATE", "INTEGER",
+    "DROP TABLE",
+    "PRIMARY KEY", "FOREIGN KEY", "REFERENCES"
 };
 
 
-struct Parser {
+struct Parser
+{
 private:
     std::string error_message;
     std::string sql;
@@ -116,16 +118,18 @@ private:
 
 public:
     explicit Parser()
-            : sql(std::string()), index(0), step(Step::type), pop_flag(false),
-              current_field_data_type(Data_type::UNKNOWN) {}
+        : sql(std::string()), index(0), step(Step::type), pop_flag(false),
+          current_field_data_type(Data_type::UNKNOWN)
+    {
+    }
 
-    std::pair<Query, Parse_error> make_error_pair(std::string const &message);
+    std::pair<Query, Parse_error> make_error_pair(std::string const& message);
 
     void clean();
 
     void clean_error();
 
-    void input(std::string const &sql);
+    void input(std::string const& sql);
 
     std::string peek();
 
@@ -148,14 +152,15 @@ public:
     std::vector<std::string> split_string_in_words();
 
     // complementary functions:
-    bool peek_is_comma(std::string const &message);
+    bool peek_is_comma(std::string const& message);
 
-    __gnu_cxx::__normal_iterator<Field *, std::vector<Field>>
-    get_field_by_name(std::string const &name);
+    std::vector<Field>::iterator
 
-    bool peek_is_table_name(std::string const &message);
+    get_field_by_name(std::string const& name);
 
-    bool peek_is_opening_parens(std::string const &message);
+    bool peek_is_table_name(std::string const& message);
+
+    bool peek_is_opening_parens(std::string const& message);
 
     bool is_index_at_end();
 
@@ -163,7 +168,7 @@ public:
 
     std::pair<Query, Parse_error> parser_switch();
 
-    bool peek_is_operator(std::string const &message);
+    bool peek_is_operator(std::string const& message);
 
     void set_additional_step();
 

@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iomanip>
+#include <sstream>
 #include "../table/Table.hpp"
 #include "../query/Query.hpp"
 

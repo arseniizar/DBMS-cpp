@@ -185,7 +185,7 @@ bool Parser::is_peek_empty() {
     return false;
 }
 
-__gnu_cxx::__normal_iterator<Field *, std::vector<Field>>
+std::vector<Field>::iterator
 Parser::get_field_by_name(const std::string &name) {
     return std::ranges::find_if(
             Parser::q.get_fields().begin(),
