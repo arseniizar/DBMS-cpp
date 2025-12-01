@@ -55,7 +55,8 @@ enable_testing()
 
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "tests/*.cpp")
 
-add_executable(unit_tests ${TEST_SOURCES})
+add_executable(unit_tests ${TEST_SOURCES}
+        tests/parser_query_types_test.cpp)
 
 target_link_libraries(unit_tests PRIVATE
         DatabaseLib

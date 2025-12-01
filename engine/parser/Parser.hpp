@@ -89,14 +89,14 @@ enum struct Step
 //};
 
 inline std::vector<std::string> reserved_words{
-    "(", ")", ">=", "<=", "!=",
-    ",", "=", ">", "<", "SELECT",
-    "INSERT INTO", "VALUES", "UPDATE",
-    "DELETE FROM", "CREATE TABLE", "WHERE",
-    "FROM", "NVARCHAR2",
-    "DATE", "INTEGER",
-    "DROP TABLE",
-    "PRIMARY KEY", "FOREIGN KEY", "REFERENCES"
+        "(", ")", ">=", "<=", "!=",
+        ",", "=", ">", "<", "SELECT",
+        "INSERT", "INTO", "VALUES", "UPDATE",
+        "DELETE", "CREATE", "TABLE", "WHERE",
+        "FROM", "NVARCHAR2",
+        "DATE", "INTEGER",
+        "DROP",
+        "PRIMARY", "KEY", "FOREIGN", "REFERENCES"
 };
 
 
