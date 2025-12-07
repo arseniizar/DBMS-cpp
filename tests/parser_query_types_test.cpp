@@ -224,3 +224,46 @@ TEST_F(ParserTest, FailsOnDropTableWithExtraWords) {
 
     EXPECT_NE(parser.get_error().message, "");
 }
+
+TEST_F(ParserTest, FailsOnCreateTableWithTwoPrimaryKeys) {
+    std::string sql = "CREATE TABLE users (id INTEGER PRIMARY KEY, email NVARCHAR2 PRIMARY KEY)";
+    parser.input(sql);
+    parser.parse();
+    EXPECT_NE(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, SucceedsOnForeignKeySyntax) {
+    std::string sql = "CREATE TABLE orders (id INTEGER, user_id INTEGER FOREIGN KEY REFERENCES users(user_id))";
+    parser.input(sql);
+    parser.parse();
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, SucceedsOnMismatchedDataTypeSyntax) {
+    std::string sql = "INSERT INTO users (id) VALUES ('this-is-not-an-integer')";
+    parser.input(sql);
+    parser.parse();
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, FailsOnInsertWithEmptyValues) {
+    std::string sql = "INSERT INTO users (id) VALUES ()";
+    parser.input(sql);
+    parser.parse();
+    EXPECT_NE(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesDeleteWithWhereClause) {
+    std::string sql = "DELETE FROM users WHERE id = '1'";
+    parser.input(sql);
+    Query q = parser.parse();
+
+    ASSERT_EQ(q.get_query_type(), Query_type::Delete);
+    EXPECT_EQ(parser.get_error().message, "");
+
+    auto conditions = q.get_conditions();
+    ASSERT_EQ(conditions.size(), 1);
+    EXPECT_EQ(conditions[0].get_operand1(), "id");
+    EXPECT_EQ(conditions[0].get_operator(), Query_operator::eq);
+    EXPECT_EQ(conditions[0].get_operand2(), "1");
+}

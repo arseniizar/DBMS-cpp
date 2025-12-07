@@ -19,6 +19,18 @@ void Parser::step_primary_key_as_type() {
     }
     Parser::pop();
 
+    auto fields = Parser::q.get_fields();
+
+    const bool pk_exists = std::ranges::any_of(fields, [](const Field& field) {
+       return field.k_a.k_t == Key_type::PK;
+    });
+
+    if (pk_exists) {
+        Parser::step = Step::error;
+        Parser::error_message = "a table can have only one PRIMARY KEY";
+        return;
+    }
+
     Parser::q.append_field(Field(Parser::current_create_table_field_val,
                                  Parser::current_field_data_type,
                                  Key_attr(Key_type::PK)));

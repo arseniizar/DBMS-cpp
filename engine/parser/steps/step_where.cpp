@@ -1,16 +1,14 @@
 #include "../Parser.hpp"
 #include "../../utils/ut_is_identifier/ut_is_identifier.hpp"
-#include "../../utils/ut_find_in_vector/ut_find_in_vector.hpp"
 
 void Parser::step_where() {
-    auto where = Parser::peek();
-    str_toupper(where);
-    if (where != "WHERE") {
+    auto where_token = pop();
+    str_toupper(where_token);
+    if (where_token != "WHERE") {
         Parser::step = Step::error;
-        Parser::error_message = "expected a keyword WHERE after the end of the previous statement";
+        Parser::error_message = "Internal parser error: expected 'WHERE'";
         return;
     }
-    Parser::pop();
     Parser::step = Step::where_field;
 }
 
@@ -21,31 +19,22 @@ void Parser::step_where_field() {
         Parser::error_message = "at WHERE: expected a Field";
         return;
     }
-    if (Parser::q.get_query_type() != Query_type::Delete) {
-        auto found_field = Parser::q.find_field_by_value(identifier);
-        if (found_field.empty()) {
-            Parser::step = Step::error;
-            Parser::error_message = "at WHERE: expected an existing field";
-            return;
-        }
-        Parser::q.append_condition(
-                Condition(identifier, true, found_field.d_t));
-    }
-    Parser::q.append_condition(
-                Condition(identifier, true, Data_type::DELETE));
+    Parser::q.append_condition(Condition(identifier, true));
     Parser::pop();
     Parser::step = Step::where_operator;
 }
 
 void Parser::step_where_operator() {
-    auto is_op = peek_is_operator("at WHERE: expected a WHERE operator");
-    if (!is_op) return;
+    if (!peek_is_operator("at WHERE: expected a WHERE operator")) {
+        return;
+    }
     Parser::step = Step::where_value;
 }
 
 void Parser::step_where_value() {
     auto curr_cond = Parser::q.get_current_condition();
     auto identifier = Parser::peek();
+
     if (is_identifier(identifier)) {
         curr_cond.operand2 = identifier;
         curr_cond.operand2_is_field = true;
@@ -53,7 +42,7 @@ void Parser::step_where_value() {
         auto pair = Parser::peek_quoted_with_length();
         if (pair.second == 0) {
             Parser::step = Step::error;
-            Parser::error_message = "at WHERE: expected a value";
+            Parser::error_message = "at WHERE: expected a value (quoted) or another field";
             return;
         }
         curr_cond.operand2 = pair.first;
@@ -61,17 +50,21 @@ void Parser::step_where_value() {
     }
     Parser::q.set_current_condition(curr_cond);
     Parser::pop();
-    Parser::step = Step::where_and;
+
+    auto next_token = peek();
+    str_toupper(next_token);
+
+    if (next_token == "AND") {
+        Parser::step = Step::where_and;
+    } else if (next_token.empty()) {
+        pop_flag = true;
+    } else {
+        // TODO: додати обробку GROUP BY тут.
+        pop_flag = true;
+    }
 }
 
 void Parser::step_where_and() {
-    auto and_word = Parser::peek();
-    str_toupper(and_word);
-    if (and_word != "AND") {
-        Parser::step = Step::error;
-        Parser::error_message = "at WHERE: expected a keyword AND";
-        return;
-    }
     Parser::pop();
     Parser::step = Step::where_field;
 }
