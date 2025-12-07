@@ -2,15 +2,18 @@
 #include "../../utils/ut_is_identifier/ut_is_identifier.hpp"
 #include "../../utils/ut_str_toupper/ut_str_toupper.hpp"
 
-void Parser::step_create_table() {
+void Parser::step_create_table()
+{
     auto is_table_name = Parser::peek_is_table_name("at CREATE: expected a Table name");
     if (!is_table_name) return;
     Parser::step = Step::create_table_opening_parens;
 }
 
-void Parser::step_create_table_opening_parens() {
+void Parser::step_create_table_opening_parens()
+{
     auto opening_parens = Parser::peek();
-    if (opening_parens != "(" || opening_parens.size() != 1) {
+    if (opening_parens != "(" || opening_parens.size() != 1)
+    {
         Parser::step = Step::error;
         Parser::error_message = "at CREATE: expected an opening parens";
         return;
@@ -19,15 +22,17 @@ void Parser::step_create_table_opening_parens() {
     Parser::step = Step::create_table_field_name;
 }
 
-void Parser::step_create_table_field_name() {
+void Parser::step_create_table_field_name()
+{
     auto identifier = Parser::peek();
-//    ! in case of an alternative for the primary key !
-//    if(identifier == "PRIMARY KEY") {
-//        Parser::Step = Step::primary_key_opening_parens;
-//        Parser::pop();
-//        return;
-//    }
-    if (!is_identifier(identifier)) {
+    //    ! in case of an alternative for the primary key !
+    //    if(identifier == "PRIMARY KEY") {
+    //        Parser::Step = Step::primary_key_opening_parens;
+    //        Parser::pop();
+    //        return;
+    //    }
+    if (!is_identifier(identifier))
+    {
         Parser::step = Step::error;
         Parser::error_message = "at CREATE: expected a Field name";
         return;
@@ -62,31 +67,37 @@ void Parser::step_create_table_field_type() {
             return;
         }
     }
-    // maybe I should add Field in the upper case, or IDK, because in IDE like
-    // DATAGRIP it works even with lowercase names of the tables
+
     Parser::pop();
+
     auto next_peek = Parser::peek();
-    if (next_peek == "PRIMARY KEY") {
+    str_toupper(next_peek);
+
+    if (next_peek == "PRIMARY") {
         Parser::step = Step::primary_key_as_type;
         return;
     }
-    if (next_peek == "FOREIGN KEY") {
+    if (next_peek == "FOREIGN") {
         Parser::step = Step::foreign_key_as_type;
         return;
     }
+
     Parser::q.append_field(Field(current_create_table_field_val, d_type));
     Parser::step = Step::create_table_comma_or_closing_parens;
 }
 
-void Parser::step_create_table_comma_or_closing_parens() {
+void Parser::step_create_table_comma_or_closing_parens()
+{
     auto comma_or_closing_paren = Parser::peek();
-    if (comma_or_closing_paren != "," and comma_or_closing_paren != ")") {
+    if (comma_or_closing_paren != "," and comma_or_closing_paren != ")")
+    {
         Parser::step = Step::error;
         Parser::error_message = "at CREATE: expected a comma or a closing parens";
         return;
     }
     Parser::pop();
-    if (comma_or_closing_paren == ",") {
+    if (comma_or_closing_paren == ",")
+    {
         Parser::step = Step::create_table_field_name;
         return;
     }

@@ -75,41 +75,60 @@ void Parser::step_insert_values_rword() {
 }
 
 void Parser::step_insert_values() {
-    auto pair = Parser::peek_quoted_with_length();
-    if (pair.second == 0) {
+    auto [first, second] = Parser::peek_quoted_with_length();
+    if (second == 0) {
         Parser::step = Step::error;
         Parser::error_message = "at INSERT: expected a value to insert";
         return;
     }
-    auto curr_insert_field = Parser::q.get_next_insert_field();
-    Parser::q.append_insert(
+
+    if (!Parser::q.get_insert_fields().empty()) {
+        const auto curr_insert_field = Parser::q.get_next_insert_field();
+        Parser::q.append_insert(
             Insert(curr_insert_field.value,
-                   pair.first,
-                   return_data_type(pair.first)));
+                   first,
+                   return_data_type(first)));
+    }
+    else {
+        Parser::q.append_insert(
+            Insert("",
+                   first,
+                   return_data_type(first)));
+    }
+
     Parser::pop();
     Parser::step = Step::insert_values_comma_or_closing_parens;
 }
 
 void Parser::step_insert_values_comma_or_closing_parens() {
-    auto comma_or_closing_parens = Parser::peek();
-    if (comma_or_closing_parens != "," and comma_or_closing_parens != ")") {
+    const auto comma_or_closing_parens = Parser::peek();
+    if (comma_or_closing_parens != "," && comma_or_closing_parens != ")") {
         Parser::step = Step::error;
         Parser::error_message = "at INSERT: expected a comma or a closing parens";
         return;
     }
+
     if (comma_or_closing_parens == ",") {
         Parser::pop();
         Parser::step = Step::insert_values;
         return;
     }
-    auto curr_insert_row = Parser::q.get_current_inserts();
-    if (curr_insert_row.size() != Parser::q.get_fields_size()) {
-        Parser::step = Step::error;
-        Parser::error_message = "at INSERT: size of inserts doesn't correspond to a number of fields in the table";
+
+    if (!Parser::q.get_insert_fields().empty()) {
+        if (const auto curr_insert_row = Parser::q.get_current_inserts(); curr_insert_row.size() != Parser::q.
+            get_fields_size()) {
+            Parser::step = Step::error;
+            Parser::error_message = "at INSERT: size of inserts doesn't correspond to a number of fields in the table";
+            return;
+        }
+    }
+
+    Parser::pop();
+    if (is_peek_empty()) {
+        pop_flag = true;
         return;
     }
-    Parser::pop();
-    if (is_peek_empty()) Parser::pop_flag = true;
+
     Parser::step = Step::insert_values_comma_before_opening_parens;
 }
 
