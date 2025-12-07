@@ -35,15 +35,19 @@ void Parser::step_select_from() {
     Parser::pop();
     Parser::step = Step::select_from_table;
 }
-
 void Parser::step_select_from_table() {
     auto is_table_name = Parser::peek_is_table_name("at SELECT: expected a name of the Table");
     if (!is_table_name) return;
-    Parser::pop();
-    if (!Parser::peek().empty()) {
-        Parser::error_message = "at DROP: improper continuation after name of the table";
-        Parser::step = Step::error;
-        return;
+
+    auto next_token = peek();
+    str_toupper(next_token);
+
+    if (next_token.empty()) {
+        pop_flag = true;
+    } else if (next_token == "WHERE") {
+        step = Step::where;
+    } else {
+        error_message = "Unexpected token after table name in SELECT statement";
+        step = Step::error;
     }
-    Parser::pop_flag = true;
 }

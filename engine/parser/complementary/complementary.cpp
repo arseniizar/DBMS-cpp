@@ -92,6 +92,7 @@ void Parser::pop_whitespace() {
 }
 
 std::string Parser::peek() {
+    Parser::pop_whitespace();
     auto peeked = Parser::peek_with_length();
     return peeked.first;
 }

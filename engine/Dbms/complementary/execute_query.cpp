@@ -81,6 +81,7 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_create_table() {
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     auto table_name = Dbms::executor.q.get_table_name();
     auto conditions = Dbms::executor.q.get_conditions();
+
     if (!is_table_already_exist(table_name)) {
         std::string message = "at EXECUTION: unable to select columns from nonexistent table";
         Dbms::executor.error = Execution_error(message);
@@ -91,24 +92,63 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     if (!are_consistent_error.message.empty()) {
         return make_executor_error(are_consistent_error.message);
     }
-    if (!conditions.empty()) {
-        auto cols = table.find_cols_by_conditions(conditions);
-        ut_print(cols);
-        return make_executor_error("");
-    } else {
+
+    if (conditions.empty()) {
         if (Dbms::executor.q.get_fields().at(0).value == "*") {
             ut_print(table.get_columns());
-            return make_executor_error("");
-        }
-        auto selected_cols = std::vector<Column>();
-        for (auto &field: Dbms::executor.q.get_fields()) {
-            for (auto &col: table.get_columns()) {
-                if (col.get_name() == field.value) {
-                    selected_cols.push_back(col);
+        } else {
+            auto selected_cols = std::vector<Column>();
+            for (auto &field: Dbms::executor.q.get_fields()) {
+                for (auto &col: table.get_columns()) {
+                    if (col.get_name() == field.value) {
+                        selected_cols.push_back(col);
+                    }
                 }
             }
+            ut_print(selected_cols);
         }
-        ut_print(selected_cols);
+        return make_executor_error("");
+    } else {
+        std::vector<size_t> matched_row_indices;
+        auto& condition = conditions[0];
+        Column condition_col = table.find_column_by_name(condition.get_field());
+        if (condition_col.empty()) {
+            return make_executor_error("at EXECUTION: column from WHERE clause does not exist");
+        }
+
+        const auto& all_rows = condition_col.get_rows();
+        for (size_t i = 0; i < all_rows.size(); ++i) {
+            if (predicate(get_operator(const_cast<Condition&>(condition)), all_rows[i], condition.get_operand2())) {
+                matched_row_indices.push_back(i);
+            }
+        }
+
+        auto requested_fields = Dbms::executor.q.get_fields();
+        std::vector<Column> result_cols;
+
+        if (requested_fields.size() == 1 && requested_fields[0].value == "*") {
+             requested_fields.clear();
+             for(auto& col : table.get_columns()){
+                 requested_fields.push_back({col.get_name(), col.get_type()});
+             }
+        }
+
+        for (const auto& field : requested_fields) {
+            Column original_col = table.find_column_by_name(field.value);
+            if (original_col.empty()) {
+                return make_executor_error("at EXECUTION: selected column '" + field.value + "' does not exist");
+            }
+
+            Column result_col(std::vector<Row>(), original_col.get_name(), original_col.get_type());
+            for (size_t index : matched_row_indices) {
+                if (index < original_col.get_rows().size()) {
+                    result_col.add_row(original_col.get_rows()[index]);
+                }
+            }
+            result_cols.push_back(result_col);
+        }
+
+        ut_print(result_cols);
         return make_executor_error("");
     }
 }

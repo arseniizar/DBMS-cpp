@@ -125,7 +125,7 @@ public:
 
     std::string get_command();
 
-    std::vector<Field> get_insert_fields();
+    std::vector<Field> get_insert_fields() const;
 
     Field get_next_insert_field();
 
