@@ -43,6 +43,7 @@ TEST_F(DbmsIntegrationTest, InsertSuccessfullyAddsData) {
 }
 
 TEST_F(DbmsIntegrationTest, FullCycleCreateInsertSelect) {
+    std::cout << "TEST" << std::endl;
     dbms.process_query("CREATE TABLE data (key NVARCHAR2, value INTEGER)");
     dbms.process_query("INSERT INTO data (key, value) VALUES ('test', '100')");
 
@@ -53,7 +54,8 @@ TEST_F(DbmsIntegrationTest, FullCycleCreateInsertSelect) {
 TEST_F(DbmsIntegrationTest, FailsOnInsertWithMismatchedColumnCount) {
     dbms.process_query("CREATE TABLE users (id INTEGER, name NVARCHAR2)");
     std::string result = dbms.process_query("INSERT INTO users (id) VALUES ('1', 'superfluous name')");
-    EXPECT_NE(result.find("nonexistent columns"), std::string::npos);
+    EXPECT_NE(result.find("at INSERT: size of inserts doesn't correspond to a number of fields in the table"),
+              std::string::npos);
 }
 
 TEST_F(DbmsIntegrationTest, FailsOnInsertWithMismatchedDataType) {

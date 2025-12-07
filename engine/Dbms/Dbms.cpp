@@ -286,8 +286,29 @@ std::string Dbms::process_query(const std::string &input) {
     if (lower_input == "exit") {
         return "exit";
     }
-    parse_and_execute(input);
-    parser.clean_error();
-    executor.clean_error();
-    return "Query executed";
+
+    std::stringstream buffer;
+    auto old_cout_buf = std::cout.rdbuf(buffer.rdbuf());
+
+    auto [query, parser_error] = parse_query(input);
+
+    if (!parser_error.message.empty()) {
+        std::cout.rdbuf(old_cout_buf);
+        return parser_error.message;
+    }
+
+    is_dbms_changed = true;
+    auto [columns, execution_error] = execute_query(query);
+
+    std::cout.rdbuf(old_cout_buf);
+
+    if (!execution_error.message.empty()) {
+        return execution_error.message;
+    }
+
+    if (!buffer.str().empty()) {
+        return buffer.str();
+    }
+
+    return "Query executed successfully";
 }

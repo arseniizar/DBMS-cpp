@@ -96,7 +96,7 @@ inline std::vector<std::string> reserved_words{
         "FROM", "NVARCHAR2",
         "DATE", "INTEGER",
         "DROP",
-        "PRIMARY", "KEY", "FOREIGN", "REFERENCES"
+        "PRIMARY", "FOREIGN", "REFERENCES"
 };
 
 
