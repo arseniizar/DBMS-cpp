@@ -59,7 +59,8 @@ add_executable(unit_tests ${TEST_SOURCES}
         tests/parser_query_types_test.cpp
         tests/dbms_integration_test.cpp
         tests/dbms_group_by_test.cpp
-        tests/dbms_having_test.cpp)
+        tests/dbms_having_test.cpp
+        tests/dbms_update_test.cpp)
 
 target_link_libraries(unit_tests PRIVATE
         DatabaseLib

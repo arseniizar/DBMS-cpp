@@ -6,6 +6,16 @@
 #include <set>
 #include <map>
 
+void Dbms::update_recent_change(Query& q) {
+    const auto rec_c = recent_change(&q);
+    Dbms::add_rec_change(rec_c);
+    Dbms::queries.push_back(q);
+    if (!Dbms::executor.get_error().message.empty())
+        fmt::println("{}", Dbms::executor.get_error().message);
+    else fmt::println("EXECUTED SUCCESSFULLY");
+}
+
+
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
     Dbms::executor.set_query(q);
     Dbms::executor.execute();
@@ -32,6 +42,10 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
         }
         goto def;
     }
+    case Q_action::UPDATE: {
+        pair = Dbms::execute_update();
+        goto def;
+    }
     case Q_action::DROP: {
         pair = Dbms::drop_table(Dbms::executor.q.get_table_name());
         if (!pair.second.message.empty()) {
@@ -43,17 +57,18 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
     def:
     default: {
         std::string table_name = Dbms::executor.tmp_t.get_table_name();
-        Table table = Dbms::find_table_by_name(Dbms::executor.tmp_t.get_table_name());
-        // checking whether query cols names are the same as the cols of table
-        auto are_cols_consistent = ut_contains_elems(
-            table.get_columns_names(),
-            Table("func", pair.first).get_columns_names()
-        );
-        if (!are_cols_consistent
-            and Dbms::executor.q.get_query_type() != Query_type::Select) {
-            Dbms::executor.error = Execution_error("at EXECUTION: provided fields do not exist in the table");
+        if (!table_name.empty()) {
+            Table table = Dbms::find_table_by_name(table_name);
+            auto are_cols_consistent = ut_contains_elems(
+                table.get_columns_names(),
+                Table("func", pair.first).get_columns_names()
+            );
+            if (!are_cols_consistent
+                and Dbms::executor.q.get_query_type() != Query_type::Select) {
+                Dbms::executor.error = Execution_error("at EXECUTION: provided fields do not exist in the table");
+            }
+            q.set_p_table(&table);
         }
-        q.set_p_table(&table);
         auto rec_c = recent_change(&q);
         Dbms::add_rec_change(rec_c);
         Dbms::queries.push_back(q);
@@ -220,6 +235,18 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_insert() {
     return std::make_pair(Dbms::executor.tmp_cols, Execution_error());
 }
 
+std::pair<std::vector<Column>, Execution_error> Dbms::execute_update() {
+    fmt::println("!!! LOG: Entered Dbms::execute_update()");
+
+    auto table_name = executor.q.get_table_name();
+    if (!is_table_already_exist(table_name)) {
+        return make_executor_error("at EXECUTION: table '" + table_name + "' does not exist");
+    }
+
+
+    return make_executor_error("");
+}
+
 std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& input_cols,
                                                        const std::vector<std::string>& group_by_cols_names,
                                                        const std::vector<Field>& requested_fields,
@@ -243,12 +270,9 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
         groups[group_by_column->get_rows()[i].get_data()].push_back(i);
     }
 
-    // Створюємо тимчасовий результат після групування
     Table grouped_table;
-    // 1. Стовпець, по якому групували
     Column grouped_col({}, group_by_col_name, group_by_column->get_type());
-    // 2. Стовпець з агрегацією (наприклад, COUNT)
-    Column agg_col({}, "COUNT(*)", Data_type::INTEGER); // Спрощено для COUNT(*)
+    Column agg_col({}, "COUNT(*)", Data_type::INTEGER);
 
     for (auto const& [key, val] : groups) {
         grouped_col.add_row(Row(key, return_data_type(key)));
@@ -257,9 +281,8 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
     grouped_table.insert_column(grouped_col);
     grouped_table.insert_column(agg_col);
 
-    // Фільтрація HAVING
     if (!having_conditions.empty()) {
-        const auto& condition = having_conditions[0]; // Спрощено
+        const auto& condition = having_conditions[0];
         std::string operand1 = condition.operand1;
         std::transform(operand1.begin(), operand1.end(), operand1.begin(), ::toupper);
 
@@ -268,7 +291,6 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
             having_check_col = &agg_col;
         }
         else {
-            // Це колонка, по якій групували
             having_check_col = &grouped_col;
         }
 
@@ -280,7 +302,6 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
             }
         }
 
-        // Створюємо фінальні відфільтровані колонки
         Table final_table;
         for (auto& original_col : grouped_table.get_columns()) {
             Column filtered_col({}, original_col.get_name(), original_col.get_type());
@@ -292,7 +313,6 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
         grouped_table = final_table;
     }
 
-    // Формуємо вивід згідно SELECT
     std::vector<Column> final_result_cols;
     for (const auto& field : requested_fields) {
         std::string field_name = field.value;
