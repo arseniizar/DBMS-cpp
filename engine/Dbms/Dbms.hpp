@@ -76,10 +76,11 @@ private:
     std::pair<std::vector<Column>, Execution_error> execute_delete_from();
 
     std::pair<std::vector<Column>, Execution_error> execute_insert();
+    std::vector<Column> execute_group_by_with_having(std::vector<Column>& input_cols,
+                                                     const std::vector<std::string>& group_by_cols_names,
+                                                     const std::vector<Field>& requested_fields,
+                                                     const std::vector<Condition>& having_conditions);
 
-    std::vector<Column> execute_group_by(std::vector<Column>& input_cols,
-                                         const std::vector<std::string>& group_by_cols_names,
-                                         const std::vector<Field>& requested_fields);
 
     void start();
 

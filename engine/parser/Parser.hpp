@@ -97,7 +97,8 @@ inline std::vector<std::string> reserved_words{
         "DATE", "INTEGER",
         "GROUP BY", "HAVING",
         "DROP",
-        "PRIMARY", "FOREIGN", "REFERENCES"
+        "PRIMARY", "FOREIGN", "REFERENCES",
+        "COUNT"
 };
 
 

@@ -98,13 +98,25 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     }
 
     std::vector<Column> where_filtered_cols;
+    std::vector<Condition> where_conditions;
+    std::vector<Condition> having_conditions;
 
-    if (conditions.empty()) {
+    for (const auto& cond : conditions) {
+        if (cond.c_type == Condition_type::WHERE) {
+            where_conditions.push_back(cond);
+        }
+        else {
+            having_conditions.push_back(cond);
+        }
+    }
+
+
+    if (where_conditions.empty()) {
         where_filtered_cols = table.get_columns();
     }
     else {
         std::vector<size_t> matched_row_indices;
-        auto& condition = conditions[0];
+        auto& condition = where_conditions[0];
         Column condition_col = table.find_column_by_name(condition.get_field());
 
         if (condition_col.empty()) {
@@ -130,14 +142,17 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     }
 
     auto group_by_cols_names = Dbms::executor.q.get_group_by_columns();
-
     std::vector<Column> final_cols;
 
     if (!group_by_cols_names.empty()) {
         auto requested_fields = Dbms::executor.q.get_fields();
-        final_cols = execute_group_by(where_filtered_cols, group_by_cols_names, requested_fields);
+        final_cols = execute_group_by_with_having(where_filtered_cols, group_by_cols_names, requested_fields,
+                                                  having_conditions);
     }
     else {
+        if (!having_conditions.empty()) {
+            return make_executor_error("at EXECUTION: HAVING clause requires a GROUP BY clause");
+        }
         if (auto requested_fields = Dbms::executor.q.get_fields(); requested_fields.size() == 1 && requested_fields[0].
             value == "*") {
             final_cols = where_filtered_cols;
@@ -205,53 +220,93 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_insert() {
     return std::make_pair(Dbms::executor.tmp_cols, Execution_error());
 }
 
-std::vector<Column> Dbms::execute_group_by(std::vector<Column>& input_cols,
-                                           const std::vector<std::string>& group_by_cols_names,
-                                           const std::vector<Field>& requested_fields) {
+std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& input_cols,
+                                                       const std::vector<std::string>& group_by_cols_names,
+                                                       const std::vector<Field>& requested_fields,
+                                                       const std::vector<Condition>& having_conditions) {
     if (input_cols.empty() || group_by_cols_names.empty()) {
-        return input_cols;
+        return {};
     }
 
     const std::string& group_by_col_name = group_by_cols_names[0];
-
-    Column group_by_column;
-    Column any_column_for_count_star;
-    bool found = false;
-    if (!input_cols.empty()) any_column_for_count_star = input_cols[0];
-
+    Column* group_by_column = nullptr;
     for (auto& col : input_cols) {
         if (col.get_name() == group_by_col_name) {
-            group_by_column = col;
-            found = true;
+            group_by_column = &col;
+            break;
         }
     }
-    if (!found) return {};
+    if (!group_by_column) return {};
 
     std::map<std::string, std::vector<size_t>> groups;
-    for (size_t i = 0; i < group_by_column.get_rows().size(); ++i) {
-        groups[group_by_column.get_rows()[i].get_data()].push_back(i);
+    for (size_t i = 0; i < group_by_column->get_rows().size(); ++i) {
+        groups[group_by_column->get_rows()[i].get_data()].push_back(i);
     }
 
-    std::vector<Column> final_result_cols;
+    // Створюємо тимчасовий результат після групування
+    Table grouped_table;
+    // 1. Стовпець, по якому групували
+    Column grouped_col({}, group_by_col_name, group_by_column->get_type());
+    // 2. Стовпець з агрегацією (наприклад, COUNT)
+    Column agg_col({}, "COUNT(*)", Data_type::INTEGER); // Спрощено для COUNT(*)
 
-    for (const auto& field : requested_fields) {
-        if (field.agg_t == Aggregation_type::NONE) {
-            if (field.value == group_by_col_name) {
-                Column result_col({}, field.value, group_by_column.get_type());
-                for (const auto& key : groups | std::views::keys) {
-                    result_col.add_row(Row(key, return_data_type(key)));
-                }
-                final_result_cols.push_back(result_col);
+    for (auto const& [key, val] : groups) {
+        grouped_col.add_row(Row(key, return_data_type(key)));
+        agg_col.add_row(Row(std::to_string(val.size()), Data_type::INTEGER));
+    }
+    grouped_table.insert_column(grouped_col);
+    grouped_table.insert_column(agg_col);
+
+    // Фільтрація HAVING
+    if (!having_conditions.empty()) {
+        const auto& condition = having_conditions[0]; // Спрощено
+        std::string operand1 = condition.operand1;
+        std::transform(operand1.begin(), operand1.end(), operand1.begin(), ::toupper);
+
+        Column* having_check_col = nullptr;
+        if (operand1 == "COUNT(*)") {
+            having_check_col = &agg_col;
+        }
+        else {
+            // Це колонка, по якій групували
+            having_check_col = &grouped_col;
+        }
+
+        std::vector<size_t> matched_indices;
+        for (size_t i = 0; i < having_check_col->get_rows().size(); ++i) {
+            if (predicate(get_operator(const_cast<Condition&>(condition)), having_check_col->get_rows()[i],
+                          condition.operand2)) {
+                matched_indices.push_back(i);
             }
         }
-        else if (field.agg_t == Aggregation_type::COUNT) {
-            std::string new_col_name = "COUNT(" + field.value + ")";
-            Column count_col({}, new_col_name, Data_type::INTEGER);
-            for (const auto& value : groups | std::views::values) {
-                size_t count = value.size();
-                count_col.add_row(Row(std::to_string(count), Data_type::INTEGER));
+
+        // Створюємо фінальні відфільтровані колонки
+        Table final_table;
+        for (auto& original_col : grouped_table.get_columns()) {
+            Column filtered_col({}, original_col.get_name(), original_col.get_type());
+            for (size_t index : matched_indices) {
+                filtered_col.add_row(original_col.get_rows()[index]);
             }
-            final_result_cols.push_back(count_col);
+            final_table.insert_column(filtered_col);
+        }
+        grouped_table = final_table;
+    }
+
+    // Формуємо вивід згідно SELECT
+    std::vector<Column> final_result_cols;
+    for (const auto& field : requested_fields) {
+        std::string field_name = field.value;
+        if (field.agg_t == Aggregation_type::COUNT) {
+            field_name = "COUNT(" + field.value + ")";
+            std::transform(field_name.begin(), field_name.end(), field_name.begin(), ::toupper);
+        }
+
+        for (auto& col : grouped_table.get_columns()) {
+            std::string col_name_upper = col.get_name();
+            std::transform(col_name_upper.begin(), col_name_upper.end(), col_name_upper.begin(), ::toupper);
+            if (col.get_name() == field.value || col_name_upper == "COUNT(*)") {
+                final_result_cols.push_back(col);
+            }
         }
     }
 
@@ -262,10 +317,10 @@ std::pair<std::vector<Column>, Execution_error> Dbms::drop_table(std::string con
     if (!is_table_already_exist(table_name)) {
         return make_executor_error("at EXECUTION: unable to drop a nonexistent table");
     }
-    auto it = std::find_if(Dbms::tables.begin(), Dbms::tables.end(),
-                           [&table_name](Table& t) {
-                               return t.get_table_name() == table_name;
-                           });
+    const auto it = std::ranges::find_if(Dbms::tables,
+                                         [&table_name](Table& t) {
+                                             return t.get_table_name() == table_name;
+                                         });
     Dbms::tables.erase(it);
     fmt::println("dropped table: {}", table_name);
     return make_executor_error("");

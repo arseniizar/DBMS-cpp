@@ -80,6 +80,9 @@ std::vector<std::string> Parser::split_string_in_words() {
 std::string Parser::pop() {
     auto pair = Parser::peek_with_length();
     if (pair.first.empty()) Parser::pop_flag = true;
+
+    fmt::println("  -> Popping token: '{}' (length: {})", pair.first, pair.second);
+
     Parser::index += pair.second;
     Parser::pop_whitespace();
     return pair.first;

@@ -27,7 +27,12 @@ void Parser::step_group_by_field() {
     str_toupper(next_token);
     if (next_token == "HAVING") {
         step = Step::having;
-    } else {
+    }
+    else if (next_token.empty()) {
         pop_flag = true;
+    }
+    else {
+        step = Step::error;
+        error_message = "Unexpected token after GROUP BY clause";
     }
 }

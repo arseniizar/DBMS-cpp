@@ -27,8 +27,8 @@ void Parser::step_select_field() {
         agg_field.agg_t = Aggregation_type::COUNT;
         agg_field.d_t = Data_type::TABLE_SELECT;
         q.append_field(agg_field);
-
-    } else {
+    }
+    else {
         identifier_or_func = pop();
         if (!is_identifier_or_asterisk(identifier_or_func)) {
             step = Step::error;
@@ -43,9 +43,11 @@ void Parser::step_select_field() {
 
     if (next_token == "FROM") {
         step = Step::select_from;
-    } else if (next_token == ",") {
+    }
+    else if (next_token == ",") {
         step = Step::select_comma;
-    } else {
+    }
+    else {
         step = Step::error;
         error_message = "at SELECT: expected ',' or 'FROM' after field";
     }
@@ -79,11 +81,14 @@ void Parser::step_select_from_table() {
 
     if (next_token == "WHERE") {
         step = Step::where;
-    } else if (next_token == "GROUP BY") {
+    }
+    else if (next_token == "GROUP BY") {
         step = Step::group_by;
-    } else if (next_token.empty()) {
+    }
+    else if (next_token.empty()) {
         pop_flag = true;
-    } else {
+    }
+    else {
         step = Step::error;
         error_message = "Unexpected token '" + peek() + "' after table name";
     }

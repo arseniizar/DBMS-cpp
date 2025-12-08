@@ -11,6 +11,11 @@
 #include "fmt/core.h"
 #include "fmt/ranges.h"
 
+enum struct Condition_type {
+    WHERE,
+    HAVING
+};
+
 struct Condition {
 public:
     std::string operand1;
@@ -19,6 +24,7 @@ public:
     std::string operand2;
     bool operand2_is_field;
     Data_type d_t = Data_type::UNKNOWN;
+    Condition_type c_type = Condition_type::WHERE;
 
     Condition(std::string const &identifier, bool b) {
         Condition::operand1 = identifier;
@@ -29,6 +35,12 @@ public:
         Condition::operand1 = identifier;
         Condition::operand1_is_field = b;
         Condition::d_t = t;
+    }
+
+    Condition(std::string const &identifier, bool b, Condition_type type) {
+        Condition::operand1 = identifier;
+        Condition::operand1_is_field = b;
+        Condition::c_type = type;
     }
 
     auto to_string() {

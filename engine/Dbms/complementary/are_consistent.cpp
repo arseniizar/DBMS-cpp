@@ -65,40 +65,43 @@ std::pair<std::vector<Column>, Execution_error> Dbms::are_conditions_consistent(
     if (Dbms::executor.q.get_conditions().empty()) {
         return make_executor_error("");
     }
-    auto condition_col_names = std::vector<std::string>();
+
+    auto table_col_names = table.get_columns_names();
+
     for (auto &condition: Dbms::executor.q.get_conditions()) {
-        if (condition.operand1_is_field)
-            condition_col_names.push_back(condition.operand1);
-        else if (condition.operand2_is_field)
-            condition_col_names.push_back(condition.operand2);
-        else {
-            std::string message = "at EXECUTION: improper condition for WHERE";
+        std::string field_to_check;
+
+        if (condition.operand1_is_field) {
+            field_to_check = condition.operand1;
+        } else if (condition.operand2_is_field) {
+            field_to_check = condition.operand2;
+        } else {
+            continue;
+        }
+
+        if (condition.c_type == Condition_type::HAVING) {
+            std::string upper_field = field_to_check;
+            std::transform(upper_field.begin(), upper_field.end(), upper_field.begin(), ::toupper);
+            if (upper_field.rfind("COUNT(", 0) == 0) {
+                continue;
+            }
+        }
+
+        bool found = false;
+        for(const auto& col_name : table_col_names) {
+            if (col_name == field_to_check) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            std::string message = "at EXECUTION: unable to access nonexistent column '" + field_to_check + "' in condition";
             Dbms::executor.error = Execution_error(message);
             return make_executor_error(message);
         }
     }
-    bool are_col_names_consistent = ut_contains_elems(
-            Dbms::find_table_by_name(Dbms::executor.q.get_table_name()).get_columns_names(),
-            condition_col_names
-    );
-    if (!are_col_names_consistent) {
-        std::string message = "at EXECUTION: unable to access nonexistent columns";
-        Dbms::executor.error = Execution_error(message);
-        return make_executor_error(message);
-    }
-//    std::vector<Data_type> conditions_d_t;
-//    std::vector<Data_type> cols_d_t;
-//    for (auto &condition: Dbms::executor.q.get_conditions()) conditions_d_t.push_back(condition.d_t);
-//    for (auto &col: table.get_columns()) conditions_d_t.push_back(col.get_type());
-//    bool are_types_consistent = ut_contains_elems(
-//            cols_d_t,
-//            conditions_d_t
-//    );
-//    if (!are_types_consistent) {
-//        std::string message = "at EXECUTION: improper condition for WHERE (improper operator for that type of data)";
-//        Dbms::executor.error = Execution_error(message);
-//        return make_executor_error(message);
-//    }
+
     return make_executor_error("");
 }
 
