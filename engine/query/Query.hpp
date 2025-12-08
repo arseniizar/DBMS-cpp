@@ -22,7 +22,7 @@ enum struct Query_type {
     Insert,
     Delete,
     Create,
-    //Update
+    Update
 };
 
 inline std::string query_type_str[] = {
@@ -31,7 +31,8 @@ inline std::string query_type_str[] = {
         "Insert",
         "Delete",
         "Create",
-        "Drop"
+        "Drop",
+        "Update"
 };
 
 struct Query {
@@ -74,7 +75,9 @@ public:
 
     void append_alias(std::string const &key, std::string const &value);
 
-    void append_update(std::string const &key, std::string const &value);
+    void append_update(const Update& u);
+
+    std::vector<Update> get_updates();
 
     void append_condition(const Condition &condition);
 

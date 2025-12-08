@@ -48,8 +48,12 @@ void Query::append_alias(std::string const& key, std::string const& value) {
     Query::aliases[key] = value;
 }
 
-void Query::append_update(std::string const& key, std::string const& value) {
-    //    Query::updates[key] = value;
+void Query::append_update(const Update& u) {
+    Query::updates.push_back(u);
+}
+
+std::vector<Update> Query::get_updates() {
+    return Query::updates;
 }
 
 void Query::append_condition(const Condition& condition) {

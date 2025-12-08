@@ -9,6 +9,7 @@ void Parser::step_update_table() {
 
 void Parser::step_update_set() {
     auto set = Parser::peek();
+    str_toupper(set);
     if (set != "SET") {
         Parser::step = Step::error;
         Parser::error_message = "at UPDATE: expected keyword SET";
@@ -48,11 +49,29 @@ void Parser::step_update_value() {
         Parser::error_message = "at UPDATE: expected a value to update with";
         return;
     }
-    Parser::q.append_update(Parser::next_update_field, pair.first);
+    Field updated_field(next_update_field, Data_type::UPDATE_COL);
+    Update u;
+    u.field_to_update = updated_field;
+    u.new_value = pair.first;
+    u.d_t = return_data_type(pair.first);
+    Parser::q.append_update(u);
+
     Parser::next_update_field.erase();
     Parser::pop();
-    if (is_peek_empty()) Parser::pop_flag = true;
-    else Parser::set_additional_step();
+
+    std::string next_token = peek();
+    str_toupper(next_token);
+
+    if (next_token.empty()) {
+        pop_flag = true;
+    } else if (next_token == ",") {
+        step = Step::update_comma;
+    } else if (next_token == "WHERE") {
+        step = Step::where;
+    } else {
+        step = Step::error;
+        error_message = "at UPDATE: unexpected token after value";
+    }
 }
 
 void Parser::step_update_comma() {
