@@ -19,65 +19,48 @@ void Dbms::update_recent_change(Query& q) {
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
     Dbms::executor.set_query(q);
     Dbms::executor.execute();
-    Execution_result rec = Dbms::executor.get_execution_res();
-    auto pair = std::pair<std::vector<Column>, Execution_error>();
+
+    std::pair<std::vector<Column>, Execution_error> result_pair;
+
     switch (Dbms::executor.action) {
-    case Q_action::SELECT: {
-        pair = Dbms::execute_select();
-        goto def;
+        case Q_action::SELECT:
+            result_pair = Dbms::execute_select();
+            break;
+        case Q_action::INSERT:
+            result_pair = Dbms::execute_insert();
+            break;
+        case Q_action::DELETE:
+            result_pair = Dbms::execute_delete_from();
+            break;
+        case Q_action::UPDATE:
+            result_pair = Dbms::execute_update();
+            break;
+        case Q_action::CREATE:
+            result_pair = Dbms::execute_create_table();
+            break;
+        case Q_action::DROP:
+            result_pair = Dbms::drop_table(Dbms::executor.q.get_table_name());
+            break;
+        default:
+            result_pair = make_executor_error("Unknown query action");
+            break;
     }
-    case Q_action::INSERT: {
-        pair = Dbms::execute_insert();
-        goto def;
+
+    if (!result_pair.second.message.empty()) {
+        Dbms::executor.error = result_pair.second;
     }
-    case Q_action::DELETE: {
-        pair = Dbms::execute_delete_from();
-        goto def;
+
+    auto rec_c = recent_change(&q);
+    Dbms::add_rec_change(rec_c);
+    Dbms::queries.push_back(q);
+
+    if (!Dbms::executor.get_error().message.empty()) {
+        fmt::println("{}", Dbms::executor.get_error().message);
+    } else {
+        fmt::println("EXECUTED SUCCESSFULLY");
     }
-    case Q_action::CREATE: {
-        pair = Dbms::execute_create_table();
-        if (!pair.second.message.empty()) {
-            fmt::println("{}", pair.second.message);
-            return make_executor_error(pair.second.message);
-        }
-        goto def;
-    }
-    case Q_action::UPDATE: {
-        pair = Dbms::execute_update();
-        goto def;
-    }
-    case Q_action::DROP: {
-        pair = Dbms::drop_table(Dbms::executor.q.get_table_name());
-        if (!pair.second.message.empty()) {
-            fmt::println("{}", pair.second.message);
-            return make_executor_error(pair.second.message);
-        }
-        return make_executor_error("");
-    }
-    def:
-    default: {
-        std::string table_name = Dbms::executor.tmp_t.get_table_name();
-        if (!table_name.empty()) {
-            Table table = Dbms::find_table_by_name(table_name);
-            auto are_cols_consistent = ut_contains_elems(
-                table.get_columns_names(),
-                Table("func", pair.first).get_columns_names()
-            );
-            if (!are_cols_consistent
-                and Dbms::executor.q.get_query_type() != Query_type::Select) {
-                Dbms::executor.error = Execution_error("at EXECUTION: provided fields do not exist in the table");
-            }
-            q.set_p_table(&table);
-        }
-        auto rec_c = recent_change(&q);
-        Dbms::add_rec_change(rec_c);
-        Dbms::queries.push_back(q);
-        if (!Dbms::executor.get_error().message.empty())
-            fmt::println("{}", Dbms::executor.get_error().message);
-        else fmt::println("EXECUTED SUCCESSFULLY");
-        return std::make_pair(Dbms::executor.tmp_cols, Dbms::executor.error);
-    }
-    }
+
+    return std::make_pair(result_pair.first, Dbms::executor.error);
 }
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_create_table() {
