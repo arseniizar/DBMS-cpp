@@ -189,6 +189,14 @@ Field Query::find_field_by_value(const std::string& value) {
     return {};
 }
 
+void Query::append_group_by_column(const std::string& col) {
+    Query::group_by_columns.push_back(col);
+}
+
+std::vector<std::string> Query::get_group_by_columns() {
+    return Query::group_by_columns;
+}
+
 void Query::set_current_update(Update const& u) {
     Query::updates.pop_back();
     Query::updates.push_back(u);
