@@ -2,7 +2,7 @@
 #include "../../utils/ut_is_identifier/ut_is_identifier.hpp"
 
 void Parser::step_select_field() {
-    auto identifier = Parser::peek();
+    const auto identifier = Parser::peek();
     if (!is_identifier_or_asterisk(identifier)) {
         Parser::step = Step::error;
         Parser::error_message = "at SELECT: expected a Field to select";
@@ -10,10 +10,10 @@ void Parser::step_select_field() {
     }
     Parser::q.append_field(Field(identifier, Data_type::TABLE_SELECT));
     Parser::pop();
-    auto from = Parser::peek();
-    if (from == "FROM" or identifier == "*") {
+    if (const auto from = Parser::peek(); from == "FROM" or identifier == "*") {
         Parser::step = Step::select_from;
-    } else {
+    }
+    else {
         Parser::step = Step::select_comma;
     }
 }
@@ -35,6 +35,7 @@ void Parser::step_select_from() {
     Parser::pop();
     Parser::step = Step::select_from_table;
 }
+
 void Parser::step_select_from_table() {
     auto is_table_name = Parser::peek_is_table_name("at SELECT: expected a name of the Table");
     if (!is_table_name) return;
@@ -44,9 +45,14 @@ void Parser::step_select_from_table() {
 
     if (next_token.empty()) {
         pop_flag = true;
-    } else if (next_token == "WHERE") {
+    }
+    else if (next_token == "WHERE") {
         step = Step::where;
-    } else {
+    }
+    else if (next_token == "GROUP_BY") {
+        step = Step::group_by;
+    }
+    else {
         error_message = "Unexpected token after table name in SELECT statement";
         step = Step::error;
     }

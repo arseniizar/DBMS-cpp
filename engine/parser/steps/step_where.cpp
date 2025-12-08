@@ -33,12 +33,12 @@ void Parser::step_where_operator() {
 
 void Parser::step_where_value() {
     auto curr_cond = Parser::q.get_current_condition();
-    auto identifier = Parser::peek();
 
-    if (is_identifier(identifier)) {
+    if (const auto identifier = Parser::peek(); is_identifier(identifier)) {
         curr_cond.operand2 = identifier;
         curr_cond.operand2_is_field = true;
-    } else {
+    }
+    else {
         auto pair = Parser::peek_quoted_with_length();
         if (pair.second == 0) {
             Parser::step = Step::error;
@@ -56,10 +56,14 @@ void Parser::step_where_value() {
 
     if (next_token == "AND") {
         Parser::step = Step::where_and;
-    } else if (next_token.empty()) {
+    }
+    else if (next_token == "GROUP BY") {
+        Parser::step = Step::group_by;
+    }
+    else if (next_token.empty()) {
         pop_flag = true;
-    } else {
-        // TODO: додати обробку GROUP BY тут.
+    }
+    else {
         pop_flag = true;
     }
 }

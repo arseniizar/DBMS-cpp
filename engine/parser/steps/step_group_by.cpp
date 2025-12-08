@@ -15,15 +15,19 @@ void Parser::step_group_by() {
 }
 
 void Parser::step_group_by_field() {
-    auto identifier = Parser::peek();
-    str_toupper(identifier);
-    std::string current_select_field_val = Parser::q.get_current_select_field().value;
-    if (!is_identifier(identifier) or identifier == current_select_field_val) {
-        Parser::step = Step::error;
-        Parser::error_message = "at GROUP BY: expected a Field to group by";
+    const auto identifier = pop();
+    if (!is_identifier(identifier)) {
+        step = Step::error;
+        error_message = "at GROUP BY: expected a column name";
         return;
     }
-    Parser::pop();
-    if (is_peek_empty()) Parser::pop_flag = true;
-    Parser::step = Step::having;
+    q.append_group_by_column(identifier);
+
+    auto next_token = peek();
+    str_toupper(next_token);
+    if (next_token == "HAVING") {
+        step = Step::having;
+    } else {
+        pop_flag = true;
+    }
 }
