@@ -26,7 +26,8 @@ public:
 
     Data_type get_type();
 
-    std::vector<Row> get_rows();
+    std::vector<Row>& get_rows();
+    [[nodiscard]] const std::vector<Row>& get_rows() const;
 
     void remove_row(Row &r);
 
@@ -34,7 +35,7 @@ public:
 
     void set_name(const std::string &name);
 
-    std::string get_name();
+    std::string get_name() const;
 
     void set_type(Data_type t);
 };

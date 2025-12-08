@@ -15,6 +15,9 @@
 #include "../parser/Parser.hpp"
 #include "../executor/Executor.hpp"
 #include "../backup/recent_change.hpp"
+#include <variant>
+
+using QueryResult = std::variant<std::string, std::vector<Column>>;
 
 struct Dbms {
 private:
@@ -47,6 +50,7 @@ private:
 
     std::pair<Query, Parse_error> parse_query(std::string const& str);
 
+    void update_recent_change(Query& q);
     std::pair<std::vector<Column>, Execution_error> execute_query(Query& q);
 
     bool check_relations();
@@ -76,6 +80,9 @@ private:
     std::pair<std::vector<Column>, Execution_error> execute_delete_from();
 
     std::pair<std::vector<Column>, Execution_error> execute_insert();
+
+    std::pair<std::vector<Column>, Execution_error> execute_update();
+
     std::vector<Column> execute_group_by_with_having(std::vector<Column>& input_cols,
                                                      const std::vector<std::string>& group_by_cols_names,
                                                      const std::vector<Field>& requested_fields,
@@ -97,7 +104,9 @@ public:
 
     void print_table_names();
 
-    std::string process_query(const std::string& input);
+    std::string process_query_to_string(const std::string& input);
+
+    QueryResult process_query(const std::string& input);
 
     Dbms();
 

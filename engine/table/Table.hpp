@@ -31,6 +31,8 @@ public:
 
     std::vector<Column> get_columns();
 
+    std::vector<Column>& get_columns_ref();
+
     void set_table_name(std::string const &name);
 
     Column find_column_by_name(std::string const &col_name);

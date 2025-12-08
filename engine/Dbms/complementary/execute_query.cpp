@@ -6,63 +6,61 @@
 #include <set>
 #include <map>
 
+void Dbms::update_recent_change(Query& q) {
+    const auto rec_c = recent_change(&q);
+    Dbms::add_rec_change(rec_c);
+    Dbms::queries.push_back(q);
+    if (!Dbms::executor.get_error().message.empty())
+        fmt::println("{}", Dbms::executor.get_error().message);
+    else fmt::println("EXECUTED SUCCESSFULLY");
+}
+
+
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
     Dbms::executor.set_query(q);
     Dbms::executor.execute();
-    Execution_result rec = Dbms::executor.get_execution_res();
-    auto pair = std::pair<std::vector<Column>, Execution_error>();
+
+    std::pair<std::vector<Column>, Execution_error> result_pair;
+
     switch (Dbms::executor.action) {
-    case Q_action::SELECT: {
-        pair = Dbms::execute_select();
-        goto def;
+        case Q_action::SELECT:
+            result_pair = Dbms::execute_select();
+            break;
+        case Q_action::INSERT:
+            result_pair = Dbms::execute_insert();
+            break;
+        case Q_action::DELETE:
+            result_pair = Dbms::execute_delete_from();
+            break;
+        case Q_action::UPDATE:
+            result_pair = Dbms::execute_update();
+            break;
+        case Q_action::CREATE:
+            result_pair = Dbms::execute_create_table();
+            break;
+        case Q_action::DROP:
+            result_pair = Dbms::drop_table(Dbms::executor.q.get_table_name());
+            break;
+        default:
+            result_pair = make_executor_error("Unknown query action");
+            break;
     }
-    case Q_action::INSERT: {
-        pair = Dbms::execute_insert();
-        goto def;
+
+    if (!result_pair.second.message.empty()) {
+        Dbms::executor.error = result_pair.second;
     }
-    case Q_action::DELETE: {
-        pair = Dbms::execute_delete_from();
-        goto def;
+
+    auto rec_c = recent_change(&q);
+    Dbms::add_rec_change(rec_c);
+    Dbms::queries.push_back(q);
+
+    if (!Dbms::executor.get_error().message.empty()) {
+        fmt::println("{}", Dbms::executor.get_error().message);
+    } else {
+        fmt::println("EXECUTED SUCCESSFULLY");
     }
-    case Q_action::CREATE: {
-        pair = Dbms::execute_create_table();
-        if (!pair.second.message.empty()) {
-            fmt::println("{}", pair.second.message);
-            return make_executor_error(pair.second.message);
-        }
-        goto def;
-    }
-    case Q_action::DROP: {
-        pair = Dbms::drop_table(Dbms::executor.q.get_table_name());
-        if (!pair.second.message.empty()) {
-            fmt::println("{}", pair.second.message);
-            return make_executor_error(pair.second.message);
-        }
-        return make_executor_error("");
-    }
-    def:
-    default: {
-        std::string table_name = Dbms::executor.tmp_t.get_table_name();
-        Table table = Dbms::find_table_by_name(Dbms::executor.tmp_t.get_table_name());
-        // checking whether query cols names are the same as the cols of table
-        auto are_cols_consistent = ut_contains_elems(
-            table.get_columns_names(),
-            Table("func", pair.first).get_columns_names()
-        );
-        if (!are_cols_consistent
-            and Dbms::executor.q.get_query_type() != Query_type::Select) {
-            Dbms::executor.error = Execution_error("at EXECUTION: provided fields do not exist in the table");
-        }
-        q.set_p_table(&table);
-        auto rec_c = recent_change(&q);
-        Dbms::add_rec_change(rec_c);
-        Dbms::queries.push_back(q);
-        if (!Dbms::executor.get_error().message.empty())
-            fmt::println("{}", Dbms::executor.get_error().message);
-        else fmt::println("EXECUTED SUCCESSFULLY");
-        return std::make_pair(Dbms::executor.tmp_cols, Dbms::executor.error);
-    }
-    }
+
+    return std::make_pair(result_pair.first, Dbms::executor.error);
 }
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_create_table() {
@@ -220,6 +218,86 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_insert() {
     return std::make_pair(Dbms::executor.tmp_cols, Execution_error());
 }
 
+std::pair<std::vector<Column>, Execution_error> Dbms::execute_update() {
+    const auto table_name = executor.q.get_table_name();
+    if (!is_table_already_exist(table_name)) {
+        return make_executor_error("at EXECUTION: table '" + table_name + "' does not exist");
+    }
+
+    auto& table_to_update = *std::ranges::find_if(tables,
+                                                  [&](Table& t) { return t.get_table_name() == table_name; });
+
+    auto updates = executor.q.get_updates();
+    auto conditions = executor.q.get_conditions();
+
+    auto& table_columns = table_to_update.get_columns_ref();
+
+    for (const auto& u : updates) {
+        bool column_exists = false;
+        for (auto& c : table_columns) {
+            if (c.get_name() == u.field_to_update.value) {
+                column_exists = true;
+                break;
+            }
+        }
+        if (!column_exists) {
+            return make_executor_error(
+                "at EXECUTION: column '" + u.field_to_update.value + "' does not exist in table '" + table_name + "'");
+        }
+    }
+
+    std::vector<size_t> row_indices_to_update;
+
+    if (conditions.empty()) {
+        if (!table_columns.empty()) {
+            for (size_t i = 0; i < table_columns[0].get_rows().size(); ++i) {
+                row_indices_to_update.push_back(i);
+            }
+        }
+    }
+    else {
+        auto& condition = conditions[0];
+        Column* condition_col = nullptr;
+        for (auto& col : table_columns) {
+            if (col.get_name() == condition.get_field()) {
+                condition_col = &col;
+                break;
+            }
+        }
+
+        if (!condition_col) {
+            return make_executor_error(
+                "at EXECUTION: column '" + condition.get_field() + "' from WHERE clause does not exist");
+        }
+
+        const auto& rows = condition_col->get_rows();
+        for (size_t i = 0; i < rows.size(); ++i) {
+            if (predicate(get_operator(const_cast<Condition&>(condition)), rows[i], condition.get_operand2())) {
+                row_indices_to_update.push_back(i);
+            }
+        }
+    }
+
+    for (size_t row_index : row_indices_to_update) {
+        for (const auto& u : updates) {
+            for (auto& table_col : table_columns) {
+                if (table_col.get_name() == u.field_to_update.value) {
+                    if (return_data_type(u.new_value) != table_col.get_type()) {
+                        return make_executor_error(
+                            "at EXECUTION: data type mismatch for column '" + table_col.get_name() + "'");
+                    }
+                    if (row_index < table_col.get_rows().size()) {
+                        table_col.get_rows()[row_index] = Row(u.new_value, u.d_t);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    return make_executor_error("");
+}
+
 std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& input_cols,
                                                        const std::vector<std::string>& group_by_cols_names,
                                                        const std::vector<Field>& requested_fields,
@@ -243,12 +321,9 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
         groups[group_by_column->get_rows()[i].get_data()].push_back(i);
     }
 
-    // Створюємо тимчасовий результат після групування
     Table grouped_table;
-    // 1. Стовпець, по якому групували
     Column grouped_col({}, group_by_col_name, group_by_column->get_type());
-    // 2. Стовпець з агрегацією (наприклад, COUNT)
-    Column agg_col({}, "COUNT(*)", Data_type::INTEGER); // Спрощено для COUNT(*)
+    Column agg_col({}, "COUNT(*)", Data_type::INTEGER);
 
     for (auto const& [key, val] : groups) {
         grouped_col.add_row(Row(key, return_data_type(key)));
@@ -257,9 +332,8 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
     grouped_table.insert_column(grouped_col);
     grouped_table.insert_column(agg_col);
 
-    // Фільтрація HAVING
     if (!having_conditions.empty()) {
-        const auto& condition = having_conditions[0]; // Спрощено
+        const auto& condition = having_conditions[0];
         std::string operand1 = condition.operand1;
         std::transform(operand1.begin(), operand1.end(), operand1.begin(), ::toupper);
 
@@ -268,7 +342,6 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
             having_check_col = &agg_col;
         }
         else {
-            // Це колонка, по якій групували
             having_check_col = &grouped_col;
         }
 
@@ -280,7 +353,6 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
             }
         }
 
-        // Створюємо фінальні відфільтровані колонки
         Table final_table;
         for (auto& original_col : grouped_table.get_columns()) {
             Column filtered_col({}, original_col.get_name(), original_col.get_type());
@@ -292,7 +364,6 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
         grouped_table = final_table;
     }
 
-    // Формуємо вивід згідно SELECT
     std::vector<Column> final_result_cols;
     for (const auto& field : requested_fields) {
         std::string field_name = field.value;

@@ -7,7 +7,11 @@ Data_type Column::get_type() {
     return Column::type;
 }
 
-std::vector<Row> Column::get_rows() {
+std::vector<Row>& Column::get_rows() {
+    return Column::rows;
+}
+
+const std::vector<Row>& Column::get_rows() const {
     return Column::rows;
 }
 
@@ -25,7 +29,7 @@ void Column::set_name(const std::string &name) {
     Column::col_name = name;
 }
 
-std::string Column::get_name() {
+std::string Column::get_name() const {
     return Column::col_name;
 }
 

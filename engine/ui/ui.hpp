@@ -2,8 +2,10 @@
 #define UI_HPP
 
 #include <QMainWindow>
-#include <Dbms/Dbms.hpp>
+#include <engine/Dbms/Dbms.hpp>
+#include "sqltablemodel.hpp"
 
+class QTableView;
 class QTextEdit;
 class QPushButton;
 
@@ -19,7 +21,11 @@ private:
     QPushButton *helpButton;
     QPushButton *loadButton;
     QTextEdit *outputEdit;
+    QTableView *tableView;
+    QTextEdit *messageEdit;
+
     Dbms dbms;
+    SqlTableModel *model;
 private slots:
     void onRunButtonClicked();
     void onListTablesClicked();

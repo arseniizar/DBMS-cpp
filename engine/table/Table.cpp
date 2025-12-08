@@ -5,6 +5,10 @@ std::vector<Column> Table::get_columns() {
     return Table::columns;
 }
 
+std::vector<Column>& Table::get_columns_ref() {
+    return Table::columns;
+}
+
 void Table::set_table_name(std::string const &name) {
     Table::table_name = name;
 }
