@@ -70,23 +70,21 @@ void Parser::step_select_from() {
 }
 
 void Parser::step_select_from_table() {
-    auto is_table_name = Parser::peek_is_table_name("at SELECT: expected a name of the Table");
-    if (!is_table_name) return;
+    if (!peek_is_table_name("at SELECT: expected a name of the Table")) {
+        return;
+    }
 
-    auto next_token = peek();
+    std::string next_token = peek();
     str_toupper(next_token);
 
-    if (next_token.empty()) {
-        pop_flag = true;
-    }
-    else if (next_token == "WHERE") {
+    if (next_token == "WHERE") {
         step = Step::where;
-    }
-    else if (next_token == "GROUP_BY") {
+    } else if (next_token == "GROUP BY") {
         step = Step::group_by;
-    }
-    else {
-        error_message = "Unexpected token after table name in SELECT statement";
+    } else if (next_token.empty()) {
+        pop_flag = true;
+    } else {
         step = Step::error;
+        error_message = "Unexpected token '" + peek() + "' after table name";
     }
 }

@@ -19,6 +19,10 @@ inline std::string data_types_str[]{
 };
 
 static Data_type return_data_type(const std::string &data) {
+    // just an empty string
+    if (data.empty()) {
+        return Data_type::NVARCHAR2;
+    }
     auto upper_data = data;
     str_toupper(upper_data);
     // https://www.mtu.edu/umc/services/websites/writing/characters-avoid/

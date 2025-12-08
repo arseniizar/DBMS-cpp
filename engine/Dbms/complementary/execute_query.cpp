@@ -97,26 +97,16 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
         return make_executor_error(are_consistent_error.message);
     }
 
-    std::vector<Column> result_cols;
+    std::vector<Column> where_filtered_cols;
 
     if (conditions.empty()) {
-        if (Dbms::executor.q.get_fields().at(0).value == "*") {
-            result_cols = table.get_columns();
-        }
-        else {
-            for (auto& field : Dbms::executor.q.get_fields()) {
-                for (auto& col : table.get_columns()) {
-                    if (col.get_name() == field.value) {
-                        result_cols.push_back(col);
-                    }
-                }
-            }
-        }
+        where_filtered_cols = table.get_columns();
     }
     else {
         std::vector<size_t> matched_row_indices;
         auto& condition = conditions[0];
         Column condition_col = table.find_column_by_name(condition.get_field());
+
         if (condition_col.empty()) {
             return make_executor_error("at EXECUTION: column from WHERE clause does not exist");
         }
@@ -128,43 +118,48 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
             }
         }
 
-        auto requested_fields = Dbms::executor.q.get_fields();
-
-        if (requested_fields.size() == 1 && requested_fields[0].value == "*") {
-            requested_fields.clear();
-            for (auto& col : table.get_columns()) {
-                requested_fields.push_back({col.get_name(), col.get_type()});
-            }
-        }
-
-        for (const auto& field : requested_fields) {
-            Column original_col = table.find_column_by_name(field.value);
-            if (original_col.empty()) {
-                return make_executor_error("at EXECUTION: selected column '" + field.value + "' does not exist");
-            }
-
-            Column filtered_col(std::vector<Row>(), original_col.get_name(), original_col.get_type());
+        for (auto& original_col : table.get_columns()) {
+            Column filtered_col({}, original_col.get_name(), original_col.get_type());
             for (size_t index : matched_row_indices) {
                 if (index < original_col.get_rows().size()) {
                     filtered_col.add_row(original_col.get_rows()[index]);
                 }
             }
-            result_cols.push_back(filtered_col);
+            where_filtered_cols.push_back(filtered_col);
         }
     }
 
-
     auto group_by_cols_names = Dbms::executor.q.get_group_by_columns();
+
+    std::vector<Column> final_cols;
 
     if (!group_by_cols_names.empty()) {
         auto requested_fields = Dbms::executor.q.get_fields();
-        auto grouped_cols = execute_group_by(result_cols, group_by_cols_names, requested_fields);
-        ut_print(grouped_cols);
+        final_cols = execute_group_by(where_filtered_cols, group_by_cols_names, requested_fields);
     }
     else {
-        ut_print(result_cols);
+        if (auto requested_fields = Dbms::executor.q.get_fields(); requested_fields.size() == 1 && requested_fields[0].
+            value == "*") {
+            final_cols = where_filtered_cols;
+        }
+        else {
+            for (const auto& field : requested_fields) {
+                bool found = false;
+                for (auto& col : where_filtered_cols) {
+                    if (field.value == col.get_name()) {
+                        final_cols.push_back(col);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    return make_executor_error("at EXECUTION: column '" + field.value + "' not found in table");
+                }
+            }
+        }
     }
 
+    ut_print(final_cols);
     return make_executor_error("");
 }
 
