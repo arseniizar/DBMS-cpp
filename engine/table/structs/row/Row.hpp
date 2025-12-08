@@ -17,15 +17,15 @@ public:
         Row::data = str;
         Row::type = d_t;
     }
-    std::string get_data();
+    std::string get_data() const;
 
-    Data_type get_type();
+    Data_type get_type() const;
 
     void set_type(Data_type d_t);
 
     void insert_data(std::string const &ins_data);
 
-    bool empty();
+    bool empty() const;
 };
 
 

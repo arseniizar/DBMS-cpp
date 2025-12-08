@@ -15,6 +15,9 @@
 #include "../parser/Parser.hpp"
 #include "../executor/Executor.hpp"
 #include "../backup/recent_change.hpp"
+#include <variant>
+
+using QueryResult = std::variant<std::string, std::vector<Column>>;
 
 struct Dbms {
 private:
@@ -101,7 +104,9 @@ public:
 
     void print_table_names();
 
-    std::string process_query(const std::string& input);
+    std::string process_query_to_string(const std::string& input);
+
+    QueryResult process_query(const std::string& input);
 
     Dbms();
 

@@ -29,7 +29,7 @@ void Column::set_name(const std::string &name) {
     Column::col_name = name;
 }
 
-std::string Column::get_name() {
+std::string Column::get_name() const {
     return Column::col_name;
 }
 

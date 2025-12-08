@@ -262,7 +262,7 @@ Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::
     return {};
 }
 
-std::string Dbms::process_query(const std::string &input) {
+std::string Dbms::process_query_to_string(const std::string &input) {
     std::string lower_input = input;
     std::ranges::transform(lower_input, lower_input.begin(),
                            [](unsigned char c) { return std::tolower(c); });
@@ -310,4 +310,48 @@ std::string Dbms::process_query(const std::string &input) {
     }
 
     return "Query executed successfully";
+}
+
+QueryResult Dbms::process_query(const std::string& input) {
+    std::string lower_input = input;
+    std::ranges::transform(lower_input, lower_input.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+
+    if (lower_input == "-tables") {
+        std::stringstream ss;
+        if (tables.empty()) {
+            ss << "[ *empty* ]";
+        } else {
+            for (auto &t : tables) {
+                ss << t.get_table_name() << "\n";
+            }
+        }
+        return ss.str();
+    }
+    if (lower_input == "-help") {
+        return std::string("Available commands:\nSELECT, DROP TABLE, INSERT INTO, CREATE TABLE, DELETE FROM, UPDATE");
+    }
+    if (lower_input == "-load") {
+        load_prompt();
+        return std::string("Load prompt executed in console.");
+    }
+
+    auto [query, parser_error] = parse_query(input);
+
+    if (!parser_error.message.empty()) {
+        return "Parse error: " + parser_error.message;
+    }
+
+    is_dbms_changed = true;
+    auto [columns, execution_error] = execute_query(query);
+
+    if (!execution_error.message.empty()) {
+        return "Execution error: " + execution_error.message;
+    }
+
+    if (query.get_query_type() == Query_type::Select) {
+        return columns;
+    }
+
+    return std::string("Query executed successfully");
 }

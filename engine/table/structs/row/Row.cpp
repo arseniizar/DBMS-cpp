@@ -3,11 +3,11 @@
 //
 #include "Row.hpp"
 
-std::string Row::get_data() {
+std::string Row::get_data() const {
     return Row::data;
 }
 
-Data_type Row::get_type() {
+Data_type Row::get_type() const {
     return Row::type;
 }
 
@@ -19,6 +19,6 @@ void Row::set_type(Data_type d_t) {
     Row::type = d_t;
 }
 
-bool Row::empty() {
+bool Row::empty() const {
     return Row::data.empty() and Row::type == Data_type::UNKNOWN;
 }

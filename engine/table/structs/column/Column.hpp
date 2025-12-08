@@ -35,7 +35,7 @@ public:
 
     void set_name(const std::string &name);
 
-    std::string get_name();
+    std::string get_name() const;
 
     void set_type(Data_type t);
 };
