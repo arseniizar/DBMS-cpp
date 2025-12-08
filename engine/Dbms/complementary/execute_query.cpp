@@ -1,7 +1,10 @@
+#include <ranges>
+
 #include "../Dbms.hpp"
 #include "../../utils/ut_contains_elems/ut_contains_elems.hpp"
 #include "../../utils/ut_print/ut_print.hpp"
 #include <set>
+#include <map>
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
     Dbms::executor.set_query(q);
@@ -99,9 +102,10 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     if (conditions.empty()) {
         if (Dbms::executor.q.get_fields().at(0).value == "*") {
             result_cols = table.get_columns();
-        } else {
-            for (auto &field: Dbms::executor.q.get_fields()) {
-                for (auto &col: table.get_columns()) {
+        }
+        else {
+            for (auto& field : Dbms::executor.q.get_fields()) {
+                for (auto& col : table.get_columns()) {
                     if (col.get_name() == field.value) {
                         result_cols.push_back(col);
                     }
@@ -127,10 +131,10 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
         auto requested_fields = Dbms::executor.q.get_fields();
 
         if (requested_fields.size() == 1 && requested_fields[0].value == "*") {
-             requested_fields.clear();
-             for(auto& col : table.get_columns()){
-                 requested_fields.push_back({col.get_name(), col.get_type()});
-             }
+            requested_fields.clear();
+            for (auto& col : table.get_columns()) {
+                requested_fields.push_back({col.get_name(), col.get_type()});
+            }
         }
 
         for (const auto& field : requested_fields) {
@@ -153,9 +157,11 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     auto group_by_cols_names = Dbms::executor.q.get_group_by_columns();
 
     if (!group_by_cols_names.empty()) {
-        auto grouped_cols = execute_group_by(result_cols, group_by_cols_names);
+        auto requested_fields = Dbms::executor.q.get_fields();
+        auto grouped_cols = execute_group_by(result_cols, group_by_cols_names, requested_fields);
         ut_print(grouped_cols);
-    } else {
+    }
+    else {
         ut_print(result_cols);
     }
 
@@ -205,8 +211,8 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_insert() {
 }
 
 std::vector<Column> Dbms::execute_group_by(std::vector<Column>& input_cols,
-                                           const std::vector<std::string>&
-                                           group_by_cols_names) {
+                                           const std::vector<std::string>& group_by_cols_names,
+                                           const std::vector<Field>& requested_fields) {
     if (input_cols.empty() || group_by_cols_names.empty()) {
         return input_cols;
     }
@@ -214,25 +220,47 @@ std::vector<Column> Dbms::execute_group_by(std::vector<Column>& input_cols,
     const std::string& group_by_col_name = group_by_cols_names[0];
 
     Column group_by_column;
+    Column any_column_for_count_star;
+    bool found = false;
+    if (!input_cols.empty()) any_column_for_count_star = input_cols[0];
+
     for (auto& col : input_cols) {
         if (col.get_name() == group_by_col_name) {
             group_by_column = col;
-            break;
+            found = true;
         }
     }
-    if (group_by_column.empty()) return {};
+    if (!found) return {};
 
-    std::set<std::string> unique_values;
-    for (auto& row : group_by_column.get_rows()) {
-        unique_values.insert(row.get_data());
+    std::map<std::string, std::vector<size_t>> groups;
+    for (size_t i = 0; i < group_by_column.get_rows().size(); ++i) {
+        groups[group_by_column.get_rows()[i].get_data()].push_back(i);
     }
 
-    Column result_col({}, group_by_column.get_name(), group_by_column.get_type());
-    for (const auto& val : unique_values) {
-        result_col.add_row(Row(val, return_data_type(val)));
+    std::vector<Column> final_result_cols;
+
+    for (const auto& field : requested_fields) {
+        if (field.agg_t == Aggregation_type::NONE) {
+            if (field.value == group_by_col_name) {
+                Column result_col({}, field.value, group_by_column.get_type());
+                for (const auto& key : groups | std::views::keys) {
+                    result_col.add_row(Row(key, return_data_type(key)));
+                }
+                final_result_cols.push_back(result_col);
+            }
+        }
+        else if (field.agg_t == Aggregation_type::COUNT) {
+            std::string new_col_name = "COUNT(" + field.value + ")";
+            Column count_col({}, new_col_name, Data_type::INTEGER);
+            for (const auto& value : groups | std::views::values) {
+                size_t count = value.size();
+                count_col.add_row(Row(std::to_string(count), Data_type::INTEGER));
+            }
+            final_result_cols.push_back(count_col);
+        }
     }
 
-    return {result_col};
+    return final_result_cols;
 }
 
 std::pair<std::vector<Column>, Execution_error> Dbms::drop_table(std::string const& table_name) {

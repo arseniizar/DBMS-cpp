@@ -2,19 +2,52 @@
 #include "../../utils/ut_is_identifier/ut_is_identifier.hpp"
 
 void Parser::step_select_field() {
-    const auto identifier = Parser::peek();
-    if (!is_identifier_or_asterisk(identifier)) {
-        Parser::step = Step::error;
-        Parser::error_message = "at SELECT: expected a Field to select";
-        return;
+    std::string identifier_or_func = peek();
+    str_toupper(identifier_or_func);
+
+    if (identifier_or_func == "COUNT") {
+        pop();
+        if (!peek_is_opening_parens("at SELECT: expected '(' after COUNT")) return;
+
+        std::string col_name = pop();
+        if (!is_identifier_or_asterisk(col_name)) {
+            step = Step::error;
+            error_message = "at SELECT: expected column name or '*' inside COUNT()";
+            return;
+        }
+
+        if (auto closing_paren = pop(); closing_paren != ")") {
+            step = Step::error;
+            error_message = "at SELECT: expected ')' after column name in COUNT()";
+            return;
+        }
+
+        Field agg_field;
+        agg_field.value = col_name;
+        agg_field.agg_t = Aggregation_type::COUNT;
+        agg_field.d_t = Data_type::TABLE_SELECT;
+        q.append_field(agg_field);
+
+    } else {
+        identifier_or_func = pop();
+        if (!is_identifier_or_asterisk(identifier_or_func)) {
+            step = Step::error;
+            error_message = "at SELECT: expected a Field to select or aggregate function";
+            return;
+        }
+        q.append_field({identifier_or_func, Data_type::TABLE_SELECT});
     }
-    Parser::q.append_field(Field(identifier, Data_type::TABLE_SELECT));
-    Parser::pop();
-    if (const auto from = Parser::peek(); from == "FROM" or identifier == "*") {
-        Parser::step = Step::select_from;
-    }
-    else {
-        Parser::step = Step::select_comma;
+
+    auto next_token = peek();
+    str_toupper(next_token);
+
+    if (next_token == "FROM") {
+        step = Step::select_from;
+    } else if (next_token == ",") {
+        step = Step::select_comma;
+    } else {
+        step = Step::error;
+        error_message = "at SELECT: expected ',' or 'FROM' after field";
     }
 }
 

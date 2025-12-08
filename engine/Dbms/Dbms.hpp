@@ -78,7 +78,8 @@ private:
     std::pair<std::vector<Column>, Execution_error> execute_insert();
 
     std::vector<Column> execute_group_by(std::vector<Column>& input_cols,
-                                         const std::vector<std::string>& group_by_cols_names);
+                                         const std::vector<std::string>& group_by_cols_names,
+                                         const std::vector<Field>& requested_fields);
 
     void start();
 
