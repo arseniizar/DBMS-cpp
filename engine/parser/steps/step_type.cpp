@@ -1,5 +1,6 @@
 #include "../Parser.hpp"
 #include "../../utils/ut_str_toupper/ut_str_toupper.hpp"
+
 void Parser::step_type() {
     auto peeked = Parser::peek();
     str_toupper(peeked);
@@ -60,6 +61,11 @@ void Parser::step_type() {
         Parser::pop();
         Parser::q.set_query_type(Query_type::Drop);
         Parser::step = Step::drop_table;
+    }
+    else if (peeked == "UPDATE") {
+        Parser::pop();
+        Parser::q.set_query_type(Query_type::Update);
+        Parser::step = Step::update_table;
     }
     else {
         Parser::step = Step::error;

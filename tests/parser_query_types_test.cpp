@@ -267,3 +267,23 @@ TEST_F(ParserTest, HandlesDeleteWithWhereClause) {
     EXPECT_EQ(conditions[0].get_operator(), Query_operator::eq);
     EXPECT_EQ(conditions[0].get_operand2(), "1");
 }
+
+TEST_F(ParserTest, HandlesBasicUpdate) {
+    std::string sql = "UPDATE users SET name = 'Arseniy' WHERE id = '1'";
+    parser.input(sql);
+    Query q = parser.parse();
+
+    ASSERT_EQ(q.get_query_type(), Query_type::Update);
+    EXPECT_EQ(parser.get_error().message, "");
+    EXPECT_EQ(q.get_table_name(), "users");
+
+    auto updates = q.get_updates();
+    ASSERT_EQ(updates.size(), 1);
+    EXPECT_EQ(updates[0].field_to_update.value, "name");
+    EXPECT_EQ(updates[0].new_value, "Arseniy");
+
+    auto conditions = q.get_conditions();
+    ASSERT_EQ(conditions.size(), 1);
+    EXPECT_EQ(conditions[0].get_operand1(), "id");
+    EXPECT_EQ(conditions[0].get_operand2(), "1");
+}

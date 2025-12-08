@@ -10,7 +10,8 @@
 #include "../../table/structs/Data_type.hpp"
 
 struct Update {
-    std::string value;
+    Field field_to_update;
+    std::string new_value;
     Data_type d_t;
 };
 
