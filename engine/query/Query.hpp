@@ -48,6 +48,7 @@ private:
     std::vector<Update> updates;
     std::map<std::string, std::string> aliases;
     std::vector<Condition> conditions;
+    std::vector<std::string> group_by_columns;
     std::vector<std::vector<Insert>> inserts;
     int insert_field_count = 0;
 public:
@@ -132,6 +133,10 @@ public:
     void set_current_update(Update const &u);
 
     Field find_field_by_value(std::string const &value);
+
+    void append_group_by_column(const std::string& col);
+
+    std::vector<std::string> get_group_by_columns();
 };
 
 

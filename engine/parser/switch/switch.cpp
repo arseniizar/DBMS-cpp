@@ -85,6 +85,30 @@ std::pair<Query, Parse_error> Parser::parser_switch() {
             Parser::step_where_and();
             break;
         }
+        case Step::group_by: {
+            Parser::step_group_by();
+            break;
+        }
+        case Step::group_by_field: {
+            Parser::step_group_by_field();
+            break;
+        }
+        case Step::having: {
+            Parser::step_having();
+            break;
+        }
+        case Step::having_field: {
+            Parser::step_having_field();
+            break;
+        }
+        case Step::having_operator: {
+            Parser::step_having_operator();
+            break;
+        }
+        case Step::having_value: {
+            Parser::step_having_value();
+            break;
+        }
         case Step::create_table: {
             Parser::step_create_table();
             break;

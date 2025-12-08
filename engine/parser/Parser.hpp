@@ -95,8 +95,10 @@ inline std::vector<std::string> reserved_words{
         "DELETE", "CREATE", "TABLE", "WHERE",
         "FROM", "NVARCHAR2",
         "DATE", "INTEGER",
+        "GROUP BY", "HAVING",
         "DROP",
-        "PRIMARY", "FOREIGN", "REFERENCES"
+        "PRIMARY", "FOREIGN", "REFERENCES",
+        "COUNT"
 };
 
 

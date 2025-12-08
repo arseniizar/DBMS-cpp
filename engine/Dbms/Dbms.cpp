@@ -262,7 +262,6 @@ Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::
     return {};
 }
 
-
 std::string Dbms::process_query(const std::string &input) {
     std::string lower_input = input;
     std::ranges::transform(lower_input, lower_input.begin(),
@@ -294,7 +293,7 @@ std::string Dbms::process_query(const std::string &input) {
 
     if (!parser_error.message.empty()) {
         std::cout.rdbuf(old_cout_buf);
-        return parser_error.message;
+        return "Parse error: " + parser_error.message;
     }
 
     is_dbms_changed = true;
@@ -303,7 +302,7 @@ std::string Dbms::process_query(const std::string &input) {
     std::cout.rdbuf(old_cout_buf);
 
     if (!execution_error.message.empty()) {
-        return execution_error.message;
+        return "Execution error: " + execution_error.message;
     }
 
     if (!buffer.str().empty()) {

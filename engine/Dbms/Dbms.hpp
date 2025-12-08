@@ -33,21 +33,21 @@ private:
     bool is_loading;
     std::string error_message;
 
-    std::pair<std::vector<Column>, Execution_error> make_executor_error(std::string const &message);
+    std::pair<std::vector<Column>, Execution_error> make_executor_error(std::string const& message);
 
-    Table find_table_by_name(std::string const &name);
+    Table find_table_by_name(std::string const& name);
 
-    bool is_table_already_exist(std::string const &table_name);
+    bool is_table_already_exist(std::string const& table_name);
 
-    void add_rec_change(const recent_change &rec_c);
+    void add_rec_change(const recent_change& rec_c);
 
-    void add_table(std::string const &name, std::vector<Column> const &cols);
+    void add_table(std::string const& name, std::vector<Column> const& cols);
 
     void add_table(Table t);
 
-    std::pair<Query, Parse_error> parse_query(std::string const &str);
+    std::pair<Query, Parse_error> parse_query(std::string const& str);
 
-    std::pair<std::vector<Column>, Execution_error> execute_query(Query &q);
+    std::pair<std::vector<Column>, Execution_error> execute_query(Query& q);
 
     bool check_relations();
 
@@ -65,9 +65,9 @@ private:
 
     void load_prompt();
 
-    void parse_and_execute(std::string const &input);
+    void parse_and_execute(std::string const& input);
 
-    Execution_error add_and_override_cols(std::string const &table_name, std::vector<Column> cols);
+    Execution_error add_and_override_cols(std::string const& table_name, std::vector<Column> cols);
 
     std::pair<std::vector<Column>, Execution_error> execute_create_table();
 
@@ -76,6 +76,11 @@ private:
     std::pair<std::vector<Column>, Execution_error> execute_delete_from();
 
     std::pair<std::vector<Column>, Execution_error> execute_insert();
+    std::vector<Column> execute_group_by_with_having(std::vector<Column>& input_cols,
+                                                     const std::vector<std::string>& group_by_cols_names,
+                                                     const std::vector<Field>& requested_fields,
+                                                     const std::vector<Condition>& having_conditions);
+
 
     void start();
 
@@ -92,7 +97,7 @@ public:
 
     void print_table_names();
 
-    std::string process_query(const std::string &input);
+    std::string process_query(const std::string& input);
 
     Dbms();
 
