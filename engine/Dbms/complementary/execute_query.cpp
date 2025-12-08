@@ -236,13 +236,81 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_insert() {
 }
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_update() {
-    fmt::println("!!! LOG: Entered Dbms::execute_update()");
-
-    auto table_name = executor.q.get_table_name();
+    const auto table_name = executor.q.get_table_name();
     if (!is_table_already_exist(table_name)) {
         return make_executor_error("at EXECUTION: table '" + table_name + "' does not exist");
     }
 
+    auto& table_to_update = *std::ranges::find_if(tables,
+                                                  [&](Table& t) { return t.get_table_name() == table_name; });
+
+    auto updates = executor.q.get_updates();
+    auto conditions = executor.q.get_conditions();
+
+    auto& table_columns = table_to_update.get_columns_ref();
+
+    for (const auto& u : updates) {
+        bool column_exists = false;
+        for (auto& c : table_columns) {
+            if (c.get_name() == u.field_to_update.value) {
+                column_exists = true;
+                break;
+            }
+        }
+        if (!column_exists) {
+            return make_executor_error(
+                "at EXECUTION: column '" + u.field_to_update.value + "' does not exist in table '" + table_name + "'");
+        }
+    }
+
+    std::vector<size_t> row_indices_to_update;
+
+    if (conditions.empty()) {
+        if (!table_columns.empty()) {
+            for (size_t i = 0; i < table_columns[0].get_rows().size(); ++i) {
+                row_indices_to_update.push_back(i);
+            }
+        }
+    }
+    else {
+        auto& condition = conditions[0];
+        Column* condition_col = nullptr;
+        for (auto& col : table_columns) {
+            if (col.get_name() == condition.get_field()) {
+                condition_col = &col;
+                break;
+            }
+        }
+
+        if (!condition_col) {
+            return make_executor_error(
+                "at EXECUTION: column '" + condition.get_field() + "' from WHERE clause does not exist");
+        }
+
+        const auto& rows = condition_col->get_rows();
+        for (size_t i = 0; i < rows.size(); ++i) {
+            if (predicate(get_operator(const_cast<Condition&>(condition)), rows[i], condition.get_operand2())) {
+                row_indices_to_update.push_back(i);
+            }
+        }
+    }
+
+    for (size_t row_index : row_indices_to_update) {
+        for (const auto& u : updates) {
+            for (auto& table_col : table_columns) {
+                if (table_col.get_name() == u.field_to_update.value) {
+                    if (return_data_type(u.new_value) != table_col.get_type()) {
+                        return make_executor_error(
+                            "at EXECUTION: data type mismatch for column '" + table_col.get_name() + "'");
+                    }
+                    if (row_index < table_col.get_rows().size()) {
+                        table_col.get_rows()[row_index] = Row(u.new_value, u.d_t);
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
     return make_executor_error("");
 }
