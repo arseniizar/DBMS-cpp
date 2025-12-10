@@ -1,4 +1,5 @@
 #include "ui.hpp"
+#include "codeeditor.hpp"
 
 #include <QApplication>
 #include <QTabWidget>
@@ -20,12 +21,18 @@
 #include <QStandardItemModel>
 #include <variant>
 #include <QPainter>
+#include <QCompleter>
+#include <QStringListModel>
+#include <QAbstractItemView>
+#include <QScrollBar>
 
 
 Ui::Ui(QWidget* parent)
     : QMainWindow(parent), model(nullptr) {
+    setupCompleter();
     setupUi();
     applyDarkTheme();
+
     dbms.load_save();
     updateDatabaseExplorer();
 }
@@ -58,6 +65,33 @@ void Ui::setupUi() {
 
     createDocks();
     statusBar()->showMessage("Ready", 3000);
+}
+
+void Ui::setupCompleter() {
+    completer = new QCompleter(this);
+    completerModel = new QStringListModel(this);
+    completer->setModel(completerModel);
+    completer->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setWrapAround(false);
+
+    completer->popup()->setStyleSheet(R"(
+        QListView {
+            background-color: #252526;
+            color: #CCCCCC;
+            border: 1px solid #3E3E42;
+        }
+        QListView::item:selected {
+            background-color: #094771;
+        }
+    )");
+
+    QStringList keywords;
+    keywords << "SELECT" << "FROM" << "WHERE" << "INSERT" << "INTO" << "VALUES"
+        << "UPDATE" << "SET" << "DELETE" << "CREATE" << "TABLE" << "DROP"
+        << "GROUP BY" << "HAVING" << "COUNT" << "PRIMARY KEY" << "FOREIGN KEY"
+        << "REFERENCES" << "NVARCHAR2" << "INTEGER" << "DATE";
+    completerModel->setStringList(keywords);
 }
 
 void Ui::applyDarkTheme() {
@@ -221,6 +255,18 @@ void Ui::updateDatabaseExplorer() {
     QStandardItem* root = dbExplorerModel->invisibleRootItem();
 
     std::vector<std::string> tableNames = dbms.get_table_names();
+
+    QStringList currentList = completerModel->stringList();
+    QStringList keywords = {
+        "SELECT", "FROM", "WHERE", "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE", "CREATE", "TABLE", "DROP",
+        "GROUP BY", "HAVING", "COUNT", "PRIMARY KEY", "FOREIGN KEY", "REFERENCES", "NVARCHAR2", "INTEGER", "DATE"
+    };
+
+    for (const auto& tableName : tableNames) {
+        keywords.append(QString::fromStdString(tableName));
+    }
+    completerModel->setStringList(keywords);
+
     for (const auto& tableName : tableNames) {
         QStandardItem* tableItem = new QStandardItem(QString::fromStdString(tableName));
         tableItem->setIcon(QIcon::fromTheme("database"));
@@ -229,13 +275,14 @@ void Ui::updateDatabaseExplorer() {
     }
 }
 
-QTextEdit* Ui::currentQueryEdit() {
-    return qobject_cast<QTextEdit*>(tabWidget->currentWidget());
+CodeEditor* Ui::currentQueryEdit() {
+    return qobject_cast<CodeEditor*>(tabWidget->currentWidget());
 }
 
 void Ui::onNewQueryTab() {
-    QTextEdit* newQueryEdit = new QTextEdit();
+    CodeEditor* newQueryEdit = new CodeEditor();
     new SqlHighlighter(newQueryEdit->document());
+    newQueryEdit->setCompleter(completer);
 
     int newIndex = tabWidget->addTab(newQueryEdit, QString("Query %1").arg(tabWidget->count() + 1));
     tabWidget->setCurrentIndex(newIndex);
@@ -268,7 +315,7 @@ void Ui::onOpenDatabase() {
 }
 
 void Ui::onRunQuery() {
-    QTextEdit* currentEdit = currentQueryEdit();
+    CodeEditor* currentEdit = currentQueryEdit();
     if (!currentEdit) return;
 
     messageEdit->clear();

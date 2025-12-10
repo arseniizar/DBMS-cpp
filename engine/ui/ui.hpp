@@ -6,12 +6,15 @@
 #include "sqltablemodel.hpp"
 #include "sqlhighlighter.hpp"
 
+class CodeEditor;
 class QAction;
 class QTextEdit;
 class QTableView;
 class QTabWidget;
 class QTreeView;
 class QStandardItemModel;
+class QCompleter;
+class QStringListModel;
 
 class Ui final : public QMainWindow {
     Q_OBJECT
@@ -36,8 +39,9 @@ private:
     void createDocks();
     void applyDarkTheme();
     void updateDatabaseExplorer();
+    void setupCompleter();
 
-    QTextEdit* currentQueryEdit();
+    CodeEditor* currentQueryEdit();
 
     Dbms dbms;
     SqlTableModel *model;
@@ -54,6 +58,9 @@ private:
     QAction *helpAction;
     QAction *exitAction;
     QAction *aboutAction;
+
+    QCompleter *completer;
+    QStringListModel *completerModel;
 };
 
 #endif // UI_HPP
