@@ -3,7 +3,7 @@
 //
 
 #include "gtest/gtest.h"
-#include "Dbms/Dbms.hpp"
+#include "engine/Dbms/Dbms.hpp"
 
 class DbmsHavingTest : public ::testing::Test {
 protected:
@@ -11,15 +11,15 @@ protected:
 };
 
 TEST_F(DbmsHavingTest, HandlesHavingWithCountAndGreaterThan) {
-    dbms.process_query("CREATE TABLE employees (department NVARCHAR2, salary INTEGER)");
-    dbms.process_query("INSERT INTO employees (department, salary) VALUES ('IT', '1000')");
-    dbms.process_query("INSERT INTO employees (department, salary) VALUES ('HR', '500')");
-    dbms.process_query("INSERT INTO employees (department, salary) VALUES ('IT', '1200')");
-    dbms.process_query("INSERT INTO employees (department, salary) VALUES ('IT', '1500')");
-    dbms.process_query("INSERT INTO employees (department, salary) VALUES ('HR', '600')");
-    dbms.process_query("INSERT INTO employees (department, salary) VALUES ('FINANCE', '800')");
+    dbms.process_query_to_string("CREATE TABLE employees (department NVARCHAR2, salary INTEGER)");
+    dbms.process_query_to_string("INSERT INTO employees (department, salary) VALUES ('IT', '1000')");
+    dbms.process_query_to_string("INSERT INTO employees (department, salary) VALUES ('HR', '500')");
+    dbms.process_query_to_string("INSERT INTO employees (department, salary) VALUES ('IT', '1200')");
+    dbms.process_query_to_string("INSERT INTO employees (department, salary) VALUES ('IT', '1500')");
+    dbms.process_query_to_string("INSERT INTO employees (department, salary) VALUES ('HR', '600')");
+    dbms.process_query_to_string("INSERT INTO employees (department, salary) VALUES ('FINANCE', '800')");
 
-    std::string result = dbms.process_query(
+    std::string result = dbms.process_query_to_string(
         "SELECT department, COUNT(*) FROM employees GROUP BY department HAVING COUNT(*) > 1"
     );
 
@@ -31,13 +31,13 @@ TEST_F(DbmsHavingTest, HandlesHavingWithCountAndGreaterThan) {
 }
 
 TEST_F(DbmsHavingTest, HandlesHavingWithCountAndEqualTo) {
-    dbms.process_query("CREATE TABLE orders (user_id INTEGER, product NVARCHAR2)");
-    dbms.process_query("INSERT INTO orders (user_id, product) VALUES ('1', 'Laptop')");
-    dbms.process_query("INSERT INTO orders (user_id, product) VALUES ('2', 'Mouse')");
-    dbms.process_query("INSERT INTO orders (user_id, product) VALUES ('1', 'Keyboard')");
-    dbms.process_query("INSERT INTO orders (user_id, product) VALUES ('3', 'Monitor')");
+    dbms.process_query_to_string("CREATE TABLE orders (user_id INTEGER, product NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, product) VALUES ('1', 'Laptop')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, product) VALUES ('2', 'Mouse')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, product) VALUES ('1', 'Keyboard')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, product) VALUES ('3', 'Monitor')");
 
-    std::string result = dbms.process_query(
+    std::string result = dbms.process_query_to_string(
         "SELECT user_id, COUNT(*) FROM orders GROUP BY user_id HAVING COUNT(*) = 2"
     );
 
@@ -47,22 +47,22 @@ TEST_F(DbmsHavingTest, HandlesHavingWithCountAndEqualTo) {
 }
 
 TEST_F(DbmsHavingTest, RejectsHavingWithoutGroupBy) {
-    dbms.process_query("CREATE TABLE data (value INTEGER)");
-    dbms.process_query("INSERT INTO data (value) VALUES ('10')");
+    dbms.process_query_to_string("CREATE TABLE data (value INTEGER)");
+    dbms.process_query_to_string("INSERT INTO data (value) VALUES ('10')");
 
-    std::string result = dbms.process_query("SELECT COUNT(*) FROM data HAVING COUNT(*) > 0");
+    std::string result = dbms.process_query_to_string("SELECT COUNT(*) FROM data HAVING COUNT(*) > 0");
 
     std::transform(result.begin(), result.end(), result.begin(), ::tolower);
     EXPECT_NE(result.find("error"), std::string::npos);
 }
 
 TEST_F(DbmsHavingTest, HandlesHavingWithGroupByColumn) {
-    dbms.process_query("CREATE TABLE cities (name NVARCHAR2, population INTEGER)");
-    dbms.process_query("INSERT INTO cities (name, population) VALUES ('Kyiv', '2800')");
-    dbms.process_query("INSERT INTO cities (name, population) VALUES ('Lviv', '700')");
-    dbms.process_query("INSERT INTO cities (name, population) VALUES ('Kharkiv', '1400')");
+    dbms.process_query_to_string("CREATE TABLE cities (name NVARCHAR2, population INTEGER)");
+    dbms.process_query_to_string("INSERT INTO cities (name, population) VALUES ('Kyiv', '2800')");
+    dbms.process_query_to_string("INSERT INTO cities (name, population) VALUES ('Lviv', '700')");
+    dbms.process_query_to_string("INSERT INTO cities (name, population) VALUES ('Kharkiv', '1400')");
 
-    std::string result = dbms.process_query(
+    std::string result = dbms.process_query_to_string(
         "SELECT name FROM cities GROUP BY name HAVING name = 'Kyiv'"
     );
 
