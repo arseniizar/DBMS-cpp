@@ -19,6 +19,7 @@
 #include <QTreeView>
 #include <QStandardItemModel>
 #include <variant>
+#include <QPainter>
 
 Ui::Ui(QWidget* parent)
     : QMainWindow(parent), model(nullptr) {
@@ -75,17 +76,28 @@ void Ui::applyDarkTheme() {
     qApp->setPalette(darkPalette);
 }
 
+QIcon create_themed_icon(const QString& resource_path) {
+    QIcon icon(resource_path);
+    if (icon.isNull()) {
+        return QIcon();
+    }
+    QPixmap pixmap = icon.pixmap(QSize(24, 24));
+    QPainter painter(&pixmap);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(pixmap.rect(), qApp->palette().color(QPalette::Active, QPalette::WindowText));
+    return QIcon(pixmap);
+}
 
 void Ui::createActions() {
-    newQueryAction = new QAction(QIcon(":/new.png"), "&New Query Tab", this);
+    newQueryAction = new QAction(create_themed_icon(":/new.png"), "&New Query Tab", this);
     newQueryAction->setShortcut(QKeySequence::New);
     connect(newQueryAction, &QAction::triggered, this, &Ui::onNewQueryTab);
 
-    openDbAction = new QAction(QIcon(":/open.png"), "&Open Database...", this);
+    openDbAction = new QAction(create_themed_icon(":/open.png"), "&Open Database...", this);
     openDbAction->setShortcut(QKeySequence::Open);
     connect(openDbAction, &QAction::triggered, this, &Ui::onOpenDatabase);
 
-    runQueryAction = new QAction(QIcon(":/run.png"), "&Run Query", this);
+    runQueryAction = new QAction(create_themed_icon(":/run.png"), "&Run Query", this);
     runQueryAction->setShortcut(QKeySequence(Qt::Key_F5));
     connect(runQueryAction, &QAction::triggered, this, &Ui::onRunQuery);
 
@@ -96,7 +108,7 @@ void Ui::createActions() {
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
 
-    aboutAction = new QAction(QIcon(":/about.png"), "&About", this);
+    aboutAction = new QAction(create_themed_icon(":/about"), "&About", this);
     connect(aboutAction, &QAction::triggered, this, &Ui::about);
 }
 
