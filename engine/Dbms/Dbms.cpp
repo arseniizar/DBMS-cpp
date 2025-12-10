@@ -77,36 +77,42 @@ void Dbms::load_prompt() {
 
         if (input == "1") {
             Dbms::load_save();
-        } else if (input == "2") {
+        }
+        else if (input == "2") {
             Dbms::load_save_menu();
-        } else if (input == "3") {
+        }
+        else if (input == "3") {
             fmt::println("You have loaded an empty DBMS");
-        } else if (input == "4") {
+        }
+        else if (input == "4") {
             fmt::println("You have exited DBMS loading menu");
             break;
-        } else {
+        }
+        else {
             fmt::println("You should type an appropriate number");
         }
     }
 }
 
-void Dbms::parse_and_execute(const std::string &input) {
+void Dbms::parse_and_execute(const std::string& input) {
     std::pair<Query, Parse_error> parse_pair = Dbms::parse_query(input);
     if (!parse_pair.second.message.empty()) {
         Dbms::parse_errors.push_back(parse_pair.second);
-    } else {
+    }
+    else {
         Dbms::is_dbms_changed = true;
         std::pair<std::vector<Column>, Execution_error>
-                execution_pair = Dbms::execute_query(parse_pair.first);
+            execution_pair = Dbms::execute_query(parse_pair.first);
         if (!execution_pair.second.message.empty()) {
             Dbms::execution_errors.push_back(execution_pair.second);
-        } else {
+        }
+        else {
             fmt::println("proceeding...");
         }
     }
 }
 
-std::pair<Query, Parse_error> Dbms::parse_query(std::string const &str) {
+std::pair<Query, Parse_error> Dbms::parse_query(std::string const& str) {
     Dbms::parser.input(str);
     Query q = Dbms::parser.parse();
     if (!Dbms::parser.get_error().message.empty())
@@ -121,32 +127,32 @@ void Dbms::add_table(Table t) {
     Dbms::tables.push_back(t);
 }
 
-void Dbms::add_table(std::string const &name, std::vector<Column> const &cols) {
+void Dbms::add_table(std::string const& name, std::vector<Column> const& cols) {
     Dbms::table_names.push_back(name);
     Dbms::tables.emplace_back(name, cols);
 }
 
-void Dbms::add_rec_change(const recent_change &rec_c) {
+void Dbms::add_rec_change(const recent_change& rec_c) {
     Dbms::recent_changes.push_back(rec_c);
 }
 
-std::pair<std::vector<Column>, Execution_error> Dbms::make_executor_error(std::string const &message) {
+std::pair<std::vector<Column>, Execution_error> Dbms::make_executor_error(std::string const& message) {
     Execution_error err = Execution_error(message);
     Dbms::executor.set_error(err);
     Dbms::executor.set_error(err);
     return std::make_pair(Dbms::executor.tmp_cols, err);
 }
 
-Table Dbms::find_table_by_name(std::string const &name) {
+Table Dbms::find_table_by_name(std::string const& name) {
     return *std::find_if(Dbms::tables.begin(), Dbms::tables.end(),
                          [&name](Table t) {
                              return t.get_table_name() == name;
                          });
 }
 
-bool Dbms::is_table_already_exist(std::string const &table_name) {
+bool Dbms::is_table_already_exist(std::string const& table_name) {
     return std::any_of(Dbms::table_names.begin(), table_names.end(),
-                       [&table_name](std::string const &str) {
+                       [&table_name](std::string const& str) {
                            return str == table_name;
                        });
 }
@@ -171,7 +177,7 @@ void Dbms::populate_keys() {
     Query q = Dbms::executor.q;
     auto foreign_keys = q.get_foreign_keys();
     std::for_each(foreign_keys.begin(), foreign_keys.end(),
-                  [&q, this](Field const &fk) {
+                  [&q, this](Field const& fk) {
                       Dbms::executor.tmp_t.add_foreign_key(
                           Foreign_key(fk.value, q.get_table_name(), fk.k_a));
                   });
@@ -179,7 +185,7 @@ void Dbms::populate_keys() {
 
 std::vector<Query> Dbms::get_create_queries() {
     auto res = std::vector<Query>();
-    for (auto &q: Dbms::queries) {
+    for (auto& q : Dbms::queries) {
         if (q.get_query_type() == Query_type::Create)
             res.push_back(q);
     }
@@ -188,7 +194,7 @@ std::vector<Query> Dbms::get_create_queries() {
 
 std::vector<Query> Dbms::get_insert_queries() {
     auto res = std::vector<Query>();
-    for (auto &q: Dbms::queries) {
+    for (auto& q : Dbms::queries) {
         if (q.get_query_type() == Query_type::Insert)
             res.push_back(q);
     }
@@ -201,7 +207,7 @@ void Dbms::print_table_names() {
         return;
     }
     auto vec = std::vector<std::string>();
-    for (auto &t: Dbms::tables)
+    for (auto& t : Dbms::tables)
         vec.push_back(t.get_table_name());
     fmt::println("{}", vec);
 }
@@ -216,17 +222,17 @@ Dbms::~Dbms() {
         Dbms::make_save();
 }
 
-Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::vector<Column> cols) {
+Execution_error Dbms::add_and_override_cols(const std::string& table_name, std::vector<Column> cols) {
     auto table = Dbms::find_table_by_name(table_name);
     // delete from with an empty where
     if (Dbms::executor.q.get_query_type() == Query_type::Delete and Table("Func", cols).are_table_rows_empty()) {
         auto table_cols = table.get_columns();
-        for (auto &col: table_cols) {
+        for (auto& col : table_cols) {
             // erase all rows
             col.set_rows(std::vector<Row>());
         }
         table.set_columns(table_cols);
-        for (auto &t: Dbms::tables)
+        for (auto& t : Dbms::tables)
             if (t.get_table_name() == table_name)
                 t = table;
         return {};
@@ -240,13 +246,13 @@ Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::
         Dbms::executor.error = Execution_error(message);
         return Execution_error(message);
     }
-    for (auto &t_col: table_cols) {
-        for (auto &col: cols) {
+    for (auto& t_col : table_cols) {
+        for (auto& col : cols) {
             if (col.get_name() == t_col.get_name()) {
-                for (auto &row: col.get_rows()) {
+                for (auto& row : col.get_rows()) {
                     if (const Data_type row_type = return_data_type(row.get_data()); row_type != t_col.get_type()) {
                         const std::string message = "at EXECUTION: unable to override "
-                                "columns with improper data type";
+                            "columns with improper data type";
                         Dbms::executor.error = Execution_error(message);
                         return Execution_error(message);
                     }
@@ -256,13 +262,13 @@ Execution_error Dbms::add_and_override_cols(const std::string &table_name, std::
         }
     }
     table.set_columns(table_cols);
-    for (auto &t: Dbms::tables)
+    for (auto& t : Dbms::tables)
         if (t.get_table_name() == table_name)
             t = table;
     return {};
 }
 
-std::string Dbms::process_query_to_string(const std::string &input) {
+std::string Dbms::process_query_to_string(const std::string& input) {
     std::string lower_input = input;
     std::ranges::transform(lower_input, lower_input.begin(),
                            [](unsigned char c) { return std::tolower(c); });
@@ -271,13 +277,28 @@ std::string Dbms::process_query_to_string(const std::string &input) {
         if (tables.empty())
             ss << "[ *empty* ]";
         else {
-            for (auto &t : tables)
+            for (auto& t : tables)
                 ss << t.get_table_name() << "\n";
         }
         return ss.str();
     }
-    if (lower_input == "-help")
-        return "Available commands:\nSELECT, DROP TABLE, INSERT INTO, CREATE TABLE, DELETE FROM";
+    if (lower_input == "-help") {
+        return
+            "Available commands with examples:\n\n"
+            "1. CREATE TABLE\n"
+            "   CREATE TABLE users (id INTEGER, name NVARCHAR2, is_active INTEGER);\n\n"
+            "2. DROP TABLE\n"
+            "   DROP TABLE users;\n\n"
+            "3. INSERT INTO\n"
+            "   INSERT INTO users (id, name) VALUES ('1', 'Arsenii'), ('2', 'Olena');\n\n"
+            "4. SELECT\n"
+            "   SELECT id, name FROM users WHERE is_active = '1';\n"
+            "   SELECT COUNT(*) FROM users GROUP BY city HAVING COUNT(*) > 5;\n\n"
+            "5. UPDATE\n"
+            "   UPDATE users SET name = 'Yana' WHERE id = '2';\n\n"
+            "6. DELETE FROM\n"
+            "   DELETE FROM users WHERE id = '3';\n";
+    }
     if (lower_input == "-load") {
         load_prompt();
         return "Load prompt executed";
@@ -321,8 +342,9 @@ QueryResult Dbms::process_query(const std::string& input) {
         std::stringstream ss;
         if (tables.empty()) {
             ss << "[ *empty* ]";
-        } else {
-            for (auto &t : tables) {
+        }
+        else {
+            for (auto& t : tables) {
                 ss << t.get_table_name() << "\n";
             }
         }

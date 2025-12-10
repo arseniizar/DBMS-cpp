@@ -21,6 +21,8 @@ Ui::Ui(QWidget *parent)
     queryEdit = new QTextEdit(centralWidget);
     queryEdit->setPlaceholderText("Enter your SQL query here...");
 
+    highlighter = new SqlHighlighter(queryEdit->document());
+
     QHBoxLayout *buttonsLayout = new QHBoxLayout;
     runButton = new QPushButton("▶️ Run Query", centralWidget);
     listTablesButton = new QPushButton("List Tables", centralWidget);
