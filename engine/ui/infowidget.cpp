@@ -2,8 +2,7 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 
-InfoWidget::InfoWidget(QWidget* parent) : QWidget(parent)
-{
+InfoWidget::InfoWidget(QWidget* parent) : QWidget(parent) {
     auto* layout = new QVBoxLayout(this);
     auto* infoTextEdit = new QTextEdit(this);
     infoTextEdit->setReadOnly(true);
@@ -49,7 +48,7 @@ InfoWidget::InfoWidget(QWidget* parent) : QWidget(parent)
             </style>
         </head>
         <body>
-            <h1>About the Project: Arsenii's DBMS</h1>
+            <h1>About the Project: DBMS</h1>
             <p>
                 This is an educational Database Management System (DBMS) project, built from scratch in C++ using the Qt framework for the graphical interface.
                 The main goal is to understand how databases work "under the hood."

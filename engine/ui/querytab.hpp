@@ -7,8 +7,7 @@
 
 class CodeEditor;
 class QCompleter;
-class QTableView;
-class QTextEdit;
+class QTabWidget;
 class SqlTableModel;
 struct Column;
 
@@ -18,17 +17,16 @@ class QueryTab : public QWidget
 {
     Q_OBJECT
 public:
-    explicit QueryTab(QCompleter* completer, QWidget *parent = nullptr);
+    explicit QueryTab(QCompleter* completer, QWidget* parent = nullptr);
     ~QueryTab() override;
 
     CodeEditor* getEditor() const;
     void displayResult(const TabQueryResult& result, const QString& query);
+    void clearResultTabs();
 
 private:
     CodeEditor* queryEditor;
-    QTableView* tableView;
-    QTextEdit* messageEdit;
-    SqlTableModel* tableModel = nullptr;
+    QTabWidget* resultsTabWidget;
 };
 
 #endif // QUERYTAB_HPP
