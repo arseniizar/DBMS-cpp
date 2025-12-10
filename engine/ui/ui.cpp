@@ -24,7 +24,6 @@
 
 Ui::Ui(QWidget* parent)
     : QMainWindow(parent), model(nullptr) {
-
     setupUi();
     applyDarkTheme();
     dbms.load_save();
@@ -47,7 +46,12 @@ void Ui::setupUi() {
 
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
-    connect(tabWidget, &QTabWidget::tabCloseRequested, tabWidget, &QTabWidget::removeTab);
+    connect(tabWidget, &QTabWidget::tabCloseRequested, this, [this](int index) {
+        if (tabWidget->count() > 1) {
+            tabWidget->widget(index)->deleteLater();
+            tabWidget->removeTab(index);
+        }
+    });
     setCentralWidget(tabWidget);
 
     onNewQueryTab();
@@ -92,15 +96,20 @@ QIcon create_themed_icon(const QString& resource_path) {
 }
 
 void Ui::createActions() {
-    newQueryAction = new QAction(create_themed_icon(":/new.png"), "&New Query Tab", this);
+    QString runIconPath = ":/run";
+    if (!QFile::exists(runIconPath)) {
+        qDebug() << "!!! FATAL: Resource file not found at path:" << runIconPath;
+    }
+
+    newQueryAction = new QAction(create_themed_icon(":/new"), "&New Query Tab", this);
     newQueryAction->setShortcut(QKeySequence::New);
     connect(newQueryAction, &QAction::triggered, this, &Ui::onNewQueryTab);
 
-    openDbAction = new QAction(create_themed_icon(":/open.png"), "&Open Database...", this);
+    openDbAction = new QAction(create_themed_icon(":/open"), "&Open Database...", this);
     openDbAction->setShortcut(QKeySequence::Open);
     connect(openDbAction, &QAction::triggered, this, &Ui::onOpenDatabase);
 
-    runQueryAction = new QAction(create_themed_icon(":/run.png"), "&Run Query", this);
+    runQueryAction = new QAction(create_themed_icon(":/run"), "&Run Query", this);
     runQueryAction->setShortcut(QKeySequence(Qt::Key_F5));
     connect(runQueryAction, &QAction::triggered, this, &Ui::onRunQuery);
 
@@ -143,7 +152,7 @@ void Ui::createStatusBar() {
 }
 
 void Ui::createDocks() {
-    QDockWidget *dbExplorerDock = new QDockWidget("Database Explorer", this);
+    QDockWidget* dbExplorerDock = new QDockWidget("Database Explorer", this);
     dbExplorerDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     addDockWidget(Qt::LeftDockWidgetArea, dbExplorerDock);
 
@@ -173,11 +182,11 @@ void Ui::createDocks() {
 
     dbExplorerDock->setWidget(dbExplorerView);
 
-    QDockWidget *outputDock = new QDockWidget("Output", this);
+    QDockWidget* outputDock = new QDockWidget("Output", this);
     addDockWidget(Qt::BottomDockWidgetArea, outputDock);
 
-    QWidget *outputContainer = new QWidget();
-    auto *outputLayout = new QVBoxLayout(outputContainer);
+    QWidget* outputContainer = new QWidget();
+    auto* outputLayout = new QVBoxLayout(outputContainer);
     outputLayout->setContentsMargins(0, 0, 0, 0);
 
     tableView = new QTableView();
@@ -200,11 +209,11 @@ void Ui::createDocks() {
 
 void Ui::updateDatabaseExplorer() {
     dbExplorerModel->clear();
-    QStandardItem *root = dbExplorerModel->invisibleRootItem();
+    QStandardItem* root = dbExplorerModel->invisibleRootItem();
 
     std::vector<std::string> tableNames = dbms.get_table_names();
     for (const auto& tableName : tableNames) {
-        QStandardItem *tableItem = new QStandardItem(QString::fromStdString(tableName));
+        QStandardItem* tableItem = new QStandardItem(QString::fromStdString(tableName));
         tableItem->setIcon(QIcon::fromTheme("database"));
         tableItem->setEditable(false);
         root->appendRow(tableItem);
@@ -224,11 +233,12 @@ void Ui::onNewQueryTab() {
     newQueryEdit->setFocus();
 }
 
-void Ui::onTableClicked(const QModelIndex &index) {
+void Ui::onTableClicked(const QModelIndex& index) {
     if (!index.parent().isValid()) {
         QString tableName = dbExplorerModel->data(index).toString();
         onNewQueryTab();
         currentQueryEdit()->setText(QString("SELECT * FROM %1;").arg(tableName));
+
         runQueryAction->trigger();
     }
 }
@@ -241,7 +251,8 @@ void Ui::onOpenDatabase() {
     if (dbms.load_database_from_path(dir.toStdString())) {
         statusBar()->showMessage("Database loaded successfully!", 4000);
         updateDatabaseExplorer();
-    } else {
+    }
+    else {
         QMessageBox::warning(this, "Error", "Failed to load database from the selected directory.");
         statusBar()->showMessage("Failed to load database.", 4000);
     }
@@ -274,13 +285,15 @@ void Ui::onRunQuery() {
             tableView->setVisible(false);
             messageEdit->setVisible(true);
             statusBar()->showMessage("Query finished.", 3000);
-        } else if constexpr (std::is_same_v<T, std::vector<Column>>) {
+        }
+        else if constexpr (std::is_same_v<T, std::vector<Column>>) {
             if (arg.empty() || (arg.begin()->get_rows().empty())) {
                 messageEdit->setPlainText("Query executed successfully, no rows returned.");
                 tableView->setVisible(false);
                 messageEdit->setVisible(true);
                 statusBar()->showMessage("Query finished. No rows returned.", 3000);
-            } else {
+            }
+            else {
                 model = new SqlTableModel(arg, this);
                 tableView->setModel(model);
                 messageEdit->setVisible(false);

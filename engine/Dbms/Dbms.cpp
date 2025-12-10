@@ -7,6 +7,8 @@
 #include "../utils/ut_contains_elems/ut_contains_elems.hpp"
 #include <fmt/core.h>
 
+#include "engine/utils/ut_print/ut_print.hpp"
+
 void Dbms::load_prompt() {
     while (true) {
         fmt::println("What save do you want to load? (type corresponding number)");
@@ -139,11 +141,44 @@ void Dbms::print_table_names() {
 Dbms::Dbms() {
     Dbms::is_dbms_changed = false;
     Dbms::is_loading = true;
+
+    try {
+        if (!std::filesystem::exists(table_saves_path)) {
+            std::filesystem::create_directories(table_saves_path);
+            fmt::println("Created saves directory at: {}", table_saves_path);
+        }
+    }
+    catch (const std::filesystem::filesystem_error& e) {
+        fmt::println("Error creating directory: {}", e.what());
+    }
 }
 
 Dbms::~Dbms() {
     if (Dbms::is_dbms_changed)
         Dbms::make_save();
+}
+
+void Dbms::create_default_database() {
+    fmt::println("No saves found. Creating a default database...");
+
+    process_query("CREATE TABLE employees (id INTEGER, name NVARCHAR2, department NVARCHAR2, salary INTEGER)");
+    process_query("CREATE TABLE departments (id INTEGER, name NVARCHAR2, location NVARCHAR2)");
+
+    process_query(
+        "INSERT INTO departments (id, name, location) VALUES ('1', 'Engineering', 'Kyiv'), ('2', 'Human Resources', 'Lviv'), ('3', 'Sales', 'Remote')");
+
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('101', 'Arsenii Zarudniuk', 'Engineering', '60000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('102', 'Olena Ivanova', 'Human Resources', '45000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('103', 'Max Popov', 'Engineering', '55000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('104', 'Yana Koval', 'Sales', '50000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('105', 'Petro Bilyk', 'Sales', '48000')");
+
+    is_dbms_changed = true;
 }
 
 Execution_error Dbms::add_and_override_cols(const std::string& table_name, std::vector<Column> cols) {
@@ -203,9 +238,22 @@ std::string Dbms::process_query_to_string(const std::string& input) {
         return ss.str();
     }
     if (lower_input == "-help") {
-        return
-            "Available commands with examples:\n\n1. CREATE TABLE\n   CREATE TABLE users (id INTEGER, name NVARCHAR2);\n\n2. DROP TABLE\n   DROP TABLE users;\n\n...";
-        // (скорочено)
+        std::string helpText =
+            "Available commands with examples:\n\n"
+            "1. CREATE TABLE\n"
+            "   CREATE TABLE users (id INTEGER, name NVARCHAR2, is_active INTEGER);\n\n"
+            "2. DROP TABLE\n"
+            "   DROP TABLE users;\n\n"
+            "3. INSERT INTO\n"
+            "   INSERT INTO users (id, name) VALUES ('1', 'Arsenii'), ('2', 'Olena');\n\n"
+            "4. SELECT\n"
+            "   SELECT id, name FROM users WHERE is_active = '1';\n"
+            "   SELECT COUNT(*) FROM users GROUP BY city HAVING COUNT(*) > 5;\n\n"
+            "5. UPDATE\n"
+            "   UPDATE users SET name = 'Yana' WHERE id = '2';\n\n"
+            "6. DELETE FROM\n"
+            "   DELETE FROM users WHERE id = '3';\n";
+        return helpText;
     }
     if (lower_input == "-load") {
         load_prompt();
@@ -215,27 +263,26 @@ std::string Dbms::process_query_to_string(const std::string& input) {
         return "exit";
     }
 
-    std::stringstream buffer;
-    auto old_cout_buf = std::cout.rdbuf(buffer.rdbuf());
-
     parser.clean();
     auto [query, parser_error] = parse_query(input);
 
     if (!parser_error.message.empty()) {
-        std::cout.rdbuf(old_cout_buf);
         return "Parse error: " + parser_error.message;
     }
 
     is_dbms_changed = true;
     auto [columns, execution_error] = execute_query(query);
 
-    std::cout.rdbuf(old_cout_buf);
 
     if (!execution_error.message.empty()) {
         return "Execution error: " + execution_error.message;
     }
 
-    if (!buffer.str().empty()) {
+    if (query.get_query_type() == Query_type::Select && !columns.empty()) {
+        std::stringstream buffer;
+        auto old_cout_buf = std::cout.rdbuf(buffer.rdbuf());
+        ut_print(columns);
+        std::cout.rdbuf(old_cout_buf);
         return buffer.str();
     }
 

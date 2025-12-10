@@ -84,6 +84,7 @@ void Parser::step_select_from_table() {
     }
 
     if (next_token.empty()) {
+        pop_flag = true;
         return;
     }
 

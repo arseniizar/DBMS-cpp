@@ -8,6 +8,12 @@
 
 void Dbms::load_save() {
     namespace fs = std::filesystem;
+
+    if (!fs::exists(Dbms::table_saves_path) || fs::is_empty(fs::path(Dbms::table_saves_path))) {
+        create_default_database();
+        return;
+    };
+
     if (fs::is_empty(fs::path(Dbms::table_saves_path))) {
         fmt::println("There are no saves available");
         return;

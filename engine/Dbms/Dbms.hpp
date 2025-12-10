@@ -97,6 +97,8 @@ public:
 
     void load_save();
 
+    void create_default_database();
+
     std::string process_query_to_string(const std::string& input);
 
     QueryResult process_query(const std::string& input);

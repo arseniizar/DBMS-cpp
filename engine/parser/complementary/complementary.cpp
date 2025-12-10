@@ -162,6 +162,9 @@ bool Parser::peek_is_comma(std::string const &message) {
 }
 
 bool Parser::is_index_at_end() {
+    fmt::println("!!! DEBUG is_index_at_end: index={}, sql.size={}, pop_flag={}",
+                    index, sql.size(), pop_flag);
+
     if (Parser::index >= Parser::sql.size() and pop_flag) {
         auto sql_upper = Parser::sql;
         str_toupper(sql_upper);
