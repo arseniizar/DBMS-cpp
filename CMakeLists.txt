@@ -47,7 +47,9 @@ file(GLOB UI_SOURCES "engine/ui/*.cpp")
 
 add_executable(dbms_app main.cpp ${UI_SOURCES}
         engine/ui/sqltablemodel.cpp
-        engine/ui/sqltablemodel.hpp)
+        engine/ui/sqltablemodel.hpp
+        engine/ui/sqlhighlighter.cpp
+        engine/ui/sqlhighlighter.hpp)
 
 target_link_libraries(dbms_app PRIVATE
     dbms_engine

@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <engine/Dbms/Dbms.hpp>
 #include "sqltablemodel.hpp"
+#include "sqlhighlighter.hpp"
 
 class QTableView;
 class QTextEdit;
@@ -26,6 +27,7 @@ private:
 
     Dbms dbms;
     SqlTableModel *model;
+    SqlHighlighter *highlighter;
 private slots:
     void onRunButtonClicked();
     void onListTablesClicked();
