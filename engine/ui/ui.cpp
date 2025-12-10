@@ -46,17 +46,14 @@ QIcon create_themed_icon(const QString& resource_path)
 
 Ui::Ui(QWidget* parent) : QMainWindow(parent)
 {
-    setupUi();
     setupCompleter();
+
+    setupUi();
+
     applyDarkTheme();
 
-    for (int i = 0; i < tabWidget->count(); ++i) {
-        if (auto* tab = qobject_cast<QueryTab*>(tabWidget->widget(i))) {
-            tab->getEditor()->setCompleter(completer);
-        }
-    }
-
     dbms.load_save();
+
     updateDatabaseExplorer();
 }
 
@@ -96,8 +93,6 @@ void Ui::setupCompleter()
         QListView { background-color: #252526; color: #CCCCCC; border: 1px solid #3E3E42; }
         QListView::item:selected { background-color: #094771; }
     )");
-
-    updateCompleterContext();
 }
 
 void Ui::applyDarkTheme()

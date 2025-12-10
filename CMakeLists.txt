@@ -45,15 +45,7 @@ target_link_libraries(dbms_engine PUBLIC fmt::fmt)
 
 file(GLOB UI_SOURCES "engine/ui/*.cpp")
 
-set(RESOURCE_FILE resources/resources.qrc
-        engine/ui/codeeditor.cpp
-        engine/ui/codeeditor.hpp
-        engine/ui/querytab.cpp
-        engine/ui/querytab.hpp
-        engine/ui/helpwidget.cpp
-        engine/ui/helpwidget.hpp
-        engine/ui/infowidget.cpp
-        engine/ui/infowidget.hpp)
+set(RESOURCE_FILE resources/resources.qrc)
 
 add_executable(
         dbms_app main.cpp
