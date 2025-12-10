@@ -2,35 +2,37 @@
 #include "codeeditor.hpp"
 #include "querytab.hpp"
 #include "helpwidget.hpp"
+#include "infowidget.hpp"
 
 #include <QApplication>
-#include <QTabWidget>
-#include <QTabBar>
-#include <QTextEdit>
-#include <QTableView>
-#include <QStatusBar>
-#include <QMenuBar>
-#include <QToolBar>
+#include <QColor>
+#include <QCompleter>
+#include <QDebug>
 #include <QDockWidget>
-#include <QMessageBox>
-#include <QVBoxLayout>
-#include <QHeaderView>
+#include <QFile>
 #include <QFileDialog>
+#include <QHeaderView>
 #include <QIcon>
 #include <QKeySequence>
-#include <QPalette>
-#include <QColor>
-#include <QTreeView>
-#include <QStandardItemModel>
-#include <variant>
+#include <QMenuBar>
+#include <QMessageBox>
 #include <QPainter>
-#include <QCompleter>
-#include <QStringListModel>
-#include <QFile>
-#include <QDebug>
+#include <QPalette>
 #include <QRegularExpression>
+#include <QStandardItemModel>
+#include <QStatusBar>
+#include <QStringListModel>
+#include <QTabBar>
+#include <QTabWidget>
+#include <QTableView>
+#include <QTextEdit>
+#include <QToolBar>
+#include <QTreeView>
+#include <QVBoxLayout>
+#include <variant>
 
-QIcon create_themed_icon(const QString& resource_path) {
+QIcon create_themed_icon(const QString& resource_path)
+{
     QIcon icon(resource_path);
     if (icon.isNull()) {
         return QIcon();
@@ -42,7 +44,8 @@ QIcon create_themed_icon(const QString& resource_path) {
     return QIcon(pixmap);
 }
 
-Ui::Ui(QWidget* parent) : QMainWindow(parent) {
+Ui::Ui(QWidget* parent) : QMainWindow(parent)
+{
     setupUi();
     setupCompleter();
     applyDarkTheme();
@@ -59,8 +62,9 @@ Ui::Ui(QWidget* parent) : QMainWindow(parent) {
 
 Ui::~Ui() {}
 
-void Ui::setupUi() {
-    setWindowTitle("Arsenii's DBMS");
+void Ui::setupUi()
+{
+    setWindowTitle("DBMS");
     setWindowIcon(QIcon(":/open"));
     resize(1200, 800);
 
@@ -78,7 +82,8 @@ void Ui::setupUi() {
     onNewQueryTab(true);
 }
 
-void Ui::setupCompleter() {
+void Ui::setupCompleter()
+{
     completer = new QCompleter(this);
     completerModel = new QStringListModel(this);
     completer->setModel(completerModel);
@@ -95,7 +100,8 @@ void Ui::setupCompleter() {
     updateCompleterContext();
 }
 
-void Ui::applyDarkTheme() {
+void Ui::applyDarkTheme()
+{
     qApp->setStyle("Fusion");
     QPalette darkPalette;
     darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
@@ -114,10 +120,11 @@ void Ui::applyDarkTheme() {
     qApp->setPalette(darkPalette);
 }
 
-void Ui::createActions() {
+void Ui::createActions()
+{
     newQueryAction = new QAction(create_themed_icon(":/new"), "&New Query Tab", this);
     newQueryAction->setShortcut(QKeySequence::New);
-    connect(newQueryAction, &QAction::triggered, this, [this](){ onNewQueryTab(false); });
+    connect(newQueryAction, &QAction::triggered, this, [this]() { onNewQueryTab(false); });
 
     openDbAction = new QAction(create_themed_icon(":/open"), "&Open Database...", this);
     openDbAction->setShortcut(QKeySequence::Open);
@@ -136,9 +143,13 @@ void Ui::createActions() {
 
     helpAction = new QAction(QIcon::fromTheme("help-contents"), "&Help", this);
     connect(helpAction, &QAction::triggered, this, &Ui::onHelp);
+
+    infoAction = new QAction(create_themed_icon(":/about"), "&Info", this);
+    connect(infoAction, &QAction::triggered, this, &Ui::onInfo);
 }
 
-void Ui::createMenus() {
+void Ui::createMenus()
+{
     QMenu* fileMenu = menuBar()->addMenu("&File");
     fileMenu->addAction(newQueryAction);
     fileMenu->addAction(openDbAction);
@@ -150,21 +161,27 @@ void Ui::createMenus() {
 
     QMenu* helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction(helpAction);
+    helpMenu->addAction(infoAction);
     helpMenu->addAction(aboutAction);
 }
 
-void Ui::createToolBars() {
+void Ui::createToolBars()
+{
     QToolBar* mainToolBar = addToolBar("Main");
     mainToolBar->addAction(newQueryAction);
     mainToolBar->addAction(openDbAction);
     mainToolBar->addAction(runQueryAction);
+    mainToolBar->addAction(helpAction);
+    mainToolBar->addAction(infoAction);
 }
 
-void Ui::createStatusBar() {
+void Ui::createStatusBar()
+{
     statusBar()->showMessage("Ready");
 }
 
-void Ui::createDocks() {
+void Ui::createDocks()
+{
     QDockWidget* dbExplorerDock = new QDockWidget("Database Explorer", this);
     dbExplorerDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     dbExplorerDock->setStyleSheet(R"( QDockWidget::title { text-align: left; padding: 6px; font-size: 16px; font-weight: bold; } )");
@@ -174,13 +191,15 @@ void Ui::createDocks() {
     dbExplorerView->setModel(dbExplorerModel);
     dbExplorerView->setHeaderHidden(true);
     connect(dbExplorerView, &QTreeView::clicked, this, &Ui::onTableClicked);
-    dbExplorerView->setStyleSheet(R"( QTreeView { background-color: #252526; color: #CCCCCC; border: none; } QTreeView::item { padding: 8px; font-size: 16px; } QTreeView::item:hover { background-color: #3E3E42; } QTreeView::item:selected { background-color: #094771; } )");
+    dbExplorerView->setStyleSheet(
+        R"( QTreeView { background-color: #252526; color: #CCCCCC; border: none; } QTreeView::item { padding: 8px; font-size: 16px; } QTreeView::item:hover { background-color: #3E3E42; } QTreeView::item:selected { background-color: #094771; } )");
 
     dbExplorerDock->setWidget(dbExplorerView);
     addDockWidget(Qt::LeftDockWidgetArea, dbExplorerDock);
 }
 
-void Ui::updateDatabaseExplorer() {
+void Ui::updateDatabaseExplorer()
+{
     dbExplorerModel->clear();
     QStandardItem* root = dbExplorerModel->invisibleRootItem();
     for (const auto& tableName : dbms.get_table_names()) {
@@ -192,25 +211,29 @@ void Ui::updateDatabaseExplorer() {
     updateCompleterContext();
 }
 
-QueryTab* Ui::currentQueryTab() {
+QueryTab* Ui::currentQueryTab()
+{
     return qobject_cast<QueryTab*>(tabWidget->currentWidget());
 }
 
-CodeEditor* Ui::currentQueryEdit() {
+CodeEditor* Ui::currentQueryEdit()
+{
     if (QueryTab* tab = currentQueryTab()) {
         return tab->getEditor();
     }
     return nullptr;
 }
 
-void Ui::onNewQueryTab(bool isConsole) {
+void Ui::onNewQueryTab(bool isConsole)
+{
     auto* newTab = new QueryTab(completer, this);
     connect(newTab->getEditor(), &CodeEditor::cursorPositionChanged, this, &Ui::updateCompleterContext);
 
     int newIndex;
     if (isConsole) {
         newIndex = tabWidget->insertTab(0, newTab, "Console");
-    } else {
+    }
+    else {
         newIndex = tabWidget->addTab(newTab, QString("Query %1").arg(tabWidget->count() + 1));
     }
 
@@ -218,44 +241,55 @@ void Ui::onNewQueryTab(bool isConsole) {
     newTab->getEditor()->setFocus();
 }
 
-void Ui::closeTab(int index) const {
-    if (index == 0) return;
+void Ui::closeTab(int index) const
+{
+    if (index == 0) {
+        return;
+    }
 
     QWidget* tab = tabWidget->widget(index);
     tabWidget->removeTab(index);
     tab->deleteLater();
 }
 
-void Ui::onTableClicked(const QModelIndex& index) {
+void Ui::onTableClicked(const QModelIndex& index)
+{
     if (!index.parent().isValid()) {
         QString tableName = dbExplorerModel->data(index).toString();
         onNewQueryTab(false);
-        if(auto* editor = currentQueryEdit()) {
+        if (auto* editor = currentQueryEdit()) {
             editor->setText(QString("SELECT * FROM %1;").arg(tableName));
             runQueryAction->trigger();
         }
     }
 }
 
-void Ui::onOpenDatabase() {
+void Ui::onOpenDatabase()
+{
     QString dir = QFileDialog::getExistingDirectory(this, "Open Database Directory", "saves/tables");
-    if (dir.isEmpty()) return;
+    if (dir.isEmpty()) {
+        return;
+    }
     if (dbms.load_database_from_path(dir.toStdString())) {
         statusBar()->showMessage("Database loaded successfully!", 4000);
         updateDatabaseExplorer();
-    } else {
+    }
+    else {
         QMessageBox::warning(this, "Error", "Failed to load database from the selected directory.");
     }
 }
 
-void Ui::onRunQuery() {
+void Ui::onRunQuery()
+{
     QueryTab* currentTab = currentQueryTab();
-    if (!currentTab) return;
+    if (!currentTab) {
+        return;
+    }
 
     CodeEditor* editor = currentTab->getEditor();
     QString textToExecute = editor->textCursor().hasSelection()
-                            ? editor->textCursor().selectedText()
-                            : editor->toPlainText();
+                                ? editor->textCursor().selectedText()
+                                : editor->toPlainText();
 
     if (textToExecute.trimmed().isEmpty()) {
         statusBar()->showMessage("No query to execute.", 3000);
@@ -269,7 +303,9 @@ void Ui::onRunQuery() {
 
     for (int i = 0; i < queries.size(); ++i) {
         const QString& queryStr = queries[i];
-        if (queryStr.trimmed().isEmpty()) continue;
+        if (queryStr.trimmed().isEmpty()) {
+            continue;
+        }
 
         QueryResult result = dbms.process_query(queryStr.trimmed().toStdString());
 
@@ -285,11 +321,14 @@ void Ui::onRunQuery() {
     statusBar()->showMessage("All queries finished.", 3000);
 }
 
-void Ui::about() {
-    QMessageBox::about(this, "About Arsenii's DBMS", "A simple yet powerful SQL database management system built with C++ and Qt.\n\nCreated by Arsenii Zarudniuk.");
+void Ui::about()
+{
+    QMessageBox::about(this, "About DBMS",
+                       "A simple yet powerful SQL database management system built with C++ and Qt.\n\nCreated by Arsenii Zarudniuk.");
 }
 
-void Ui::onHelp() {
+void Ui::onHelp()
+{
     for (int i = 0; i < tabWidget->count(); ++i) {
         if (tabWidget->tabText(i) == "Help") {
             tabWidget->setCurrentIndex(i);
@@ -302,12 +341,31 @@ void Ui::onHelp() {
     tabWidget->setCurrentIndex(helpIndex);
 }
 
-void Ui::updateCompleterContext() {
+void Ui::onInfo()
+{
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        if (tabWidget->tabText(i) == "Info") {
+            tabWidget->setCurrentIndex(i);
+            return;
+        }
+    }
+
+    auto* infoWidget = new InfoWidget(this);
+    int infoIndex = tabWidget->addTab(infoWidget, "Info");
+    tabWidget->setCurrentIndex(infoIndex);
+}
+
+void Ui::updateCompleterContext()
+{
     QueryTab* currentTab = currentQueryTab();
-    if (!currentTab) return;
+    if (!currentTab) {
+        return;
+    }
 
     CodeEditor* editor = currentTab->getEditor();
-    if (!editor || !completer) return;
+    if (!editor || !completer) {
+        return;
+    }
 
     QTextCursor cursor = editor->textCursor();
     cursor.movePosition(QTextCursor::StartOfWord, QTextCursor::MoveAnchor);
@@ -323,7 +381,8 @@ void Ui::updateCompleterContext() {
 
     if (prevWord == "FROM" || prevWord == "TABLE" || prevWord == "INTO" || prevWord == "UPDATE") {
         keywords = tableNames;
-    } else {
+    }
+    else {
         keywords << "SELECT" << "FROM" << "WHERE" << "INSERT" << "INTO" << "VALUES"
             << "UPDATE" << "SET" << "DELETE" << "CREATE" << "TABLE" << "DROP"
             << "GROUP BY" << "HAVING" << "COUNT";

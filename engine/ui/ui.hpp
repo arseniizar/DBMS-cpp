@@ -12,21 +12,25 @@ class QTreeView;
 class QStandardItemModel;
 class CodeEditor;
 class QueryTab;
+class HelpWidget;
+class InfoWidget;
 
-class Ui final : public QMainWindow {
+class Ui final : public QMainWindow
+{
     Q_OBJECT
 public:
-    explicit Ui(QWidget *parent = nullptr);
+    explicit Ui(QWidget* parent = nullptr);
     ~Ui() override;
 
 private slots:
     void onOpenDatabase();
     void onRunQuery();
     void onHelp();
+    void onInfo();
     void about();
     void onNewQueryTab(bool isConsole = false);
     void closeTab(int index) const;
-    void onTableClicked(const QModelIndex &index);
+    void onTableClicked(const QModelIndex& index);
     void updateCompleterContext();
 
 private:
@@ -45,18 +49,21 @@ private:
 
     Dbms dbms;
 
-    QTabWidget *tabWidget;
-    QTreeView *dbExplorerView;
-    QStandardItemModel *dbExplorerModel;
-    QCompleter *completer;
-    QStringListModel *completerModel;
+    // Widgets
+    QTabWidget*       tabWidget;
+    QTreeView*        dbExplorerView;
+    QStandardItemModel* dbExplorerModel;
+    QCompleter*       completer;
+    QStringListModel* completerModel;
 
-    QAction *newQueryAction;
-    QAction *openDbAction;
-    QAction *runQueryAction;
-    QAction *helpAction;
-    QAction *exitAction;
-    QAction *aboutAction;
+    // Actions
+    QAction*          newQueryAction;
+    QAction*          openDbAction;
+    QAction*          runQueryAction;
+    QAction*          helpAction;
+    QAction*          infoAction;
+    QAction*          exitAction;
+    QAction*          aboutAction;
 };
 
 #endif // UI_HPP

@@ -51,7 +51,9 @@ set(RESOURCE_FILE resources/resources.qrc
         engine/ui/querytab.cpp
         engine/ui/querytab.hpp
         engine/ui/helpwidget.cpp
-        engine/ui/helpwidget.hpp)
+        engine/ui/helpwidget.hpp
+        engine/ui/infowidget.cpp
+        engine/ui/infowidget.hpp)
 
 add_executable(
         dbms_app main.cpp
