@@ -1,34 +1,43 @@
-# Simple DBMS in C++
+# Simple DBMS in C++ with Qt
 
-A basic database management system implemented in C++ that supports essential SQL-like operations. This lightweight engine processes common SQL commands in DDL, DML, and DQL categories. **This is a console application** that allows users to interact directly via the command line.
+This is an educational Database Management System (DBMS) project, built from scratch in C++. It features a custom SQL engine for backend logic and a graphical user interface (GUI) made with the Qt framework.
 
-## Features
+The main goal of this project is to understand how databases work "under the hood."
 
-- **DDL (Data Definition Language)**
-  - `DROP`: Remove a table from the database.
-- **DML (Data Manipulation Language)**
-  - `INSERT`: Add new records to a table.
-  - `UPDATE`: Modify existing records.
-- **DQL (Data Query Language)**
-  - `SELECT`: Retrieve data from one or more tables.
-  - `WHERE`: Filter records based on specific conditions.
-  - `GROUP BY`: Aggregate data based on one or more columns.
+## Key Features
 
-> **Note:** Some aspects such as performance and full SQL compatibility are not fully confirmed and remain a work in progress.
+- **Custom SQL Engine:** Handles core SQL commands for defining, manipulating, and querying data.
+- **Graphical User Interface:** A user-friendly desktop application with:
+  - A dark theme.
+  - A tabbed interface for writing multiple queries.
+  - A database explorer to view tables.
+  - SQL syntax highlighting and code completion.
+- **Supported SQL Commands:**
+  - `CREATE TABLE`, `DROP TABLE`
+  - `INSERT INTO`
+  - `SELECT` (with `FROM`, `WHERE`, `GROUP BY`, `HAVING`, and `COUNT` aggregation)
+  - `UPDATE`
+  - `DELETE`
+- **File-Based Storage:** The database is saved as plain text files, making it easy to inspect and manage.
+
+## Screenshot
+
+![App Screenshot](assets/app.png)
 
 ## Prerequisites
 
-- **C++ Compiler:** A compiler supporting C++17 (e.g., GCC 7+, Clang 5+, MSVC 2017+).
-- **Build Tools:** 
-  - Optionally [CMake](https://cmake.org/cmake/help/latest/) for an organized build process.
-- **Standard Libraries:** Uses only the C++ Standard Library.
-- **Additional Libraries:**
-  - [fmt](https://fmt.dev/latest/index.html) for formatting output. Ensure that the fmt library is available on your system.
+- **C++ Compiler:** A compiler supporting C++20 (e.g., GCC, Clang, MSVC).
+- **Qt Framework:** Version 6 or higher.
+- **CMake:** For building the project.
+- **fmtlib:** For string formatting.
+- **Googletest:** For running unit tests.
 
-## Installation
+## Installation & Running
 
-Clone the repository from GitHub:
-
-```bash
+1.  Clone the repository:
+    ```bash
     git clone https://github.com/arseniizar/DBMS-cpp.git
     cd DBMS-cpp
+    ```
+2.  Build the project using CMake and your preferred C++ compiler. Most IDEs like CLion or Qt Creator can open the `CMakeLists.txt` file directly.
+3.  Run the compiled application.
