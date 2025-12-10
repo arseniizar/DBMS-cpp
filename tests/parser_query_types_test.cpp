@@ -2,8 +2,8 @@
 // Created by Arsenii Zarudniuk on 01/12/2025.
 //
 #include <gtest/gtest.h>
-#include "parser/Parser.hpp"
-#include "query/Query.hpp"
+#include "engine/parser/Parser.hpp"
+#include "engine/query/Query.hpp"
 
 class ParserTest : public ::testing::Test {
 protected:

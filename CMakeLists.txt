@@ -45,11 +45,13 @@ target_link_libraries(dbms_engine PUBLIC fmt::fmt)
 
 file(GLOB UI_SOURCES "engine/ui/*.cpp")
 
-add_executable(dbms_app main.cpp ${UI_SOURCES}
-        engine/ui/sqltablemodel.cpp
-        engine/ui/sqltablemodel.hpp
-        engine/ui/sqlhighlighter.cpp
-        engine/ui/sqlhighlighter.hpp)
+set(RESOURCE_FILE resources/resources.qrc)
+
+add_executable(
+        dbms_app main.cpp
+        ${UI_SOURCES}
+        ${RESOURCE_FILE}
+)
 
 target_link_libraries(dbms_app PRIVATE
     dbms_engine

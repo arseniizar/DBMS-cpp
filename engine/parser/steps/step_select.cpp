@@ -77,6 +77,17 @@ void Parser::step_select_from_table() {
     }
 
     std::string next_token = peek();
+
+    if (next_token == ";") {
+        pop();
+        next_token = peek();
+    }
+
+    if (next_token.empty()) {
+        pop_flag = true;
+        return;
+    }
+
     str_toupper(next_token);
 
     if (next_token == "WHERE") {
@@ -84,9 +95,6 @@ void Parser::step_select_from_table() {
     }
     else if (next_token == "GROUP BY") {
         step = Step::group_by;
-    }
-    else if (next_token.empty()) {
-        pop_flag = true;
     }
     else {
         step = Step::error;

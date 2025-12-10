@@ -63,13 +63,9 @@ private:
 
     void make_save();
 
-    void load_save();
-
     void load_save_menu();
 
     void load_prompt();
-
-    void parse_and_execute(std::string const& input);
 
     Execution_error add_and_override_cols(std::string const& table_name, std::vector<Column> cols);
 
@@ -88,9 +84,6 @@ private:
                                                      const std::vector<Field>& requested_fields,
                                                      const std::vector<Condition>& having_conditions);
 
-
-    void start();
-
     std::pair<std::vector<Column>, Execution_error> are_consistent();
 
     std::pair<std::vector<Column>, Execution_error> are_cols_consistent();
@@ -100,13 +93,19 @@ private:
     std::pair<std::vector<Column>, Execution_error> drop_table(std::string const& table_name);
 
 public:
-    void run();
-
     void print_table_names();
+
+    void load_save();
+
+    void create_default_database();
 
     std::string process_query_to_string(const std::string& input);
 
     QueryResult process_query(const std::string& input);
+
+    bool load_database_from_path(const std::string& path);
+
+    std::vector<std::string> get_table_names() const;
 
     Dbms();
 

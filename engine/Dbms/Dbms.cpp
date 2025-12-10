@@ -2,64 +2,12 @@
 
 #include <iostream>
 #include <algorithm>
+#include <fstream>
 #include <ranges>
 #include "../utils/ut_contains_elems/ut_contains_elems.hpp"
 #include <fmt/core.h>
 
-void Dbms::run() {
-    Dbms::start();
-    while (true) {
-        auto input = std::string();
-        std::getline(std::cin, input);
-        if (input.empty())
-            continue;
-
-        std::ranges::transform(input, input.begin(),
-                               [](const unsigned char c) { return std::tolower(c); });
-
-        if (input == "-tables") {
-            Dbms::print_table_names();
-            continue;
-        }
-        if (input == "-help") {
-            fmt::println("Available commands:");
-            fmt::println("SELECT, DROP TABLE, INSERT INTO, CREATE TABLE, DELETE FROM");
-            continue;
-        }
-        if (input == "-load") {
-            load_prompt();
-            continue;
-        }
-        if (input == "exit") {
-            fmt::println("Do you want to save the DBMS? (yes/no)");
-            std::getline(std::cin, input);
-            Dbms::is_dbms_changed = input == "yes";
-            break;
-        }
-        Dbms::parse_and_execute(input);
-        Dbms::parser.clean_error();
-        Dbms::executor.clean_error();
-    }
-    fmt::println("You have exited the program");
-}
-
-void Dbms::start() {
-    fmt::println("Welcome to the Arsenii`s database!");
-    fmt::println("Here you can to write some simple queries!");
-    fmt::println("Here are tables that are already present in the DBMS:");
-    Dbms::print_table_names();
-    fmt::println("Hints:\n"
-        "If you want to check details about tables you can use:\n"
-        "\"select * from [TABLE_NAME]\"\n"
-        "If you want to check what tables are present in the DBMS:\n"
-        "\"-tables\"\n"
-        "If you need help:\n"
-        "\"-help\"\n"
-        "If you want to save tables exit the DBMS\n"
-        "If you want to load tables:\n"
-        "\"-load\"");
-    fmt::println("If you want to exit, type EXIT :)");
-}
+#include "engine/utils/ut_print/ut_print.hpp"
 
 void Dbms::load_prompt() {
     while (true) {
@@ -94,31 +42,9 @@ void Dbms::load_prompt() {
     }
 }
 
-void Dbms::parse_and_execute(const std::string& input) {
-    std::pair<Query, Parse_error> parse_pair = Dbms::parse_query(input);
-    if (!parse_pair.second.message.empty()) {
-        Dbms::parse_errors.push_back(parse_pair.second);
-    }
-    else {
-        Dbms::is_dbms_changed = true;
-        std::pair<std::vector<Column>, Execution_error>
-            execution_pair = Dbms::execute_query(parse_pair.first);
-        if (!execution_pair.second.message.empty()) {
-            Dbms::execution_errors.push_back(execution_pair.second);
-        }
-        else {
-            fmt::println("proceeding...");
-        }
-    }
-}
-
 std::pair<Query, Parse_error> Dbms::parse_query(std::string const& str) {
-    Dbms::parser.input(str);
-    Query q = Dbms::parser.parse();
-    if (!Dbms::parser.get_error().message.empty())
-        fmt::println("{}", Dbms::parser.get_error().message);
-    //    else fmt::println("SUCCESSFUL QUERY!");
-    Dbms::parser.clean();
+    parser.input(str);
+    Query q = parser.parse();
     return std::make_pair(q, parser.get_error());
 }
 
@@ -215,11 +141,44 @@ void Dbms::print_table_names() {
 Dbms::Dbms() {
     Dbms::is_dbms_changed = false;
     Dbms::is_loading = true;
+
+    try {
+        if (!std::filesystem::exists(table_saves_path)) {
+            std::filesystem::create_directories(table_saves_path);
+            fmt::println("Created saves directory at: {}", table_saves_path);
+        }
+    }
+    catch (const std::filesystem::filesystem_error& e) {
+        fmt::println("Error creating directory: {}", e.what());
+    }
 }
 
 Dbms::~Dbms() {
     if (Dbms::is_dbms_changed)
         Dbms::make_save();
+}
+
+void Dbms::create_default_database() {
+    fmt::println("No saves found. Creating a default database...");
+
+    process_query("CREATE TABLE employees (id INTEGER, name NVARCHAR2, department NVARCHAR2, salary INTEGER)");
+    process_query("CREATE TABLE departments (id INTEGER, name NVARCHAR2, location NVARCHAR2)");
+
+    process_query(
+        "INSERT INTO departments (id, name, location) VALUES ('1', 'Engineering', 'Kyiv'), ('2', 'Human Resources', 'Lviv'), ('3', 'Sales', 'Remote')");
+
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('101', 'Arsenii Zarudniuk', 'Engineering', '60000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('102', 'Olena Ivanova', 'Human Resources', '45000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('103', 'Max Popov', 'Engineering', '55000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('104', 'Yana Koval', 'Sales', '50000')");
+    process_query(
+        "INSERT INTO employees (id, name, department, salary) VALUES ('105', 'Petro Bilyk', 'Sales', '48000')");
+
+    is_dbms_changed = true;
 }
 
 Execution_error Dbms::add_and_override_cols(const std::string& table_name, std::vector<Column> cols) {
@@ -274,16 +233,12 @@ std::string Dbms::process_query_to_string(const std::string& input) {
                            [](unsigned char c) { return std::tolower(c); });
     if (lower_input == "-tables") {
         std::stringstream ss;
-        if (tables.empty())
-            ss << "[ *empty* ]";
-        else {
-            for (auto& t : tables)
-                ss << t.get_table_name() << "\n";
-        }
+        if (tables.empty()) { ss << "[ *empty* ]"; }
+        else { for (auto& t : tables) { ss << t.get_table_name() << "\n"; } }
         return ss.str();
     }
     if (lower_input == "-help") {
-        return
+        std::string helpText =
             "Available commands with examples:\n\n"
             "1. CREATE TABLE\n"
             "   CREATE TABLE users (id INTEGER, name NVARCHAR2, is_active INTEGER);\n\n"
@@ -298,6 +253,7 @@ std::string Dbms::process_query_to_string(const std::string& input) {
             "   UPDATE users SET name = 'Yana' WHERE id = '2';\n\n"
             "6. DELETE FROM\n"
             "   DELETE FROM users WHERE id = '3';\n";
+        return helpText;
     }
     if (lower_input == "-load") {
         load_prompt();
@@ -307,31 +263,32 @@ std::string Dbms::process_query_to_string(const std::string& input) {
         return "exit";
     }
 
-    std::stringstream buffer;
-    auto old_cout_buf = std::cout.rdbuf(buffer.rdbuf());
-
+    parser.clean();
     auto [query, parser_error] = parse_query(input);
 
     if (!parser_error.message.empty()) {
-        std::cout.rdbuf(old_cout_buf);
         return "Parse error: " + parser_error.message;
     }
 
     is_dbms_changed = true;
     auto [columns, execution_error] = execute_query(query);
 
-    std::cout.rdbuf(old_cout_buf);
 
     if (!execution_error.message.empty()) {
         return "Execution error: " + execution_error.message;
     }
 
-    if (!buffer.str().empty()) {
+    if (query.get_query_type() == Query_type::Select && !columns.empty()) {
+        std::stringstream buffer;
+        auto old_cout_buf = std::cout.rdbuf(buffer.rdbuf());
+        ut_print(columns);
+        std::cout.rdbuf(old_cout_buf);
         return buffer.str();
     }
 
     return "Query executed successfully";
 }
+
 
 QueryResult Dbms::process_query(const std::string& input) {
     std::string lower_input = input;
@@ -351,13 +308,29 @@ QueryResult Dbms::process_query(const std::string& input) {
         return ss.str();
     }
     if (lower_input == "-help") {
-        return std::string("Available commands:\nSELECT, DROP TABLE, INSERT INTO, CREATE TABLE, DELETE FROM, UPDATE");
+        std::string helpText =
+            "Available commands with examples:\n\n"
+            "1. CREATE TABLE\n"
+            "   CREATE TABLE users (id INTEGER, name NVARCHAR2, is_active INTEGER);\n\n"
+            "2. DROP TABLE\n"
+            "   DROP TABLE users;\n\n"
+            "3. INSERT INTO\n"
+            "   INSERT INTO users (id, name) VALUES ('1', 'Arsenii'), ('2', 'Olena');\n\n"
+            "4. SELECT\n"
+            "   SELECT id, name FROM users WHERE is_active = '1';\n"
+            "   SELECT COUNT(*) FROM users GROUP BY city HAVING COUNT(*) > 5;\n\n"
+            "5. UPDATE\n"
+            "   UPDATE users SET name = 'Yana' WHERE id = '2';\n\n"
+            "6. DELETE FROM\n"
+            "   DELETE FROM users WHERE id = '3';\n";
+        return helpText;
     }
     if (lower_input == "-load") {
         load_prompt();
         return std::string("Load prompt executed in console.");
     }
 
+    parser.clean();
     auto [query, parser_error] = parse_query(input);
 
     if (!parser_error.message.empty()) {
@@ -376,4 +349,50 @@ QueryResult Dbms::process_query(const std::string& input) {
     }
 
     return std::string("Query executed successfully");
+}
+
+bool Dbms::load_database_from_path(const std::string& path) {
+    namespace fs = std::filesystem;
+
+    tables.clear();
+    table_names.clear();
+    queries.clear();
+
+    const fs::path db_path(path);
+    if (!fs::exists(db_path) || !fs::is_directory(db_path)) {
+        fmt::println("Error: Provided path is not a valid directory.");
+        return false;
+    }
+
+    is_loading = true;
+    for (auto const& entry : fs::directory_iterator(db_path)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".txt") {
+            std::ifstream ifs(entry.path());
+            if (!ifs.is_open()) {
+                fmt::println("Error: Could not open file {}", entry.path().string());
+                continue;
+            }
+            std::string command;
+            while (std::getline(ifs, command)) {
+                if (!command.empty()) {
+                    process_query(command);
+                }
+            }
+        }
+    }
+    is_loading = false;
+    is_dbms_changed = false;
+
+    fmt::println("Database loaded successfully from {}", path);
+    return true;
+}
+
+std::vector<std::string> Dbms::get_table_names() const {
+    std::vector<std::string> names;
+    names.reserve(tables.size());
+
+    for (const auto& table : tables) {
+        names.push_back(table.get_table_name());
+    }
+    return names;
 }

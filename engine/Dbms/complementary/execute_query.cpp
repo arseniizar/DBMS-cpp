@@ -17,29 +17,29 @@ void Dbms::update_recent_change(Query& q) {
 
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
-    Dbms::executor.set_query(q);
-    Dbms::executor.execute();
+    executor.set_query(q);
+    executor.execute();
 
     std::pair<std::vector<Column>, Execution_error> result_pair;
 
-    switch (Dbms::executor.action) {
+    switch (executor.action) {
         case Q_action::SELECT:
-            result_pair = Dbms::execute_select();
+            result_pair = execute_select();
             break;
         case Q_action::INSERT:
-            result_pair = Dbms::execute_insert();
+            result_pair = execute_insert();
             break;
         case Q_action::DELETE:
-            result_pair = Dbms::execute_delete_from();
+            result_pair = execute_delete_from();
             break;
         case Q_action::UPDATE:
-            result_pair = Dbms::execute_update();
+            result_pair = execute_update();
             break;
         case Q_action::CREATE:
-            result_pair = Dbms::execute_create_table();
+            result_pair = execute_create_table();
             break;
         case Q_action::DROP:
-            result_pair = Dbms::drop_table(Dbms::executor.q.get_table_name());
+            result_pair = drop_table(executor.q.get_table_name());
             break;
         default:
             result_pair = make_executor_error("Unknown query action");
@@ -47,20 +47,16 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_query(Query& q) {
     }
 
     if (!result_pair.second.message.empty()) {
-        Dbms::executor.error = result_pair.second;
-    }
-
-    auto rec_c = recent_change(&q);
-    Dbms::add_rec_change(rec_c);
-    Dbms::queries.push_back(q);
-
-    if (!Dbms::executor.get_error().message.empty()) {
-        fmt::println("{}", Dbms::executor.get_error().message);
+        executor.set_error(result_pair.second);
+        fmt::println("{}", result_pair.second.message);
     } else {
         fmt::println("EXECUTED SUCCESSFULLY");
     }
 
-    return std::make_pair(result_pair.first, Dbms::executor.error);
+    queries.push_back(q);
+    recent_changes.emplace_back(&queries.back());
+
+    return result_pair;
 }
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_create_table() {
@@ -172,8 +168,8 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
         }
     }
 
-    ut_print(final_cols);
-    return make_executor_error("");
+    // ut_print(final_cols);
+     return std::make_pair(final_cols, Execution_error{});
 }
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_delete_from() {

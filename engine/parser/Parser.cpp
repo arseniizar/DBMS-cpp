@@ -13,12 +13,15 @@ Parse_error Parser::get_error() {
 }
 
 void Parser::clean() {
-    Parser::sql = std::string();
-    Parser::next_update_field = std::string();
-    Parser::current_create_table_field_val = std::string();
-    Parser::q = Query();
-    Parser::index = std::size_t(0);
-    Parser::step = Step::type;
+    sql.clear();
+    next_update_field.clear();
+    current_create_table_field_val.clear();
+    error_message.clear();
+    q = Query();
+    index = 0;
+    step = Step::type;
+    pop_flag = false;
+    error = Parse_error();
 }
 
 void Parser::clean_error() {
