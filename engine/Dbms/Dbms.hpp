@@ -63,8 +63,6 @@ private:
 
     void make_save();
 
-    void load_save();
-
     void load_save_menu();
 
     void load_prompt();
@@ -96,6 +94,8 @@ private:
 
 public:
     void print_table_names();
+
+    void load_save();
 
     std::string process_query_to_string(const std::string& input);
 

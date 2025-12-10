@@ -21,11 +21,14 @@
 #include <variant>
 #include <QPainter>
 
+
 Ui::Ui(QWidget* parent)
     : QMainWindow(parent), model(nullptr) {
 
     setupUi();
     applyDarkTheme();
+    dbms.load_save();
+    updateDatabaseExplorer();
 }
 
 Ui::~Ui() {
@@ -141,6 +144,7 @@ void Ui::createStatusBar() {
 
 void Ui::createDocks() {
     QDockWidget *dbExplorerDock = new QDockWidget("Database Explorer", this);
+    dbExplorerDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     addDockWidget(Qt::LeftDockWidgetArea, dbExplorerDock);
 
     dbExplorerView = new QTreeView(dbExplorerDock);
@@ -148,6 +152,25 @@ void Ui::createDocks() {
     dbExplorerView->setModel(dbExplorerModel);
     dbExplorerView->setHeaderHidden(true);
     connect(dbExplorerView, &QTreeView::clicked, this, &Ui::onTableClicked);
+
+    dbExplorerView->setStyleSheet(R"(
+        QTreeView {
+            background-color: #252526; /* Темний фон */
+            color: #CCCCCC; /* Світлий текст */
+            border: none; /* Без рамки */
+            font-size: 14px;
+        }
+        QTreeView::item {
+            padding: 6px; /* Відступи для кожного елемента */
+        }
+        QTreeView::item:hover {
+            background-color: #3E3E42; /* Підсвітка при наведенні */
+        }
+        QTreeView::item:selected {
+            background-color: #094771; /* Колір виділення */
+        }
+    )");
+
     dbExplorerDock->setWidget(dbExplorerView);
 
     QDockWidget *outputDock = new QDockWidget("Output", this);
