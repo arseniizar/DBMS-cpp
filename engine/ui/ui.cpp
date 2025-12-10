@@ -153,7 +153,16 @@ void Ui::createStatusBar() {
 
 void Ui::createDocks() {
     QDockWidget* dbExplorerDock = new QDockWidget("Database Explorer", this);
-    dbExplorerDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    dbExplorerDock->setStyleSheet(R"(
+        QDockWidget::title {
+            background-color: #3E3E42;
+            text-align: left;
+            padding: 6px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    )");
+
     addDockWidget(Qt::LeftDockWidgetArea, dbExplorerDock);
 
     dbExplorerView = new QTreeView(dbExplorerDock);
