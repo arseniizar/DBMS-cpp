@@ -2,37 +2,60 @@
 #define UI_HPP
 
 #include <QMainWindow>
-#include <engine/Dbms/Dbms.hpp>
+#include "engine/Dbms/Dbms.hpp"
 #include "sqltablemodel.hpp"
 #include "sqlhighlighter.hpp"
 
-class QTableView;
+class QAction;
+class QMenu;
+class QToolBar;
+class QStatusBar;
 class QTextEdit;
-class QPushButton;
+class QTableView;
+class QTabWidget;
 
-struct Ui final : QMainWindow {
+class Ui final : public QMainWindow {
     Q_OBJECT
 public:
     explicit Ui(QWidget *parent = nullptr);
     ~Ui() override;
+
+private slots:
+    void onRunQuery();
+    void onListTables();
+    void onHelp();
+    void onLoad();
+    void about();
+
 private:
-    QTextEdit *queryEdit;
-    QPushButton *runButton;
-    QPushButton *listTablesButton;
-    QPushButton *helpButton;
-    QPushButton *loadButton;
-    QTextEdit *outputEdit;
-    QTableView *tableView;
-    QTextEdit *messageEdit;
+    void createActions();
+    void createMenus();
+    void createToolBars();
+    void createStatusBar();
+    void createDocks();
 
     Dbms dbms;
     SqlTableModel *model;
     SqlHighlighter *highlighter;
-private slots:
-    void onRunButtonClicked();
-    void onListTablesClicked();
-    void onHelpButtonClicked();
-    void onLoadButtonClicked();
+
+    QTabWidget *tabWidget;
+    QTableView *tableView;
+    QTextEdit *messageEdit;
+
+    QMenu *fileMenu;
+    QMenu *queryMenu;
+    QMenu *helpMenu;
+
+    QToolBar *mainToolBar;
+
+    QAction *runQueryAction;
+    QAction *listTablesAction;
+    QAction *helpAction;
+    QAction *loadAction;
+    QAction *exitAction;
+    QAction *aboutAction;
+
+    QTextEdit* currentQueryEdit();
 };
 
 #endif // UI_HPP

@@ -1,69 +1,132 @@
 #include "ui.hpp"
+
+#include <QApplication>
+#include <QTabWidget>
 #include <QTextEdit>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QWidget>
 #include <QTableView>
+#include <QStatusBar>
+#include <QMenuBar>
+#include <QToolBar>
+#include <QDockWidget>
+#include <QMessageBox>
+#include <QVBoxLayout>
 #include <QHeaderView>
+#include <QKeySequence>
+#include <QIcon>
 #include <variant>
 
 Ui::Ui(QWidget *parent)
-    : QMainWindow(parent), model(nullptr)
+    : QMainWindow(parent), model(nullptr), highlighter(nullptr)
 {
     setWindowTitle("Arsenii's DBMS");
-    resize(800, 600);
+    setWindowIcon(QIcon::fromTheme("application-x-sqlite3"));
+    resize(1200, 800);
 
-    QWidget *centralWidget = new QWidget(this);
-    setCentralWidget(centralWidget);
+    tabWidget = new QTabWidget(this);
+    tabWidget->setTabsClosable(true);
+    QTextEdit* initialQueryEdit = new QTextEdit();
+    highlighter = new SqlHighlighter(initialQueryEdit->document());
+    tabWidget->addTab(initialQueryEdit, "Query 1");
+    setCentralWidget(tabWidget);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
+    createActions();
+    createMenus();
+    createToolBars();
+    createStatusBar();
+    createDocks();
 
-    queryEdit = new QTextEdit(centralWidget);
-    queryEdit->setPlaceholderText("Enter your SQL query here...");
-
-    highlighter = new SqlHighlighter(queryEdit->document());
-
-    QHBoxLayout *buttonsLayout = new QHBoxLayout;
-    runButton = new QPushButton("▶️ Run Query", centralWidget);
-    listTablesButton = new QPushButton("List Tables", centralWidget);
-    helpButton = new QPushButton("❓ Help", centralWidget);
-    loadButton = new QPushButton("💾 Load", centralWidget);
-
-    buttonsLayout->addWidget(runButton);
-    buttonsLayout->addWidget(listTablesButton);
-    buttonsLayout->addWidget(helpButton);
-    buttonsLayout->addWidget(loadButton);
-    buttonsLayout->addStretch();
-
-    tableView = new QTableView(centralWidget);
-    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    tableView->setAlternatingRowColors(true);
-
-    messageEdit = new QTextEdit(centralWidget);
-    messageEdit->setReadOnly(true);
-    messageEdit->setMaximumHeight(100);
-
-    mainLayout->addWidget(queryEdit, 3);
-    mainLayout->addLayout(buttonsLayout);
-    mainLayout->addWidget(tableView, 5);
-    mainLayout->addWidget(messageEdit);
-
-    tableView->setVisible(false);
-    messageEdit->setVisible(true);
-    messageEdit->setText("Welcome to the DBMS! Enter a query to begin.");
-
-    connect(runButton, &QPushButton::clicked, this, &Ui::onRunButtonClicked);
-    connect(listTablesButton, &QPushButton::clicked, this, &Ui::onListTablesClicked);
-    connect(helpButton, &QPushButton::clicked, this, &Ui::onHelpButtonClicked);
-    connect(loadButton, &QPushButton::clicked, this, &Ui::onLoadButtonClicked);
+    statusBar()->showMessage("Ready", 3000);
 }
 
 Ui::~Ui() {
     delete model;
 }
 
-void Ui::onRunButtonClicked() {
-    // Очищуємо попередній вивід
+void Ui::createActions() {
+    runQueryAction = new QAction(QIcon::fromTheme("media-playback-start", QIcon(":/icons/run.png")), "&Run Query", this);
+    runQueryAction->setShortcut(QKeySequence(Qt::Key_F5));
+    runQueryAction->setStatusTip("Execute the current SQL query");
+    connect(runQueryAction, &QAction::triggered, this, &Ui::onRunQuery);
+
+    listTablesAction = new QAction("&List Tables", this);
+    connect(listTablesAction, &QAction::triggered, this, &Ui::onListTables);
+
+    helpAction = new QAction(QIcon::fromTheme("help-contents"), "&Help", this);
+    connect(helpAction, &QAction::triggered, this, &Ui::onHelp);
+
+    loadAction = new QAction(QIcon::fromTheme("document-open"), "&Load", this);
+    connect(loadAction, &QAction::triggered, this, &Ui::onLoad);
+
+    exitAction = new QAction("E&xit", this);
+    exitAction->setShortcut(QKeySequence::Quit);
+    connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
+
+    aboutAction = new QAction("&About", this);
+    connect(aboutAction, &QAction::triggered, this, &Ui::about);
+}
+
+void Ui::createMenus() {
+    fileMenu = menuBar()->addMenu("&File");
+    fileMenu->addAction(loadAction);
+    fileMenu->addSeparator();
+    fileMenu->addAction(exitAction);
+
+    queryMenu = menuBar()->addMenu("&Query");
+    queryMenu->addAction(runQueryAction);
+    queryMenu->addAction(listTablesAction);
+
+    helpMenu = menuBar()->addMenu("&Help");
+    helpMenu->addAction(helpAction);
+    helpMenu->addAction(aboutAction);
+}
+
+void Ui::createToolBars() {
+    mainToolBar = addToolBar("Main");
+    mainToolBar->addAction(runQueryAction);
+    mainToolBar->addAction(loadAction);
+    mainToolBar->addAction(helpAction);
+}
+
+void Ui::createStatusBar() {
+    statusBar();
+    statusBar()->showMessage("Ready");
+}
+
+void Ui::createDocks() {
+    QDockWidget *outputDock = new QDockWidget("Output", this);
+    addDockWidget(Qt::BottomDockWidgetArea, outputDock);
+
+    QWidget *outputContainer = new QWidget();
+    QVBoxLayout *outputLayout = new QVBoxLayout(outputContainer);
+
+    tableView = new QTableView();
+    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    tableView->setAlternatingRowColors(true);
+
+    messageEdit = new QTextEdit();
+    messageEdit->setReadOnly(true);
+    messageEdit->setMaximumHeight(120);
+
+    outputLayout->addWidget(tableView);
+    outputLayout->addWidget(messageEdit);
+    outputContainer->setLayout(outputLayout);
+
+    outputDock->setWidget(outputContainer);
+
+    tableView->setVisible(false);
+    messageEdit->setVisible(true);
+    messageEdit->setText("Welcome to the DBMS! Enter a query to begin.");
+}
+
+QTextEdit* Ui::currentQueryEdit() {
+    return qobject_cast<QTextEdit*>(tabWidget->currentWidget());
+}
+
+
+void Ui::onRunQuery() {
+    QTextEdit* currentEdit = currentQueryEdit();
+    if (!currentEdit) return;
+
     messageEdit->clear();
     if (model) {
         delete model;
@@ -71,55 +134,62 @@ void Ui::onRunButtonClicked() {
     }
     tableView->setModel(nullptr);
 
-    const QString query = queryEdit->toPlainText();
+    const QString query = currentEdit->toPlainText();
     if (query.trimmed().isEmpty()) {
-        messageEdit->setText("Query is empty.");
+        statusBar()->showMessage("Query is empty.", 3000);
         return;
     }
 
+    statusBar()->showMessage("Executing query...");
     QueryResult result = dbms.process_query(query.toStdString());
 
-    // Обробляємо результат
     std::visit([this](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, std::string>) {
-            // Результат - рядок (помилка або повідомлення)
             messageEdit->setPlainText(QString::fromStdString(arg));
             tableView->setVisible(false);
             messageEdit->setVisible(true);
+            statusBar()->showMessage("Query finished.", 3000);
         } else if constexpr (std::is_same_v<T, std::vector<Column>>) {
-            // Результат - вектор колонок
             if (arg.empty() || arg[0].get_rows().empty()) {
                 messageEdit->setPlainText("Query executed successfully, no rows returned.");
                 tableView->setVisible(false);
                 messageEdit->setVisible(true);
+                statusBar()->showMessage("Query finished. No rows returned.", 3000);
             } else {
                 model = new SqlTableModel(arg, this);
                 tableView->setModel(model);
                 messageEdit->setVisible(false);
                 tableView->setVisible(true);
+                statusBar()->showMessage(QString("Query finished. %1 rows returned.").arg(model->rowCount()), 3000);
             }
         }
     }, result);
 }
 
-void Ui::onListTablesClicked() {
+void Ui::onListTables() {
     std::string result = dbms.process_query_to_string("-tables");
     messageEdit->setPlainText(QString::fromStdString(result));
     tableView->setVisible(false);
     messageEdit->setVisible(true);
 }
 
-void Ui::onHelpButtonClicked() {
+void Ui::onHelp() {
     std::string result = dbms.process_query_to_string("-help");
     messageEdit->setPlainText(QString::fromStdString(result));
     tableView->setVisible(false);
     messageEdit->setVisible(true);
 }
 
-void Ui::onLoadButtonClicked() {
+void Ui::onLoad() {
     std::string result = dbms.process_query_to_string("-load");
-    messageEdit->setPlainText(QString::fromStdString(result));
+    messageEdit->setPlainText(QString::fromStdString(result) + "\n(Please check the console for interaction)");
     tableView->setVisible(false);
     messageEdit->setVisible(true);
+}
+
+void Ui::about() {
+    QMessageBox::about(this, "About Arsenii's DBMS",
+        "A simple yet powerful SQL database management system built with C++ and Qt.\n\n"
+        "Created by Arsenii Zarudniuk.");
 }
