@@ -33,6 +33,8 @@ Ui::Ui(QWidget* parent)
     setupUi();
     applyDarkTheme();
 
+    connect(tabWidget, &QTabWidget::currentChanged, this, &Ui::updateCompleterContext);
+
     dbms.load_save();
     updateDatabaseExplorer();
 }
@@ -65,6 +67,12 @@ void Ui::setupUi() {
 
     createDocks();
     statusBar()->showMessage("Ready", 3000);
+
+    connect(tabWidget, &QTabWidget::currentChanged, this, [this](int index){
+       if (const auto* editor = currentQueryEdit()) {
+           connect(editor, &CodeEditor::cursorPositionChanged, this, &Ui::updateCompleterContext);
+       }
+   });
 }
 
 void Ui::setupCompleter() {
@@ -284,6 +292,8 @@ void Ui::onNewQueryTab() {
     new SqlHighlighter(newQueryEdit->document());
     newQueryEdit->setCompleter(completer);
 
+    connect(newQueryEdit, &CodeEditor::cursorPositionChanged, this, &Ui::updateCompleterContext);
+
     int newIndex = tabWidget->addTab(newQueryEdit, QString("Query %1").arg(tabWidget->count() + 1));
     tabWidget->setCurrentIndex(newIndex);
     newQueryEdit->setFocus();
@@ -376,4 +386,31 @@ void Ui::about() {
     QMessageBox::about(this, "About Arsenii's DBMS",
                        "A simple yet powerful SQL database management system built with C++ and Qt.\n\n"
                        "Created by Arsenii Zarudniuk.");
+}
+
+void Ui::updateCompleterContext() {
+    const CodeEditor* editor = currentQueryEdit();
+    if (!editor) return;
+
+    QTextCursor cursor = editor->textCursor();
+    cursor.movePosition(QTextCursor::StartOfWord, QTextCursor::MoveAnchor, 2);
+    cursor.select(QTextCursor::WordUnderCursor);
+    QString prevWord = cursor.selectedText().toUpper();
+
+    QStringList keywords;
+    QStringList tableNames;
+    for(const auto& name : dbms.get_table_names()){
+        tableNames.append(QString::fromStdString(name));
+    }
+
+    if (prevWord == "FROM" || prevWord == "TABLE" || prevWord == "INTO" || prevWord == "UPDATE") {
+        keywords = tableNames;
+    } else {
+        keywords << "SELECT" << "FROM" << "WHERE" << "INSERT" << "INTO" << "VALUES"
+                 << "UPDATE" << "SET" << "DELETE" << "CREATE" << "TABLE" << "DROP"
+                 << "GROUP BY" << "HAVING" << "COUNT";
+        keywords.append(tableNames);
+    }
+
+    completerModel->setStringList(keywords);
 }

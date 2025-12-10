@@ -40,6 +40,7 @@ private:
     void applyDarkTheme();
     void updateDatabaseExplorer();
     void setupCompleter();
+    void updateCompleterContext();
 
     CodeEditor* currentQueryEdit();
 
