@@ -11,8 +11,10 @@
 #include <QVBoxLayout>
 #include <QTabWidget>
 #include <QTabBar>
+#include <QRegularExpression>
 
-QueryTab::QueryTab(QCompleter* completer, QWidget* parent) : QWidget(parent) {
+QueryTab::QueryTab(QCompleter* completer, QWidget* parent) : QWidget(parent)
+{
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
 
@@ -37,53 +39,46 @@ QueryTab::QueryTab(QCompleter* completer, QWidget* parent) : QWidget(parent) {
     auto* initialLabel = new QTextEdit();
     initialLabel->setReadOnly(true);
     initialLabel->setText("Enter a query and press F5 or the Run button to execute.");
+    initialLabel->setProperty("isInitial", true);
     resultsTabWidget->addTab(initialLabel, "Messages");
 }
 
-QueryTab::~QueryTab() {
-}
+QueryTab::~QueryTab() {}
 
-CodeEditor* QueryTab::getEditor() const {
+CodeEditor* QueryTab::getEditor() const
+{
     return queryEditor;
 }
 
-void QueryTab::clearResultTabs() {
+void QueryTab::clearResultTabs()
+{
     resultsTabWidget->clear();
 }
 
-void QueryTab::displayResult(const TabQueryResult& result, const QString& query) {
+void QueryTab::displayResult(const TabQueryResult& result, const QString& query)
+{
+    if (resultsTabWidget->count() == 1) {
+        QWidget* widget = resultsTabWidget->widget(0);
+        if (widget && widget->property("isInitial").toBool()) {
+            resultsTabWidget->removeTab(0);
+        }
+    }
+
+    QRegularExpression re(R"((?:FROM|INTO|UPDATE|TABLE)\s+([a-zA-Z0-9_]+))", QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatch match = re.match(query);
+    QString tableName = match.hasMatch() ? match.captured(1) : "";
+
     QString tabName;
     QString upperQuery = query.toUpper();
 
     if (upperQuery.startsWith("SELECT")) {
-        tabName = "Result Set";
-    }
-    else if (upperQuery.startsWith("INSERT")) {
-        tabName = "Insert";
-    }
-    else if (upperQuery.startsWith("UPDATE")) {
-        tabName = "Update";
-    }
-    else if (upperQuery.startsWith("DELETE")) {
-        tabName = "Delete";
-    }
-    else if (upperQuery.startsWith("CREATE")) {
-        tabName = "Create Table";
-    }
-    else if (upperQuery.startsWith("DROP")) {
-        tabName = "Drop Table";
-    }
-    else {
+        tabName = tableName.isEmpty() ? "Result Set" : QString("Result: %1").arg(tableName);
+    } else if (upperQuery.startsWith("CREATE TABLE")) {
+        tabName = tableName.isEmpty() ? "Create" : QString("Create: %1").arg(tableName);
+    } else if (upperQuery.startsWith("INSERT")) {
+        tabName = tableName.isEmpty() ? "Insert" : QString("Insert: %1").arg(tableName);
+    } else {
         tabName = "Message";
-    }
-
-    int existingTabs = resultsTabWidget->count();
-    if (resultsTabWidget->tabText(0) == "Messages" && existingTabs > 0) {
-        if (qobject_cast<QTextEdit*>(resultsTabWidget->widget(0))) {
-            if (resultsTabWidget->widget(0)->property("isInitial").toBool()) {
-                resultsTabWidget->removeTab(0);
-            }
-        }
     }
 
 
@@ -93,17 +88,15 @@ void QueryTab::displayResult(const TabQueryResult& result, const QString& query)
             auto* messageEdit = new QTextEdit();
             messageEdit->setReadOnly(true);
             messageEdit->setPlainText(QString("Query:\n%1\n\nResult:\n%2").arg(query, QString::fromStdString(arg)));
-            resultsTabWidget->addTab(messageEdit, tabName);
-        }
-        else if constexpr (std::is_same_v<T, std::vector<Column>>) {
+            resultsTabWidget->addTab(messageEdit, "Message");
+
+        } else if constexpr (std::is_same_v<T, std::vector<Column>>) {
             if (arg.empty() || arg[0].get_rows().empty()) {
                 auto* messageEdit = new QTextEdit();
                 messageEdit->setReadOnly(true);
-                messageEdit->setPlainText(
-                    QString("Query:\n%1\n\nResult:\nQuery executed successfully, no rows returned.").arg(query));
-                resultsTabWidget->addTab(messageEdit, tabName);
-            }
-            else {
+                messageEdit->setPlainText(QString("Query:\n%1\n\nResult:\nQuery executed successfully, no rows returned.").arg(query));
+                resultsTabWidget->addTab(messageEdit, "Message");
+            } else {
                 auto* tableView = new QTableView();
                 tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
                 tableView->setAlternatingRowColors(true);
