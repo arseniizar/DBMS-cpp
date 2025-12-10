@@ -27,7 +27,7 @@ private slots:
     void onRunQuery();
     void onHelp();
     void about();
-    void onNewQueryTab();
+    void onNewQueryTab(bool isConsole);
     void onTableClicked(const QModelIndex &index);
 
 private:
@@ -41,6 +41,7 @@ private:
     void updateDatabaseExplorer();
     void setupCompleter();
     void updateCompleterContext();
+    void closeTab(int index) const;
 
     CodeEditor* currentQueryEdit();
 
