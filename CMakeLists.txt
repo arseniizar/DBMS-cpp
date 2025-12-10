@@ -47,7 +47,9 @@ file(GLOB UI_SOURCES "engine/ui/*.cpp")
 
 set(RESOURCE_FILE resources/resources.qrc
         engine/ui/codeeditor.cpp
-        engine/ui/codeeditor.hpp)
+        engine/ui/codeeditor.hpp
+        engine/ui/querytab.cpp
+        engine/ui/querytab.hpp)
 
 add_executable(
         dbms_app main.cpp

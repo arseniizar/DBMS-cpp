@@ -1,9 +1,10 @@
 #include "ui.hpp"
 #include "codeeditor.hpp"
+#include "querytab.hpp"
 
 #include <QApplication>
 #include <QTabWidget>
-#include <QTabBar> /
+#include <QTabBar>
 #include <QTextEdit>
 #include <QTableView>
 #include <QStatusBar>
@@ -24,27 +25,38 @@
 #include <QPainter>
 #include <QCompleter>
 #include <QStringListModel>
-#include <QAbstractItemView>
-#include <QScrollBar>
 #include <QFile>
 #include <QDebug>
+#include <QRegularExpression>
 
+QIcon create_themed_icon(const QString& resource_path) {
+    QIcon icon(resource_path);
+    if (icon.isNull()) {
+        return QIcon();
+    }
+    QPixmap pixmap = icon.pixmap(QSize(24, 24));
+    QPainter painter(&pixmap);
+    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    painter.fillRect(pixmap.rect(), qApp->palette().color(QPalette::Active, QPalette::WindowText));
+    return QIcon(pixmap);
+}
 
-Ui::Ui(QWidget* parent)
-    : QMainWindow(parent), model(nullptr) {
-    setupCompleter();
+Ui::Ui(QWidget* parent) : QMainWindow(parent) {
     setupUi();
+    setupCompleter();
     applyDarkTheme();
 
-    connect(tabWidget, &QTabWidget::currentChanged, this, &Ui::updateCompleterContext);
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        if (auto* tab = qobject_cast<QueryTab*>(tabWidget->widget(i))) {
+            tab->getEditor()->setCompleter(completer);
+        }
+    }
 
     dbms.load_save();
     updateDatabaseExplorer();
 }
 
-Ui::~Ui() {
-    delete model;
-}
+Ui::~Ui() {}
 
 void Ui::setupUi() {
     setWindowTitle("Arsenii's DBMS");
@@ -55,20 +67,14 @@ void Ui::setupUi() {
     createMenus();
     createToolBars();
     createStatusBar();
+    createDocks();
 
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
     connect(tabWidget, &QTabWidget::tabCloseRequested, this, &Ui::closeTab);
-
-    connect(tabWidget, &QTabWidget::currentChanged, this, &Ui::updateCompleterContext);
-
     setCentralWidget(tabWidget);
 
-    // Викликаємо створення вкладки Console
     onNewQueryTab(true);
-
-    createDocks();
-    statusBar()->showMessage("Ready", 3000);
 }
 
 void Ui::setupCompleter() {
@@ -78,29 +84,18 @@ void Ui::setupCompleter() {
     completer->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     completer->setWrapAround(false);
+    completer->setFilterMode(Qt::MatchContains);
 
     completer->popup()->setStyleSheet(R"(
-        QListView {
-            background-color: #252526;
-            color: #CCCCCC;
-            border: 1px solid #3E3E42;
-        }
-        QListView::item:selected {
-            background-color: #094771;
-        }
+        QListView { background-color: #252526; color: #CCCCCC; border: 1px solid #3E3E42; }
+        QListView::item:selected { background-color: #094771; }
     )");
 
-    QStringList keywords;
-    keywords << "SELECT" << "FROM" << "WHERE" << "INSERT" << "INTO" << "VALUES"
-        << "UPDATE" << "SET" << "DELETE" << "CREATE" << "TABLE" << "DROP"
-        << "GROUP BY" << "HAVING" << "COUNT" << "PRIMARY KEY" << "FOREIGN KEY"
-        << "REFERENCES" << "NVARCHAR2" << "INTEGER" << "DATE";
-    completerModel->setStringList(keywords);
+    updateCompleterContext();
 }
 
 void Ui::applyDarkTheme() {
     qApp->setStyle("Fusion");
-
     QPalette darkPalette;
     darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
     darkPalette.setColor(QPalette::WindowText, Qt::white);
@@ -115,28 +110,13 @@ void Ui::applyDarkTheme() {
     darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
     darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
     darkPalette.setColor(QPalette::HighlightedText, Qt::black);
-    darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(127, 127, 127));
-    darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(127, 127, 127));
-
     qApp->setPalette(darkPalette);
-}
-
-QIcon create_themed_icon(const QString& resource_path) {
-    QIcon icon(resource_path);
-    if (icon.isNull()) {
-        return QIcon();
-    }
-    QPixmap pixmap = icon.pixmap(QSize(24, 24));
-    QPainter painter(&pixmap);
-    painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    painter.fillRect(pixmap.rect(), qApp->palette().color(QPalette::Active, QPalette::WindowText));
-    return QIcon(pixmap);
 }
 
 void Ui::createActions() {
     newQueryAction = new QAction(create_themed_icon(":/new"), "&New Query Tab", this);
     newQueryAction->setShortcut(QKeySequence::New);
-    connect(newQueryAction, &QAction::triggered, this, [this]() { onNewQueryTab(false); });
+    connect(newQueryAction, &QAction::triggered, this, [this](){ onNewQueryTab(false); });
 
     openDbAction = new QAction(create_themed_icon(":/open"), "&Open Database...", this);
     openDbAction->setShortcut(QKeySequence::Open);
@@ -146,15 +126,15 @@ void Ui::createActions() {
     runQueryAction->setShortcut(QKeySequence(Qt::Key_F5));
     connect(runQueryAction, &QAction::triggered, this, &Ui::onRunQuery);
 
-    helpAction = new QAction(QIcon::fromTheme("help-contents"), "&Help", this);
-    connect(helpAction, &QAction::triggered, this, &Ui::onHelp);
-
     exitAction = new QAction("E&xit", this);
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
 
     aboutAction = new QAction(create_themed_icon(":/about"), "&About", this);
     connect(aboutAction, &QAction::triggered, this, &Ui::about);
+
+    helpAction = new QAction(QIcon::fromTheme("help-contents"), "&Help", this);
+    connect(helpAction, &QAction::triggered, this, &Ui::onHelp);
 }
 
 void Ui::createMenus() {
@@ -180,91 +160,30 @@ void Ui::createToolBars() {
 }
 
 void Ui::createStatusBar() {
-    statusBar();
     statusBar()->showMessage("Ready");
 }
 
 void Ui::createDocks() {
     QDockWidget* dbExplorerDock = new QDockWidget("Database Explorer", this);
-    dbExplorerDock->setStyleSheet(R"(
-        QDockWidget::title {
-            background-color: #3E3E42;
-            text-align: left;
-            padding: 6px;
-            font-size: 16px;
-            font-weight: bold;
-        }
-    )");
-
-    addDockWidget(Qt::LeftDockWidgetArea, dbExplorerDock);
+    dbExplorerDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    dbExplorerDock->setStyleSheet(R"( QDockWidget::title { text-align: left; padding: 6px; font-size: 16px; font-weight: bold; } )");
 
     dbExplorerView = new QTreeView(dbExplorerDock);
     dbExplorerModel = new QStandardItemModel(dbExplorerDock);
     dbExplorerView->setModel(dbExplorerModel);
     dbExplorerView->setHeaderHidden(true);
     connect(dbExplorerView, &QTreeView::clicked, this, &Ui::onTableClicked);
-
-    dbExplorerView->setStyleSheet(R"(
-        QTreeView {
-            background-color: #252526;
-            color: #CCCCCC;
-            border: none;
-        }
-        QTreeView::item {
-            padding: 8px;
-            font-size: 16px;
-        }
-        QTreeView::item:hover {
-            background-color: #3E3E42;
-        }
-        QTreeView::item:selected {
-            background-color: #094771;
-        }
-    )");
+    dbExplorerView->setStyleSheet(R"( QTreeView { background-color: #252526; color: #CCCCCC; border: none; } QTreeView::item { padding: 8px; font-size: 16px; } QTreeView::item:hover { background-color: #3E3E42; } QTreeView::item:selected { background-color: #094771; } )");
 
     dbExplorerDock->setWidget(dbExplorerView);
-
-    QDockWidget* outputDock = new QDockWidget("Output", this);
-    addDockWidget(Qt::BottomDockWidgetArea, outputDock);
-    outputDock->setStyleSheet(R"(
-        QDockWidget::title {
-            background-color: #3E3E42;
-            text-align: left;
-            padding: 6px;
-            font-size: 16px;
-            font-weight: bold;
-        }
-    )");
-
-    QWidget* outputContainer = new QWidget();
-    auto* outputLayout = new QVBoxLayout(outputContainer);
-    outputLayout->setContentsMargins(0, 0, 0, 0);
-
-    tableView = new QTableView();
-    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    tableView->setAlternatingRowColors(true);
-
-    messageEdit = new QTextEdit();
-    messageEdit->setReadOnly(true);
-    messageEdit->setMaximumHeight(120);
-
-    outputLayout->addWidget(tableView);
-    outputLayout->addWidget(messageEdit);
-
-    outputDock->setWidget(outputContainer);
-
-    tableView->setVisible(false);
-    messageEdit->setVisible(true);
-    messageEdit->setText("Welcome! Open a database or create a new one to begin.");
+    addDockWidget(Qt::LeftDockWidgetArea, dbExplorerDock);
 }
 
 void Ui::updateDatabaseExplorer() {
     dbExplorerModel->clear();
     QStandardItem* root = dbExplorerModel->invisibleRootItem();
-
-    std::vector<std::string> tableNames = dbms.get_table_names();
-    for (const auto& tableName : tableNames) {
-        QStandardItem* tableItem = new QStandardItem(QString::fromStdString(tableName));
+    for (const auto& tableName : dbms.get_table_names()) {
+        auto* tableItem = new QStandardItem(QString::fromStdString(tableName));
         tableItem->setIcon(QIcon::fromTheme("database"));
         tableItem->setEditable(false);
         root->appendRow(tableItem);
@@ -272,50 +191,49 @@ void Ui::updateDatabaseExplorer() {
     updateCompleterContext();
 }
 
+QueryTab* Ui::currentQueryTab() {
+    return qobject_cast<QueryTab*>(tabWidget->currentWidget());
+}
+
 CodeEditor* Ui::currentQueryEdit() {
-    return qobject_cast<CodeEditor*>(tabWidget->currentWidget());
+    if (QueryTab* tab = currentQueryTab()) {
+        return tab->getEditor();
+    }
+    return nullptr;
 }
 
 void Ui::onNewQueryTab(bool isConsole) {
-    CodeEditor* newQueryEdit = new CodeEditor();
-    new SqlHighlighter(newQueryEdit->document());
-    newQueryEdit->setCompleter(completer);
-    connect(newQueryEdit, &CodeEditor::cursorPositionChanged, this, &Ui::updateCompleterContext);
+    auto* newTab = new QueryTab(completer, this);
+    connect(newTab->getEditor(), &CodeEditor::cursorPositionChanged, this, &Ui::updateCompleterContext);
 
     int newIndex;
-    QString title;
-
     if (isConsole) {
-        title = "Console";
-        newIndex = tabWidget->insertTab(0, newQueryEdit, title);
-        if (auto* button = tabWidget->tabBar()->tabButton(newIndex, QTabBar::RightSide)) {
-            button->hide();
-        }
-    }
-    else {
-        title = QString("Query %1").arg(tabWidget->count() + 1);
-        newIndex = tabWidget->addTab(newQueryEdit, title);
+        newIndex = tabWidget->insertTab(0, newTab, "Console");
+    } else {
+        newIndex = tabWidget->addTab(newTab, QString("Query %1").arg(tabWidget->count() + 1));
     }
 
     tabWidget->setCurrentIndex(newIndex);
-    newQueryEdit->setFocus();
+    newTab->getEditor()->setFocus();
+}
+
+void Ui::closeTab(int index) const {
+    if (index == 0) return;
+
+    QWidget* tab = tabWidget->widget(index);
+    tabWidget->removeTab(index);
+    tab->deleteLater();
 }
 
 void Ui::onTableClicked(const QModelIndex& index) {
     if (!index.parent().isValid()) {
         QString tableName = dbExplorerModel->data(index).toString();
-        // --- ВИПРАВЛЕННЯ №2: Створюємо нову вкладку (не консольну) ---
         onNewQueryTab(false);
-        currentQueryEdit()->setText(QString("SELECT * FROM %1;").arg(tableName));
-        runQueryAction->trigger();
+        if(auto* editor = currentQueryEdit()) {
+            editor->setText(QString("SELECT * FROM %1;").arg(tableName));
+            runQueryAction->trigger();
+        }
     }
-}
-
-void Ui::closeTab(const int index) const {
-    if (index == 0) return;
-    QWidget* tab = tabWidget->widget(index);
-    tabWidget->removeTab(index);
-    tab->deleteLater();
 }
 
 void Ui::onOpenDatabase() {
@@ -324,110 +242,63 @@ void Ui::onOpenDatabase() {
     if (dbms.load_database_from_path(dir.toStdString())) {
         statusBar()->showMessage("Database loaded successfully!", 4000);
         updateDatabaseExplorer();
-    }
-    else {
+    } else {
         QMessageBox::warning(this, "Error", "Failed to load database from the selected directory.");
     }
 }
 
 void Ui::onRunQuery() {
-    CodeEditor* currentEdit = currentQueryEdit();
-    if (!currentEdit) return;
+    QueryTab* currentTab = currentQueryTab();
+    if (!currentTab) return;
 
-    QString query;
-    QTextCursor cursor = currentEdit->textCursor();
+    CodeEditor* editor = currentTab->getEditor();
+    QString textToExecute = editor->textCursor().hasSelection()
+                            ? editor->textCursor().selectedText()
+                            : editor->toPlainText();
 
-    if (cursor.hasSelection()) {
-        query = cursor.selectedText();
-    }
-    else {
-        QString allText = currentEdit->toPlainText();
-        int currentPos = cursor.position();
-        int start = allText.lastIndexOf(QRegularExpression("[;]\\s*|\\n\\s*\\n"), currentPos - 1);
-        if (start == -1) {
-            start = 0;
-        }
-        else {
-            if (allText.at(start) == ';') { start++; }
-            else {
-                for (int i = start; i < currentPos; ++i) {
-                    if (!allText.at(i).isSpace()) {
-                        start = i;
-                        break;
-                    }
-                }
-            }
-        }
-        int end = allText.indexOf(QRegularExpression("[;]|\\n\\s*\\n"), currentPos);
-        if (end == -1) { end = allText.length(); }
-        query = allText.mid(start, end - start);
-    }
-
-    if (query.trimmed().isEmpty()) {
+    if (textToExecute.trimmed().isEmpty()) {
         statusBar()->showMessage("No query to execute.", 3000);
         return;
     }
 
-    messageEdit->clear();
-    if (model) {
-        delete model;
-        model = nullptr;
-    }
-    tableView->setModel(nullptr);
+    QRegularExpression separator(";\\s*|\\n\\s*\\n");
+    QStringList queries = textToExecute.split(separator, Qt::SkipEmptyParts);
 
-    statusBar()->showMessage("Executing query...");
-    QueryResult result = dbms.process_query(query.trimmed().toStdString());
+    statusBar()->showMessage(QString("Found %1 queries to execute...").arg(queries.size()));
 
-    std::visit([this, query](auto&& arg) {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, std::string>) {
-            messageEdit->setPlainText(
-                QString("Query:\n%1\n\nResult:\n%2").arg(query.trimmed(), QString::fromStdString(arg)));
-            tableView->setVisible(false);
-            messageEdit->setVisible(true);
-            statusBar()->showMessage("Query finished.", 3000);
+    for (int i = 0; i < queries.size(); ++i) {
+        const QString& queryStr = queries[i];
+        if (queryStr.trimmed().isEmpty()) continue;
+
+        QueryResult result = dbms.process_query(queryStr.trimmed().toStdString());
+
+        currentTab->displayResult(result, queryStr.trimmed());
+
+        QApplication::processEvents();
+
+        QString upperQuery = queryStr.trimmed().toUpper();
+        if (upperQuery.startsWith("CREATE") || upperQuery.startsWith("DROP")) {
+            updateDatabaseExplorer();
         }
-        else if constexpr (std::is_same_v<T, std::vector<Column>>) {
-            if (arg.empty() || (arg.begin()->get_rows().empty())) {
-                messageEdit->setPlainText(
-                    QString("Query:\n%1\n\nResult:\nQuery executed successfully, no rows returned.").arg(
-                        query.trimmed()));
-                tableView->setVisible(false);
-                messageEdit->setVisible(true);
-                statusBar()->showMessage("Query finished. No rows returned.", 3000);
-            }
-            else {
-                model = new SqlTableModel(arg, this);
-                tableView->setModel(model);
-                messageEdit->setVisible(false);
-                tableView->setVisible(true);
-                statusBar()->showMessage(QString("Query finished. %1 rows returned.").arg(model->rowCount()), 3000);
-            }
-        }
-    }, result);
-
-    QString upperQuery = query.trimmed().toUpper();
-    if (upperQuery.startsWith("CREATE") || upperQuery.startsWith("DROP")) {
-        updateDatabaseExplorer();
     }
-}
-
-void Ui::onHelp() {
-    const std::string result = dbms.process_query_to_string("-help");
-    messageEdit->setPlainText(QString::fromStdString(result));
-    tableView->setVisible(false);
-    messageEdit->setVisible(true);
+    statusBar()->showMessage("All queries finished.", 3000);
 }
 
 void Ui::about() {
-    QMessageBox::about(this, "About Arsenii's DBMS",
-                       "A simple yet powerful SQL database management system built with C++ and Qt.\n\n"
-                       "Created by Arsenii Zarudniuk.");
+    QMessageBox::about(this, "About Arsenii's DBMS", "A simple yet powerful SQL database management system built with C++ and Qt.\n\nCreated by Arsenii Zarudniuk.");
+}
+
+void Ui::onHelp() {
+    onNewQueryTab(false);
+    tabWidget->setTabText(tabWidget->currentIndex(), "Help");
+    if (auto* tab = currentQueryTab()) {
+        tab->displayResult(dbms.process_query("-help"), "Help");
+    }
 }
 
 void Ui::updateCompleterContext() {
-    const CodeEditor* editor = currentQueryEdit();
-    if (!editor) return;
+    CodeEditor* editor = currentQueryEdit();
+    if (!editor || !completer) return;
 
     QTextCursor cursor = editor->textCursor();
     cursor.movePosition(QTextCursor::StartOfWord, QTextCursor::MoveAnchor);
@@ -443,8 +314,7 @@ void Ui::updateCompleterContext() {
 
     if (prevWord == "FROM" || prevWord == "TABLE" || prevWord == "INTO" || prevWord == "UPDATE") {
         keywords = tableNames;
-    }
-    else {
+    } else {
         keywords << "SELECT" << "FROM" << "WHERE" << "INSERT" << "INTO" << "VALUES"
             << "UPDATE" << "SET" << "DELETE" << "CREATE" << "TABLE" << "DROP"
             << "GROUP BY" << "HAVING" << "COUNT";
