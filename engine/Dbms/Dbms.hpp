@@ -101,6 +101,10 @@ public:
 
     QueryResult process_query(const std::string& input);
 
+    bool load_database_from_path(const std::string& path);
+
+    std::vector<std::string> get_table_names() const;
+
     Dbms();
 
     ~Dbms();

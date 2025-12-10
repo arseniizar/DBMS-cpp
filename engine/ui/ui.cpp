@@ -11,80 +11,115 @@
 #include <QMessageBox>
 #include <QVBoxLayout>
 #include <QHeaderView>
-#include <QKeySequence>
+#include <QFileDialog>
 #include <QIcon>
+#include <QKeySequence>
+#include <QPalette>
+#include <QColor>
+#include <QTreeView>
+#include <QStandardItemModel>
 #include <variant>
 
-Ui::Ui(QWidget *parent)
-    : QMainWindow(parent), model(nullptr), highlighter(nullptr)
-{
-    setWindowTitle("Arsenii's DBMS");
-    setWindowIcon(QIcon::fromTheme("application-x-sqlite3"));
-    resize(1200, 800);
+Ui::Ui(QWidget* parent)
+    : QMainWindow(parent), model(nullptr) {
 
-    tabWidget = new QTabWidget(this);
-    tabWidget->setTabsClosable(true);
-    QTextEdit* initialQueryEdit = new QTextEdit();
-    highlighter = new SqlHighlighter(initialQueryEdit->document());
-    tabWidget->addTab(initialQueryEdit, "Query 1");
-    setCentralWidget(tabWidget);
-
-    createActions();
-    createMenus();
-    createToolBars();
-    createStatusBar();
-    createDocks();
-
-    statusBar()->showMessage("Ready", 3000);
+    setupUi();
+    applyDarkTheme();
 }
 
 Ui::~Ui() {
     delete model;
 }
 
-void Ui::createActions() {
-    runQueryAction = new QAction(QIcon::fromTheme("media-playback-start", QIcon(":/icons/run.png")), "&Run Query", this);
-    runQueryAction->setShortcut(QKeySequence(Qt::Key_F5));
-    runQueryAction->setStatusTip("Execute the current SQL query");
-    connect(runQueryAction, &QAction::triggered, this, &Ui::onRunQuery);
+void Ui::setupUi() {
+    setWindowTitle("Arsenii's DBMS");
+    setWindowIcon(QIcon(":/open.png"));
+    resize(1200, 800);
 
-    listTablesAction = new QAction("&List Tables", this);
-    connect(listTablesAction, &QAction::triggered, this, &Ui::onListTables);
+    createActions();
+    createMenus();
+    createToolBars();
+    createStatusBar();
+
+    tabWidget = new QTabWidget(this);
+    tabWidget->setTabsClosable(true);
+    connect(tabWidget, &QTabWidget::tabCloseRequested, tabWidget, &QTabWidget::removeTab);
+    setCentralWidget(tabWidget);
+
+    onNewQueryTab();
+
+    createDocks();
+    statusBar()->showMessage("Ready", 3000);
+}
+
+void Ui::applyDarkTheme() {
+    qApp->setStyle("Fusion");
+
+    QPalette darkPalette;
+    darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+    darkPalette.setColor(QPalette::WindowText, Qt::white);
+    darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+    darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+    darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+    darkPalette.setColor(QPalette::ToolTipText, Qt::white);
+    darkPalette.setColor(QPalette::Text, Qt::white);
+    darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+    darkPalette.setColor(QPalette::ButtonText, Qt::white);
+    darkPalette.setColor(QPalette::BrightText, Qt::red);
+    darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+    darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+    darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+    darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor(127, 127, 127));
+    darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(127, 127, 127));
+
+    qApp->setPalette(darkPalette);
+}
+
+
+void Ui::createActions() {
+    newQueryAction = new QAction(QIcon(":/new.png"), "&New Query Tab", this);
+    newQueryAction->setShortcut(QKeySequence::New);
+    connect(newQueryAction, &QAction::triggered, this, &Ui::onNewQueryTab);
+
+    openDbAction = new QAction(QIcon(":/open.png"), "&Open Database...", this);
+    openDbAction->setShortcut(QKeySequence::Open);
+    connect(openDbAction, &QAction::triggered, this, &Ui::onOpenDatabase);
+
+    runQueryAction = new QAction(QIcon(":/run.png"), "&Run Query", this);
+    runQueryAction->setShortcut(QKeySequence(Qt::Key_F5));
+    connect(runQueryAction, &QAction::triggered, this, &Ui::onRunQuery);
 
     helpAction = new QAction(QIcon::fromTheme("help-contents"), "&Help", this);
     connect(helpAction, &QAction::triggered, this, &Ui::onHelp);
-
-    loadAction = new QAction(QIcon::fromTheme("document-open"), "&Load", this);
-    connect(loadAction, &QAction::triggered, this, &Ui::onLoad);
 
     exitAction = new QAction("E&xit", this);
     exitAction->setShortcut(QKeySequence::Quit);
     connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
 
-    aboutAction = new QAction("&About", this);
+    aboutAction = new QAction(QIcon(":/about.png"), "&About", this);
     connect(aboutAction, &QAction::triggered, this, &Ui::about);
 }
 
 void Ui::createMenus() {
-    fileMenu = menuBar()->addMenu("&File");
-    fileMenu->addAction(loadAction);
+    QMenu* fileMenu = menuBar()->addMenu("&File");
+    fileMenu->addAction(newQueryAction);
+    fileMenu->addAction(openDbAction);
     fileMenu->addSeparator();
     fileMenu->addAction(exitAction);
 
-    queryMenu = menuBar()->addMenu("&Query");
+    QMenu* queryMenu = menuBar()->addMenu("&Query");
     queryMenu->addAction(runQueryAction);
-    queryMenu->addAction(listTablesAction);
 
-    helpMenu = menuBar()->addMenu("&Help");
+    QMenu* helpMenu = menuBar()->addMenu("&Help");
     helpMenu->addAction(helpAction);
     helpMenu->addAction(aboutAction);
 }
 
 void Ui::createToolBars() {
-    mainToolBar = addToolBar("Main");
+    QToolBar* mainToolBar = addToolBar("Main");
+    mainToolBar->addAction(newQueryAction);
+    mainToolBar->addAction(openDbAction);
     mainToolBar->addAction(runQueryAction);
-    mainToolBar->addAction(loadAction);
-    mainToolBar->addAction(helpAction);
 }
 
 void Ui::createStatusBar() {
@@ -93,11 +128,22 @@ void Ui::createStatusBar() {
 }
 
 void Ui::createDocks() {
+    QDockWidget *dbExplorerDock = new QDockWidget("Database Explorer", this);
+    addDockWidget(Qt::LeftDockWidgetArea, dbExplorerDock);
+
+    dbExplorerView = new QTreeView(dbExplorerDock);
+    dbExplorerModel = new QStandardItemModel(dbExplorerDock);
+    dbExplorerView->setModel(dbExplorerModel);
+    dbExplorerView->setHeaderHidden(true);
+    connect(dbExplorerView, &QTreeView::clicked, this, &Ui::onTableClicked);
+    dbExplorerDock->setWidget(dbExplorerView);
+
     QDockWidget *outputDock = new QDockWidget("Output", this);
     addDockWidget(Qt::BottomDockWidgetArea, outputDock);
 
     QWidget *outputContainer = new QWidget();
-    QVBoxLayout *outputLayout = new QVBoxLayout(outputContainer);
+    auto *outputLayout = new QVBoxLayout(outputContainer);
+    outputLayout->setContentsMargins(0, 0, 0, 0);
 
     tableView = new QTableView();
     tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -109,19 +155,62 @@ void Ui::createDocks() {
 
     outputLayout->addWidget(tableView);
     outputLayout->addWidget(messageEdit);
-    outputContainer->setLayout(outputLayout);
 
     outputDock->setWidget(outputContainer);
 
     tableView->setVisible(false);
     messageEdit->setVisible(true);
-    messageEdit->setText("Welcome to the DBMS! Enter a query to begin.");
+    messageEdit->setText("Welcome! Open a database or create a new one to begin.");
+}
+
+void Ui::updateDatabaseExplorer() {
+    dbExplorerModel->clear();
+    QStandardItem *root = dbExplorerModel->invisibleRootItem();
+
+    std::vector<std::string> tableNames = dbms.get_table_names();
+    for (const auto& tableName : tableNames) {
+        QStandardItem *tableItem = new QStandardItem(QString::fromStdString(tableName));
+        tableItem->setIcon(QIcon::fromTheme("database"));
+        tableItem->setEditable(false);
+        root->appendRow(tableItem);
+    }
 }
 
 QTextEdit* Ui::currentQueryEdit() {
     return qobject_cast<QTextEdit*>(tabWidget->currentWidget());
 }
 
+void Ui::onNewQueryTab() {
+    QTextEdit* newQueryEdit = new QTextEdit();
+    new SqlHighlighter(newQueryEdit->document());
+
+    int newIndex = tabWidget->addTab(newQueryEdit, QString("Query %1").arg(tabWidget->count() + 1));
+    tabWidget->setCurrentIndex(newIndex);
+    newQueryEdit->setFocus();
+}
+
+void Ui::onTableClicked(const QModelIndex &index) {
+    if (!index.parent().isValid()) {
+        QString tableName = dbExplorerModel->data(index).toString();
+        onNewQueryTab();
+        currentQueryEdit()->setText(QString("SELECT * FROM %1;").arg(tableName));
+        runQueryAction->trigger();
+    }
+}
+
+void Ui::onOpenDatabase() {
+    QString dir = QFileDialog::getExistingDirectory(this, "Open Database Directory", "../engine/saves/tables");
+
+    if (dir.isEmpty()) return;
+
+    if (dbms.load_database_from_path(dir.toStdString())) {
+        statusBar()->showMessage("Database loaded successfully!", 4000);
+        updateDatabaseExplorer();
+    } else {
+        QMessageBox::warning(this, "Error", "Failed to load database from the selected directory.");
+        statusBar()->showMessage("Failed to load database.", 4000);
+    }
+}
 
 void Ui::onRunQuery() {
     QTextEdit* currentEdit = currentQueryEdit();
@@ -151,7 +240,7 @@ void Ui::onRunQuery() {
             messageEdit->setVisible(true);
             statusBar()->showMessage("Query finished.", 3000);
         } else if constexpr (std::is_same_v<T, std::vector<Column>>) {
-            if (arg.empty() || arg[0].get_rows().empty()) {
+            if (arg.empty() || (arg.begin()->get_rows().empty())) {
                 messageEdit->setPlainText("Query executed successfully, no rows returned.");
                 tableView->setVisible(false);
                 messageEdit->setVisible(true);
@@ -165,31 +254,22 @@ void Ui::onRunQuery() {
             }
         }
     }, result);
-}
 
-void Ui::onListTables() {
-    std::string result = dbms.process_query_to_string("-tables");
-    messageEdit->setPlainText(QString::fromStdString(result));
-    tableView->setVisible(false);
-    messageEdit->setVisible(true);
+    QString upperQuery = query.trimmed().toUpper();
+    if (upperQuery.startsWith("CREATE") || upperQuery.startsWith("DROP")) {
+        updateDatabaseExplorer();
+    }
 }
 
 void Ui::onHelp() {
-    std::string result = dbms.process_query_to_string("-help");
+    const std::string result = dbms.process_query_to_string("-help");
     messageEdit->setPlainText(QString::fromStdString(result));
-    tableView->setVisible(false);
-    messageEdit->setVisible(true);
-}
-
-void Ui::onLoad() {
-    std::string result = dbms.process_query_to_string("-load");
-    messageEdit->setPlainText(QString::fromStdString(result) + "\n(Please check the console for interaction)");
     tableView->setVisible(false);
     messageEdit->setVisible(true);
 }
 
 void Ui::about() {
     QMessageBox::about(this, "About Arsenii's DBMS",
-        "A simple yet powerful SQL database management system built with C++ and Qt.\n\n"
-        "Created by Arsenii Zarudniuk.");
+                       "A simple yet powerful SQL database management system built with C++ and Qt.\n\n"
+                       "Created by Arsenii Zarudniuk.");
 }

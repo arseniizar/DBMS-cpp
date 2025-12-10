@@ -51,7 +51,7 @@ std::vector<Column> Table::erase() {
     return erased_columns;
 }
 
-std::string Table::get_table_name() {
+std::string Table::get_table_name() const {
     return Table::table_name;
 }
 

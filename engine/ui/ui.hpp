@@ -7,12 +7,11 @@
 #include "sqlhighlighter.hpp"
 
 class QAction;
-class QMenu;
-class QToolBar;
-class QStatusBar;
 class QTextEdit;
 class QTableView;
 class QTabWidget;
+class QTreeView;
+class QStandardItemModel;
 
 class Ui final : public QMainWindow {
     Q_OBJECT
@@ -21,41 +20,40 @@ public:
     ~Ui() override;
 
 private slots:
+    void onOpenDatabase();
     void onRunQuery();
-    void onListTables();
     void onHelp();
-    void onLoad();
     void about();
+    void onNewQueryTab();
+    void onTableClicked(const QModelIndex &index);
 
 private:
+    void setupUi();
     void createActions();
     void createMenus();
     void createToolBars();
     void createStatusBar();
     void createDocks();
+    void applyDarkTheme();
+    void updateDatabaseExplorer();
+
+    QTextEdit* currentQueryEdit();
 
     Dbms dbms;
     SqlTableModel *model;
-    SqlHighlighter *highlighter;
 
     QTabWidget *tabWidget;
     QTableView *tableView;
     QTextEdit *messageEdit;
+    QTreeView *dbExplorerView;
+    QStandardItemModel *dbExplorerModel;
 
-    QMenu *fileMenu;
-    QMenu *queryMenu;
-    QMenu *helpMenu;
-
-    QToolBar *mainToolBar;
-
+    QAction *newQueryAction;
+    QAction *openDbAction;
     QAction *runQueryAction;
-    QAction *listTablesAction;
     QAction *helpAction;
-    QAction *loadAction;
     QAction *exitAction;
     QAction *aboutAction;
-
-    QTextEdit* currentQueryEdit();
 };
 
 #endif // UI_HPP

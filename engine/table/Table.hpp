@@ -43,7 +43,7 @@ public:
 
     std::vector<Column> erase();
 
-    std::string get_table_name();
+    std::string get_table_name () const;
 
     void insert_column(const Column &column);
 

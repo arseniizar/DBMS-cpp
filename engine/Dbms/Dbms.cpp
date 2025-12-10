@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <fstream>
 #include <ranges>
 #include "../utils/ut_contains_elems/ut_contains_elems.hpp"
 #include <fmt/core.h>
@@ -39,7 +40,7 @@ void Dbms::load_prompt() {
     }
 }
 
-std::pair<Query, Parse_error> Dbms::parse_query(std::string const &str) {
+std::pair<Query, Parse_error> Dbms::parse_query(std::string const& str) {
     parser.input(str);
     Query q = parser.parse();
     return std::make_pair(q, parser.get_error());
@@ -191,18 +192,20 @@ Execution_error Dbms::add_and_override_cols(const std::string& table_name, std::
     return {};
 }
 
-std::string Dbms::process_query_to_string(const std::string &input) {
+std::string Dbms::process_query_to_string(const std::string& input) {
     std::string lower_input = input;
     std::ranges::transform(lower_input, lower_input.begin(),
                            [](unsigned char c) { return std::tolower(c); });
     if (lower_input == "-tables") {
         std::stringstream ss;
         if (tables.empty()) { ss << "[ *empty* ]"; }
-        else { for (auto &t : tables) { ss << t.get_table_name() << "\n"; } }
+        else { for (auto& t : tables) { ss << t.get_table_name() << "\n"; } }
         return ss.str();
     }
     if (lower_input == "-help") {
-         return "Available commands with examples:\n\n1. CREATE TABLE\n   CREATE TABLE users (id INTEGER, name NVARCHAR2);\n\n2. DROP TABLE\n   DROP TABLE users;\n\n..."; // (скорочено)
+        return
+            "Available commands with examples:\n\n1. CREATE TABLE\n   CREATE TABLE users (id INTEGER, name NVARCHAR2);\n\n2. DROP TABLE\n   DROP TABLE users;\n\n...";
+        // (скорочено)
     }
     if (lower_input == "-load") {
         load_prompt();
@@ -249,8 +252,9 @@ QueryResult Dbms::process_query(const std::string& input) {
         std::stringstream ss;
         if (tables.empty()) {
             ss << "[ *empty* ]";
-        } else {
-            for (auto &t : tables) {
+        }
+        else {
+            for (auto& t : tables) {
                 ss << t.get_table_name() << "\n";
             }
         }
@@ -298,4 +302,50 @@ QueryResult Dbms::process_query(const std::string& input) {
     }
 
     return std::string("Query executed successfully");
+}
+
+bool Dbms::load_database_from_path(const std::string& path) {
+    namespace fs = std::filesystem;
+
+    tables.clear();
+    table_names.clear();
+    queries.clear();
+
+    const fs::path db_path(path);
+    if (!fs::exists(db_path) || !fs::is_directory(db_path)) {
+        fmt::println("Error: Provided path is not a valid directory.");
+        return false;
+    }
+
+    is_loading = true;
+    for (auto const& entry : fs::directory_iterator(db_path)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".txt") {
+            std::ifstream ifs(entry.path());
+            if (!ifs.is_open()) {
+                fmt::println("Error: Could not open file {}", entry.path().string());
+                continue;
+            }
+            std::string command;
+            while (std::getline(ifs, command)) {
+                if (!command.empty()) {
+                    process_query(command);
+                }
+            }
+        }
+    }
+    is_loading = false;
+    is_dbms_changed = false;
+
+    fmt::println("Database loaded successfully from {}", path);
+    return true;
+}
+
+std::vector<std::string> Dbms::get_table_names() const {
+    std::vector<std::string> names;
+    names.reserve(tables.size());
+
+    for (const auto& table : tables) {
+        names.push_back(table.get_table_name());
+    }
+    return names;
 }
