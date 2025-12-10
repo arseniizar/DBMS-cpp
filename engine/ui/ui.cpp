@@ -55,15 +55,21 @@ void Ui::setupUi() {
 
     tabWidget = new QTabWidget(this);
     tabWidget->setTabsClosable(true);
-    connect(tabWidget, &QTabWidget::tabCloseRequested, this, [this](int index) {
-        if (tabWidget->count() > 1) {
-            tabWidget->widget(index)->deleteLater();
-            tabWidget->removeTab(index);
+    connect(tabWidget, &QTabWidget::tabCloseRequested, this, [this](int index){
+        if (index == 0) {
+            return;
         }
+        QWidget* tab = tabWidget->widget(index);
+        tabWidget->removeTab(index);
+        tab->deleteLater();
     });
     setCentralWidget(tabWidget);
 
-    onNewQueryTab();
+    CodeEditor* consoleEditor = new CodeEditor();
+    new SqlHighlighter(consoleEditor->document());
+    consoleEditor->setCompleter(completer);
+    connect(consoleEditor, &CodeEditor::cursorPositionChanged, this, &Ui::updateCompleterContext);
+    tabWidget->addTab(consoleEditor, "Console");
 
     createDocks();
     statusBar()->showMessage("Ready", 3000);
@@ -294,7 +300,7 @@ void Ui::onNewQueryTab() {
 
     connect(newQueryEdit, &CodeEditor::cursorPositionChanged, this, &Ui::updateCompleterContext);
 
-    int newIndex = tabWidget->addTab(newQueryEdit, QString("Query %1").arg(tabWidget->count() + 1));
+    int newIndex = tabWidget->addTab(newQueryEdit, QString("Query %1").arg(tabWidget->count()));
     tabWidget->setCurrentIndex(newIndex);
     newQueryEdit->setFocus();
 }
