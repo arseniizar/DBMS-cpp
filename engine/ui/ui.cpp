@@ -1,6 +1,7 @@
 #include "ui.hpp"
 #include "codeeditor.hpp"
 #include "querytab.hpp"
+#include "helpwidget.hpp"
 
 #include <QApplication>
 #include <QTabWidget>
@@ -289,15 +290,23 @@ void Ui::about() {
 }
 
 void Ui::onHelp() {
-    onNewQueryTab(false);
-    tabWidget->setTabText(tabWidget->currentIndex(), "Help");
-    if (auto* tab = currentQueryTab()) {
-        tab->displayResult(dbms.process_query("-help"), "Help");
+    for (int i = 0; i < tabWidget->count(); ++i) {
+        if (tabWidget->tabText(i) == "Help") {
+            tabWidget->setCurrentIndex(i);
+            return;
+        }
     }
+
+    auto* helpWidget = new HelpWidget(this);
+    int helpIndex = tabWidget->addTab(helpWidget, "Help");
+    tabWidget->setCurrentIndex(helpIndex);
 }
 
 void Ui::updateCompleterContext() {
-    CodeEditor* editor = currentQueryEdit();
+    QueryTab* currentTab = currentQueryTab();
+    if (!currentTab) return;
+
+    CodeEditor* editor = currentTab->getEditor();
     if (!editor || !completer) return;
 
     QTextCursor cursor = editor->textCursor();
