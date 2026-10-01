@@ -5,9 +5,9 @@
 ![Build](https://img.shields.io/badge/CMake-3.20+-orange.svg)
 ![Tests](https://img.shields.io/badge/Tests-GoogleTest-red.svg)
 
-An educational Relational Database Management System (RDBMS) built from scratch in modern **C++20** with a desktop IDE powered by **Qt 6**. 
+An educational Relational Database Management System (RDBMS) built from scratch in modern **C++20** with an interactive desktop GUI powered by **Qt 6**. 
 
-The goal of this project is to explore database internals "under the hood": query tokenization, recursive-descent syntax parsing, abstract execution planning, and memory-mapped tabular data structures.
+The goal of this project is to explore database internals "under the hood": query tokenization, finite-state machine (FSM) syntax parsing, relational query execution planning, and disk snapshot persistence.
 
 ---
 
@@ -16,11 +16,11 @@ The goal of this project is to explore database internals "under the hood": quer
 The system is decoupled into modular layers:
 
 - **Input:** SQL Query string
-- **Lexer & Parser:** Recursive-descent parser and state machine validating syntax and tokens
-- **Query Representation:** AST object representing DDL, DML, or DQL commands
-- **Execution Engine:** Interprets query plan, performs filtering (`WHERE`), joins, and aggregations
-- **Storage Layer:** File-based data storage and type management (`INTEGER`, `NVARCHAR2`, `DATE`)
-- **Desktop UI:** Qt 6 interface with `QSyntaxHighlighter` and `QAbstractTableModel`
+- **Lexer & Parser:** Finite-State Machine (FSM) tokenizer and parser validating grammar rules and syntax tokens
+- **Query Representation:** Structured intermediate representation (`Query` command object) representing DDL, DML, or DQL commands
+- **Execution Engine:** Evaluates relational queries, performing multi-condition filtering (`WHERE`), table joins (`JOIN`), and aggregations
+- **Storage Layer:** File-based table snapshot persistence and schema type management (`INTEGER`, `NVARCHAR2`, `DATE`)
+- **Desktop UI:** Qt 6 graphical interface featuring `QSyntaxHighlighter`, query tabs, and table grid visualization via `QAbstractTableModel`
 
 ---
 
@@ -34,7 +34,7 @@ The system is decoupled into modular layers:
   - **Relationships:** Basic `JOIN` evaluation between tables.
 - **Desktop Database Explorer (Qt 6):**
   - Custom code editor with real-time SQL syntax highlighting (`QSyntaxHighlighter`).
-  - High-performance tabular data visualization implemented via `QAbstractTableModel`.
+  - Tabular data visualization implemented via `QAbstractTableModel`.
   - Tabbed query workspace and interactive schema explorer.
 - **Robust Verification:**
   - Automated unit and integration test suite using **GoogleTest** covering parser state transitions, edge-case query parsing, and execution results.
@@ -64,20 +64,3 @@ The system is decoupled into modular layers:
 ```bash
 git clone https://github.com/arseniizar/DBMS-cpp.git
 cd DBMS-cpp
-```
-
-### 2. Build via CMake
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
-```
-
-### 3. Run the Application
-```bash
-./build/DatabaseProject
-```
-
-### 4. Run Unit Tests (GoogleTest)
-```bash
-cd build && ctest --output-on-failure
-```
