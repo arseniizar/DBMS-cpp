@@ -64,3 +64,20 @@ The system is decoupled into modular layers:
 ```bash
 git clone https://github.com/arseniizar/DBMS-cpp.git
 cd DBMS-cpp
+```
+
+### 2. Build via CMake
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
+
+### 3. Run the Application
+```bash
+./build/DatabaseProject
+```
+
+### 4. Run Unit Tests (GoogleTest)
+```bash
+cd build && ctest --output-on-failure
+```
