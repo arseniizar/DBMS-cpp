@@ -79,5 +79,5 @@ cmake --build build -j
 
 ### 4. Run Unit Tests (GoogleTest)
 ```bash
-cd build andand ctest --output-on-failure
+cd build && ctest --output-on-failure
 ```
