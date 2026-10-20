@@ -1,4 +1,4 @@
-# Relational DBMS & SQL Execution Engine
+# Relational DBMS and SQL Execution Engine
 
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![Qt](https://img.shields.io/badge/Qt-6.x-green.svg)
@@ -16,7 +16,7 @@ The goal of this project is to explore database internals "under the hood": quer
 The system is decoupled into modular layers:
 
 - **Input:** SQL Query string
-- **Lexer & Parser:** Finite-State Machine (FSM) tokenizer and parser validating grammar rules and syntax tokens
+- **Lexer and Parser:** Finite-State Machine (FSM) tokenizer and parser validating grammar rules and syntax tokens
 - **Query Representation:** Structured intermediate representation (`Query` command object) representing DDL, DML, or DQL commands
 - **Execution Engine:** Evaluates relational queries, performing multi-condition filtering (`WHERE`), table joins (`JOIN`), and aggregations
 - **Storage Layer:** File-based table snapshot persistence and schema type management (`INTEGER`, `NVARCHAR2`, `DATE`)
@@ -30,7 +30,7 @@ The system is decoupled into modular layers:
   - **DDL:** `CREATE TABLE` (with `PRIMARY KEY`, `FOREIGN KEY`, `REFERENCES`), `DROP TABLE`.
   - **DML:** `INSERT INTO`, `UPDATE`, `DELETE`.
   - **DQL:** `SELECT ... FROM ... WHERE` with multi-conditional filtering (`AND`, comparison operators).
-  - **Aggregations & Grouping:** `GROUP BY`, `HAVING`, and `COUNT(...)`.
+  - **Aggregations and Grouping:** `GROUP BY`, `HAVING`, and `COUNT(...)`.
   - **Relationships:** Basic `JOIN` evaluation between tables.
 - **Desktop Database Explorer (Qt 6):**
   - Custom code editor with real-time SQL syntax highlighting (`QSyntaxHighlighter`).
@@ -47,7 +47,7 @@ The system is decoupled into modular layers:
 
 ---
 
-## Tech Stack & Prerequisites
+## Tech Stack and Prerequisites
 
 - **Language:** C++20 (GCC 11+, Clang 13+, or MSVC 2019+)
 - **GUI Framework:** Qt 6.x (Core, Gui, Widgets)
@@ -79,5 +79,5 @@ cmake --build build -j
 
 ### 4. Run Unit Tests (GoogleTest)
 ```bash
-cd build && ctest --output-on-failure
+cd build andand ctest --output-on-failure
 ```
