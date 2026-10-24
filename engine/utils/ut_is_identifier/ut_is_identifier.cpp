@@ -15,9 +15,14 @@ bool is_identifier(std::string str) {
         }
     }
 
-    auto match = std::smatch();
-    const auto regex = std::regex("^[a-zA-Z_][a-zA-Z0-9_]*$");
-    return std::regex_match(str, match, regex);
+    if (str.empty()) return false;
+    const auto first = static_cast<unsigned char>(str[0]);
+    if (!std::isalpha(first) && first != '_') return false;
+    for (size_t i = 1; i < str.size(); ++i) {
+        const auto ch = static_cast<unsigned char>(str[i]);
+        if (!std::isalnum(ch) && ch != '_') return false;
+    }
+    return true;
 }
 
 bool is_identifier_or_asterisk(const std::string &str) {

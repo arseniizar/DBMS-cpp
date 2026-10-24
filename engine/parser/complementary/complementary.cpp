@@ -81,8 +81,6 @@ std::string Parser::pop() {
     auto pair = Parser::peek_with_length();
     if (pair.first.empty()) Parser::pop_flag = true;
 
-    fmt::println("  -> Popping token: '{}' (length: {})", pair.first, pair.second);
-
     Parser::index += pair.second;
     Parser::pop_whitespace();
     return pair.first;
@@ -130,11 +128,9 @@ std::pair<std::string, int> Parser::peek_quoted_with_length() {
 
 std::pair<std::string, int> Parser::peek_identifier_with_length() {
     for (auto i = Parser::index; i < Parser::sql.size(); ++i) {
-        auto regex = std::regex("[a-zA-Z0-9_*]");
-        auto match = std::smatch();
-        auto str = std::string(1, Parser::sql.at(i));
-        auto matched = std::regex_match(str, match, regex);
-        if (!matched) {
+        const auto ch = static_cast<unsigned char>(Parser::sql[i]);
+        const bool is_valid = std::isalnum(ch) || ch == '_' || ch == '*';
+        if (!is_valid) {
             auto substr = Parser::sql.substr(Parser::index, i - Parser::index);
             return std::make_pair(substr, substr.size());
         }
@@ -162,9 +158,6 @@ bool Parser::peek_is_comma(std::string const &message) {
 }
 
 bool Parser::is_index_at_end() {
-    fmt::println("!!! DEBUG is_index_at_end: index={}, sql.size={}, pop_flag={}",
-                    index, sql.size(), pop_flag);
-
     if (Parser::index >= Parser::sql.size() and pop_flag) {
         auto sql_upper = Parser::sql;
         str_toupper(sql_upper);

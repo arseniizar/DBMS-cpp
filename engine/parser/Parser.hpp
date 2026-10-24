@@ -96,6 +96,7 @@ inline std::vector<std::string> reserved_words{
         "FROM", "NVARCHAR2",
         "DATE", "INTEGER",
         "GROUP BY", "HAVING",
+        "LEFT JOIN", "RIGHT JOIN", "FULL JOIN",
         "DROP",
         "PRIMARY", "FOREIGN", "REFERENCES",
         "COUNT",

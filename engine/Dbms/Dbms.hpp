@@ -6,6 +6,7 @@
 #define DATABASEPROJECT_DBMS_HPP
 
 #include <vector>
+#include <deque>
 #include "fmt/core.h"
 #include "fmt/format.h"
 #include <filesystem>
@@ -21,7 +22,7 @@ using QueryResult = std::variant<std::string, std::vector<Column>>;
 
 struct Dbms {
 private:
-    std::vector<Query> queries;
+    std::deque<Query> queries;
     std::vector<Table> tables;
     std::string table_saves_path = R"(..\engine\saves\tables\)";
     // for the logs, maybe UNDO in the future
