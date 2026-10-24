@@ -80,7 +80,10 @@ void Table::set_primary_key(Primary_key const &pk) {
 }
 
 bool Table::contains_cols_names(const std::vector<std::string> &names) {
-    return std::ranges::is_permutation(names, Table::get_columns_names());
+    auto col_names = Table::get_columns_names();
+    return std::ranges::all_of(names, [&col_names](const std::string &name) {
+        return std::ranges::find(col_names, name) != col_names.end();
+    });
 }
 
 Primary_key Table::get_primary_key() {
@@ -185,6 +188,8 @@ std::vector<Column> Table::find_cols_by_conditions(std::vector<Condition> condit
                             if (row.get_data() >= operand_values.at(index_val)) found_rows.push_back(row);
                         break;
                     }
+                    default:
+                        break;
                 }
                 index_op++;
                 index_val++;

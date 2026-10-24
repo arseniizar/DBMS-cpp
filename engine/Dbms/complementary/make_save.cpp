@@ -18,7 +18,7 @@ void Dbms::make_save() {
         return;
     }
     for (auto &table: Dbms::tables) {
-        std::ofstream ofs(fs_path.string() + R"(\)" + table.get_table_name() + ".txt", std::ofstream::out);
+        std::ofstream ofs((fs_path / (table.get_table_name() + ".txt")).string(), std::ofstream::out);
         if (ofs.is_open()) {
             // create table
             ofs << "create table " + table.get_table_name() + "( ";
