@@ -174,16 +174,54 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_delete_from() {
     auto table_name = Dbms::executor.q.get_table_name();
-    auto table = Dbms::find_table_by_name(table_name);
     auto conditions = Dbms::executor.q.get_conditions();
     if (!is_table_already_exist(table_name)) {
         std::string message = "at EXECUTION: unable to delete from nonexistent table";
         Dbms::executor.error = Execution_error(message);
         return make_executor_error(message);
     }
+    auto table = Dbms::find_table_by_name(table_name);
     auto are_consistent_error = Dbms::are_consistent().second;
     if (!are_consistent_error.message.empty()) {
         return make_executor_error(are_consistent_error.message);
+    }
+    if (!conditions.empty()) {
+        auto& table_to_modify = *std::ranges::find_if(tables,
+            [&](Table& t) { return t.get_table_name() == table_name; });
+        auto& table_columns = table_to_modify.get_columns_ref();
+        size_t num_rows = table_columns.empty() ? 0 : table_columns[0].get_rows().size();
+
+        std::vector<size_t> rows_to_keep;
+        for (size_t i = 0; i < num_rows; ++i) {
+            bool matches_all = true;
+            for (auto& cond : conditions) {
+                Column* cond_col = nullptr;
+                for (auto& col : table_columns) {
+                    if (col.get_name() == cond.get_field()) {
+                        cond_col = &col;
+                        break;
+                    }
+                }
+                if (!cond_col || !predicate(get_operator(cond), cond_col->get_rows()[i], cond.get_operand2())) {
+                    matches_all = false;
+                    break;
+                }
+            }
+            if (!matches_all) {
+                rows_to_keep.push_back(i);
+            }
+        }
+
+        for (auto& col : table_columns) {
+            std::vector<Row> kept_rows;
+            for (size_t idx : rows_to_keep) {
+                if (idx < col.get_rows().size()) {
+                    kept_rows.push_back(col.get_rows()[idx]);
+                }
+            }
+            col.set_rows(kept_rows);
+        }
+        return std::make_pair(table_columns, Execution_error());
     }
     Execution_error exe_er = Dbms::add_and_override_cols(table_name,
                                                          table.find_cols_by_conditions(

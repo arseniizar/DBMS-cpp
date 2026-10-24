@@ -74,6 +74,16 @@ TEST_F(DbmsIntegrationTest, DeleteWithoutWhereClearsTable) {
     EXPECT_EQ(result.find("2"), std::string::npos);
 }
 
+TEST_F(DbmsIntegrationTest, DeleteWithWhereRemovesMatchingRows) {
+    dbms.process_query_to_string("CREATE TABLE items (id INTEGER, name NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO items (id, name) VALUES ('1', 'Keyboard'), ('2', 'Mouse')");
+    dbms.process_query_to_string("DELETE FROM items WHERE id = '1'");
+
+    std::string result = dbms.process_query_to_string("SELECT * FROM items");
+    EXPECT_EQ(result.find("Keyboard"), std::string::npos);
+    EXPECT_NE(result.find("Mouse"), std::string::npos);
+}
+
 
 TEST_F(DbmsIntegrationTest, UiCommandTablesOnEmptyDb) {
     std::string result = dbms.process_query_to_string("-tables");
