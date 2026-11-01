@@ -4,12 +4,12 @@
 
 void Parser::step_join() {
     auto join = Parser::peek();
-    if (join != "JOIN") {
+    str_toupper(join);
+    if (join != "JOIN" && join != "LEFT JOIN" && join != "RIGHT JOIN" && join != "FULL JOIN") {
         Parser::step = Step::error;
         Parser::error_message = "expected a JOIN after the end of the previous statement";
         return;
     }
-    str_toupper(join);
     auto join_type_str = return_join_type_str(join);
     join_type j_t = return_join_type(join_type_str);
     Parser::q.set_join_type(j_t);
@@ -25,6 +25,7 @@ void Parser::step_join_table() {
 
 void Parser::step_join_on() {
     auto on = Parser::peek();
+    str_toupper(on);
     if (on != "ON") {
         Parser::step = Step::error;
         Parser::error_message = "at JOIN: expected a keyword ON";
@@ -41,7 +42,7 @@ void Parser::step_join_on_field1() {
         Parser::error_message = "at JOIN: expected a Field";
         return;
     }
-    Parser::q.append_condition(Condition(identifier, true));
+    Parser::q.append_condition(Condition(identifier, true, Condition_type::JOIN_ON));
     Parser::pop();
     Parser::step = Step::join_on_equal;
 }
@@ -64,5 +65,23 @@ void Parser::step_join_on_field2() {
     curr_cond.operand2_is_field = true;
     Parser::q.set_current_condition(curr_cond);
     Parser::pop();
-    Parser::pop_flag = true;
+
+    std::string next_token = peek();
+    if (next_token == ";") {
+        pop();
+        next_token = peek();
+    }
+    if (next_token.empty()) {
+        Parser::pop_flag = true;
+        return;
+    }
+    str_toupper(next_token);
+    if (next_token == "WHERE") {
+        step = Step::where;
+    } else if (next_token == "GROUP BY") {
+        step = Step::group_by;
+    } else {
+        step = Step::error;
+        error_message = "Unexpected token '" + peek() + "' after JOIN clause";
+    }
 }

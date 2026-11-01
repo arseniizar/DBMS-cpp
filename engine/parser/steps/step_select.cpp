@@ -93,6 +93,9 @@ void Parser::step_select_from_table() {
     if (next_token == "WHERE") {
         step = Step::where;
     }
+    else if (next_token == "JOIN" || next_token == "LEFT JOIN" || next_token == "RIGHT JOIN" || next_token == "FULL JOIN") {
+        step = Step::join;
+    }
     else if (next_token == "GROUP BY") {
         step = Step::group_by;
     }

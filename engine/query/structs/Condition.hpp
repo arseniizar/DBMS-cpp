@@ -13,7 +13,8 @@
 
 enum struct Condition_type {
     WHERE,
-    HAVING
+    HAVING,
+    JOIN_ON
 };
 
 struct Condition {

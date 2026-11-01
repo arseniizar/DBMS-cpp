@@ -27,12 +27,7 @@ const char* step_names[] = {
 
 std::pair<Query, Parse_error> Parser::parser_switch() {
     while (true) {
-        fmt::println("Step: {:<40} | Next token: '{}'",
-                     step_names[static_cast<int>(Parser::step)],
-                     Parser::peek());
-
         if (is_index_at_end()) {
-            fmt::println("End of parsing detected.");
             Parser::q.set_command(Parser::sql);
             return std::make_pair(Parser::q, Parser::error);
         }
@@ -107,6 +102,30 @@ std::pair<Query, Parse_error> Parser::parser_switch() {
         }
         case Step::having_value: {
             Parser::step_having_value();
+            break;
+        }
+        case Step::join: {
+            Parser::step_join();
+            break;
+        }
+        case Step::join_table: {
+            Parser::step_join_table();
+            break;
+        }
+        case Step::join_on: {
+            Parser::step_join_on();
+            break;
+        }
+        case Step::join_on_field1: {
+            Parser::step_join_on_field1();
+            break;
+        }
+        case Step::join_on_equal: {
+            Parser::step_join_on_equal();
+            break;
+        }
+        case Step::join_on_field2: {
+            Parser::step_join_on_field2();
             break;
         }
         case Step::create_table: {
