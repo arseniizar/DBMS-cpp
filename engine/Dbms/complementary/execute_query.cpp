@@ -175,25 +175,37 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     std::vector<Column> where_filtered_cols;
     if (where_conditions.empty()) {
         where_filtered_cols = source_cols;
-    }
-    else {
+    } else {
+        size_t num_rows = source_cols.empty() ? 0 : source_cols[0].get_rows().size();
         std::vector<size_t> matched_row_indices;
-        auto& condition = where_conditions[0];
-        Column condition_col;
-        for (auto& col : source_cols) {
-            if (col.get_name() == condition.get_field()) {
-                condition_col = col;
-                break;
+        matched_row_indices.reserve(num_rows);
+
+        std::vector<const Column*> cond_cols;
+        cond_cols.reserve(where_conditions.size());
+        for (const auto& cond : where_conditions) {
+            const Column* found_col = nullptr;
+            for (const auto& col : source_cols) {
+                if (col.get_name() == cond.operand1) {
+                    found_col = &col;
+                    break;
+                }
             }
+            if (!found_col) {
+                return make_executor_error("at EXECUTION: column from WHERE clause does not exist");
+            }
+            cond_cols.push_back(found_col);
         }
 
-        if (condition_col.empty()) {
-            return make_executor_error("at EXECUTION: column from WHERE clause does not exist");
-        }
-
-        const auto& all_rows = condition_col.get_rows();
-        for (size_t i = 0; i < all_rows.size(); ++i) {
-            if (predicate(get_operator(const_cast<Condition&>(condition)), all_rows[i], condition.get_operand2())) {
+        for (size_t i = 0; i < num_rows; ++i) {
+            bool all_match = true;
+            for (size_t c_idx = 0; c_idx < where_conditions.size(); ++c_idx) {
+                auto& cond = const_cast<Condition&>(where_conditions[c_idx]);
+                if (!predicate(get_operator(cond), cond_cols[c_idx]->get_rows()[i], cond.get_operand2())) {
+                    all_match = false;
+                    break;
+                }
+            }
+            if (all_match) {
                 matched_row_indices.push_back(i);
             }
         }
@@ -424,16 +436,25 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
     }
     if (!group_by_column) return {};
 
-    std::map<std::string, std::vector<size_t>> groups;
-    for (size_t i = 0; i < group_by_column->get_rows().size(); ++i) {
-        groups[group_by_column->get_rows()[i].get_data()].push_back(i);
+    std::unordered_map<std::string, std::vector<size_t>> groups;
+    std::vector<std::string> group_keys;
+    const auto& group_rows = group_by_column->get_rows();
+    groups.reserve(group_rows.size());
+    for (size_t i = 0; i < group_rows.size(); ++i) {
+        const std::string& key = group_rows[i].get_data();
+        auto [it, inserted] = groups.try_emplace(key);
+        if (inserted) {
+            group_keys.push_back(key);
+        }
+        it->second.push_back(i);
     }
 
     Table grouped_table;
     Column grouped_col({}, group_by_col_name, group_by_column->get_type());
     Column agg_col({}, "COUNT(*)", Data_type::INTEGER);
 
-    for (auto const& [key, val] : groups) {
+    for (const auto& key : group_keys) {
+        const auto& val = groups[key];
         grouped_col.add_row(Row(key, return_data_type(key)));
         agg_col.add_row(Row(std::to_string(val.size()), Data_type::INTEGER));
     }
