@@ -5,6 +5,7 @@
 #include "../../utils/ut_print/ut_print.hpp"
 #include <set>
 #include <map>
+#include <unordered_map>
 
 void Dbms::update_recent_change(Query& q) {
     const auto rec_c = recent_change(&q);
@@ -78,10 +79,16 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_create_table() {
 
 std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
     auto table_name = Dbms::executor.q.get_table_name();
+    auto joined_table_name = Dbms::executor.q.get_joined_table_name();
     auto conditions = Dbms::executor.q.get_conditions();
 
     if (!is_table_already_exist(table_name)) {
         std::string message = "at EXECUTION: unable to select columns from nonexistent table";
+        Dbms::executor.error = Execution_error(message);
+        return make_executor_error(message);
+    }
+    if (!joined_table_name.empty() && !is_table_already_exist(joined_table_name)) {
+        std::string message = "at EXECUTION: unable to join nonexistent table";
         Dbms::executor.error = Execution_error(message);
         return make_executor_error(message);
     }
@@ -91,27 +98,94 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
         return make_executor_error(are_consistent_error.message);
     }
 
-    std::vector<Column> where_filtered_cols;
+    std::vector<Condition> join_conditions;
     std::vector<Condition> where_conditions;
     std::vector<Condition> having_conditions;
 
     for (const auto& cond : conditions) {
-        if (cond.c_type == Condition_type::WHERE) {
+        if (cond.c_type == Condition_type::JOIN_ON) {
+            join_conditions.push_back(cond);
+        } else if (cond.c_type == Condition_type::WHERE) {
             where_conditions.push_back(cond);
-        }
-        else {
+        } else {
             having_conditions.push_back(cond);
         }
     }
 
+    std::vector<Column> source_cols;
+    if (joined_table_name.empty()) {
+        source_cols = table.get_columns();
+    } else {
+        auto right_table = Dbms::find_table_by_name(joined_table_name);
+        if (join_conditions.empty()) {
+            return make_executor_error("at EXECUTION: JOIN requires an ON condition");
+        }
+        const auto& join_cond = join_conditions[0];
+        Column left_key_col = table.find_column_by_name(join_cond.operand1);
+        Column right_key_col = right_table.find_column_by_name(join_cond.operand2);
+        if (left_key_col.empty() || right_key_col.empty()) {
+            left_key_col = table.find_column_by_name(join_cond.operand2);
+            right_key_col = right_table.find_column_by_name(join_cond.operand1);
+        }
+        if (left_key_col.empty() || right_key_col.empty()) {
+            return make_executor_error("at EXECUTION: invalid JOIN ON columns");
+        }
 
+        std::unordered_map<std::string, std::vector<size_t>> right_hash_index;
+        const auto& right_key_rows = right_key_col.get_rows();
+        right_hash_index.reserve(right_key_rows.size());
+        for (size_t r_idx = 0; r_idx < right_key_rows.size(); ++r_idx) {
+            right_hash_index[right_key_rows[r_idx].get_data()].push_back(r_idx);
+        }
+
+        auto left_cols = table.get_columns();
+        auto right_cols = right_table.get_columns();
+        for (auto& col : left_cols) {
+            source_cols.emplace_back(std::vector<Row>{}, col.get_name(), col.get_type());
+        }
+        for (auto& col : right_cols) {
+            source_cols.emplace_back(std::vector<Row>{}, col.get_name(), col.get_type());
+        }
+
+        const auto& left_key_rows = left_key_col.get_rows();
+        const bool is_left_join = Dbms::executor.q.get_join_type() == join_type::LEFT_JOIN;
+
+        for (size_t l_idx = 0; l_idx < left_key_rows.size(); ++l_idx) {
+            auto it = right_hash_index.find(left_key_rows[l_idx].get_data());
+            if (it != right_hash_index.end()) {
+                for (size_t r_idx : it->second) {
+                    for (size_t c = 0; c < left_cols.size(); ++c) {
+                        source_cols[c].add_row(left_cols[c].get_rows()[l_idx]);
+                    }
+                    for (size_t c = 0; c < right_cols.size(); ++c) {
+                        source_cols[left_cols.size() + c].add_row(right_cols[c].get_rows()[r_idx]);
+                    }
+                }
+            } else if (is_left_join) {
+                for (size_t c = 0; c < left_cols.size(); ++c) {
+                    source_cols[c].add_row(left_cols[c].get_rows()[l_idx]);
+                }
+                for (size_t c = 0; c < right_cols.size(); ++c) {
+                    source_cols[left_cols.size() + c].add_row(Row("", right_cols[c].get_type()));
+                }
+            }
+        }
+    }
+
+    std::vector<Column> where_filtered_cols;
     if (where_conditions.empty()) {
-        where_filtered_cols = table.get_columns();
+        where_filtered_cols = source_cols;
     }
     else {
         std::vector<size_t> matched_row_indices;
         auto& condition = where_conditions[0];
-        Column condition_col = table.find_column_by_name(condition.get_field());
+        Column condition_col;
+        for (auto& col : source_cols) {
+            if (col.get_name() == condition.get_field()) {
+                condition_col = col;
+                break;
+            }
+        }
 
         if (condition_col.empty()) {
             return make_executor_error("at EXECUTION: column from WHERE clause does not exist");
@@ -124,7 +198,7 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_select() {
             }
         }
 
-        for (auto& original_col : table.get_columns()) {
+        for (auto& original_col : source_cols) {
             Column filtered_col({}, original_col.get_name(), original_col.get_type());
             for (size_t index : matched_row_indices) {
                 if (index < original_col.get_rows().size()) {

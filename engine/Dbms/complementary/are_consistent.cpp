@@ -67,8 +67,25 @@ std::pair<std::vector<Column>, Execution_error> Dbms::are_conditions_consistent(
     }
 
     auto table_col_names = table.get_columns_names();
+    const auto& joined_table_name = Dbms::executor.q.get_joined_table_name();
+    if (!joined_table_name.empty() && is_table_already_exist(joined_table_name)) {
+        auto joined_cols = Dbms::find_table_by_name(joined_table_name).get_columns_names();
+        table_col_names.insert(table_col_names.end(), joined_cols.begin(), joined_cols.end());
+    }
 
     for (auto &condition: Dbms::executor.q.get_conditions()) {
+        if (condition.c_type == Condition_type::JOIN_ON) {
+            bool found1 = std::ranges::find(table_col_names, condition.operand1) != table_col_names.end();
+            bool found2 = std::ranges::find(table_col_names, condition.operand2) != table_col_names.end();
+            if (!found1 || !found2) {
+                std::string missing = !found1 ? condition.operand1 : condition.operand2;
+                std::string message = "at EXECUTION: unable to access nonexistent column '" + missing + "' in JOIN condition";
+                Dbms::executor.error = Execution_error(message);
+                return make_executor_error(message);
+            }
+            continue;
+        }
+
         std::string field_to_check;
 
         if (condition.operand1_is_field) {
