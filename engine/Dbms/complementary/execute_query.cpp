@@ -461,6 +461,45 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
     grouped_table.insert_column(grouped_col);
     grouped_table.insert_column(agg_col);
 
+    for (const auto& field : requested_fields) {
+        if (field.agg_t != Aggregation_type::SUM &&
+            field.agg_t != Aggregation_type::MIN &&
+            field.agg_t != Aggregation_type::MAX) {
+            continue;
+        }
+        Column* target_col = nullptr;
+        for (auto& col : input_cols) {
+            if (col.get_name() == field.value) {
+                target_col = &col;
+                break;
+            }
+        }
+        if (!target_col) continue;
+
+        std::string prefix = field.agg_t == Aggregation_type::SUM ? "SUM(" :
+                             (field.agg_t == Aggregation_type::MIN ? "MIN(" : "MAX(");
+        Column fn_col({}, prefix + field.value + ")", Data_type::INTEGER);
+
+        for (const auto& key : group_keys) {
+            const auto& row_indices = groups[key];
+            long long acc = 0;
+            bool first = true;
+            for (size_t idx : row_indices) {
+                long long v = std::stoll(target_col->get_rows()[idx].get_data());
+                if (field.agg_t == Aggregation_type::SUM) {
+                    acc += v;
+                } else if (field.agg_t == Aggregation_type::MIN) {
+                    if (first || v < acc) acc = v;
+                } else if (field.agg_t == Aggregation_type::MAX) {
+                    if (first || v > acc) acc = v;
+                }
+                first = false;
+            }
+            fn_col.add_row(Row(std::to_string(acc), Data_type::INTEGER));
+        }
+        grouped_table.insert_column(fn_col);
+    }
+
     if (!having_conditions.empty()) {
         const auto& condition = having_conditions[0];
         std::string operand1 = condition.operand1;
@@ -495,17 +534,25 @@ std::vector<Column> Dbms::execute_group_by_with_having(std::vector<Column>& inpu
 
     std::vector<Column> final_result_cols;
     for (const auto& field : requested_fields) {
-        std::string field_name = field.value;
-        if (field.agg_t == Aggregation_type::COUNT) {
-            field_name = "COUNT(" + field.value + ")";
-            std::transform(field_name.begin(), field_name.end(), field_name.begin(), ::toupper);
+        std::string expected_col_name = field.value;
+        if (field.agg_t == Aggregation_type::SUM) {
+            expected_col_name = "SUM(" + field.value + ")";
+        } else if (field.agg_t == Aggregation_type::MIN) {
+            expected_col_name = "MIN(" + field.value + ")";
+        } else if (field.agg_t == Aggregation_type::MAX) {
+            expected_col_name = "MAX(" + field.value + ")";
         }
 
         for (auto& col : grouped_table.get_columns()) {
             std::string col_name_upper = col.get_name();
             std::transform(col_name_upper.begin(), col_name_upper.end(), col_name_upper.begin(), ::toupper);
-            if (col.get_name() == field.value || col_name_upper == "COUNT(*)") {
+            if (field.agg_t == Aggregation_type::COUNT && col_name_upper == "COUNT(*)") {
                 final_result_cols.push_back(col);
+                break;
+            }
+            if (field.agg_t != Aggregation_type::COUNT && col.get_name() == expected_col_name) {
+                final_result_cols.push_back(col);
+                break;
             }
         }
     }

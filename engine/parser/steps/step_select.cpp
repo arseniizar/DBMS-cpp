@@ -5,26 +5,30 @@ void Parser::step_select_field() {
     std::string identifier_or_func = peek();
     str_toupper(identifier_or_func);
 
-    if (identifier_or_func == "COUNT") {
+    if (identifier_or_func == "COUNT" || identifier_or_func == "SUM" ||
+        identifier_or_func == "MIN" || identifier_or_func == "MAX") {
         pop();
-        if (!peek_is_opening_parens("at SELECT: expected '(' after COUNT")) return;
+        if (!peek_is_opening_parens("at SELECT: expected '(' after " + identifier_or_func)) return;
 
         std::string col_name = pop();
         if (!is_identifier_or_asterisk(col_name)) {
             step = Step::error;
-            error_message = "at SELECT: expected column name or '*' inside COUNT()";
+            error_message = "at SELECT: expected column name or '*' inside " + identifier_or_func + "()";
             return;
         }
 
         if (auto closing_paren = pop(); closing_paren != ")") {
             step = Step::error;
-            error_message = "at SELECT: expected ')' after column name in COUNT()";
+            error_message = "at SELECT: expected ')' after column name in " + identifier_or_func + "()";
             return;
         }
 
         Field agg_field;
         agg_field.value = col_name;
-        agg_field.agg_t = Aggregation_type::COUNT;
+        if (identifier_or_func == "COUNT") agg_field.agg_t = Aggregation_type::COUNT;
+        else if (identifier_or_func == "SUM") agg_field.agg_t = Aggregation_type::SUM;
+        else if (identifier_or_func == "MIN") agg_field.agg_t = Aggregation_type::MIN;
+        else if (identifier_or_func == "MAX") agg_field.agg_t = Aggregation_type::MAX;
         agg_field.d_t = Data_type::TABLE_SELECT;
         q.append_field(agg_field);
     }

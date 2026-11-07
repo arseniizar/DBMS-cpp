@@ -99,7 +99,7 @@ inline std::vector<std::string> reserved_words{
         "LEFT JOIN", "RIGHT JOIN", "FULL JOIN",
         "DROP",
         "PRIMARY", "FOREIGN", "REFERENCES",
-        "COUNT",
+        "COUNT", "SUM", "MIN", "MAX",
         ";"
 };
 

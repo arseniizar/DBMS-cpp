@@ -11,7 +11,7 @@
 #include "Key_attr.hpp"
 
 enum struct Aggregation_type {
-    NONE, COUNT
+    NONE, COUNT, SUM, MIN, MAX
 };
 
 struct Field {

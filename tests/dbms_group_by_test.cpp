@@ -53,3 +53,20 @@ TEST_F(DbmsGroupByTest, HandlesGroupByWithCountColumn) {
     EXPECT_NE(result.find("Lviv"), std::string::npos);
     EXPECT_NE(result.find("1"), std::string::npos);
 }
+
+TEST_F(DbmsGroupByTest, HandlesGroupByWithSumMinMax) {
+    dbms.process_query("CREATE TABLE sales (city NVARCHAR2, amount INTEGER)");
+    dbms.process_query("INSERT INTO sales (city, amount) VALUES ('Kyiv', '100')");
+    dbms.process_query("INSERT INTO sales (city, amount) VALUES ('Kyiv', '250')");
+    dbms.process_query("INSERT INTO sales (city, amount) VALUES ('Lviv', '80')");
+
+    std::string result = dbms.process_query_to_string(
+        "SELECT city, SUM(amount), MIN(amount), MAX(amount) FROM sales GROUP BY city");
+
+    EXPECT_NE(result.find("Kyiv"), std::string::npos);
+    EXPECT_NE(result.find("350"), std::string::npos);
+    EXPECT_NE(result.find("100"), std::string::npos);
+    EXPECT_NE(result.find("250"), std::string::npos);
+    EXPECT_NE(result.find("Lviv"), std::string::npos);
+    EXPECT_NE(result.find("80"), std::string::npos);
+}
