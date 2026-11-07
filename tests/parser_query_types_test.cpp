@@ -287,3 +287,162 @@ TEST_F(ParserTest, HandlesBasicUpdate) {
     EXPECT_EQ(conditions[0].get_operand1(), "id");
     EXPECT_EQ(conditions[0].get_operand2(), "1");
 }
+
+TEST_F(ParserTest, HandlesSelectWithInnerJoin) {
+    parser.input("SELECT name, product FROM users JOIN orders ON user_id = customer_id");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    EXPECT_EQ(q.get_table_name(), "users");
+    EXPECT_EQ(q.get_joined_table_name(), "orders");
+    EXPECT_EQ(q.get_join_type(), join_type::JOIN);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithLeftJoin) {
+    parser.input("SELECT name, product FROM users LEFT JOIN orders ON user_id = customer_id");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    EXPECT_EQ(q.get_joined_table_name(), "orders");
+    EXPECT_EQ(q.get_join_type(), join_type::LEFT_JOIN);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithRightJoin) {
+    parser.input("SELECT name FROM users RIGHT JOIN orders ON user_id = customer_id");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    EXPECT_EQ(q.get_join_type(), join_type::RIGHT_JOIN);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithFullJoin) {
+    parser.input("SELECT name FROM users FULL JOIN orders ON user_id = customer_id");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    EXPECT_EQ(q.get_join_type(), join_type::FULL_JOIN);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithGroupBy) {
+    parser.input("SELECT city FROM sales GROUP BY city");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    ASSERT_EQ(q.get_group_by_columns().size(), 1);
+    EXPECT_EQ(q.get_group_by_columns()[0], "city");
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithGroupByAndHaving) {
+    parser.input("SELECT city, COUNT(*) FROM sales GROUP BY city HAVING COUNT(*) > 2");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    ASSERT_EQ(q.get_group_by_columns().size(), 1);
+    ASSERT_EQ(q.get_conditions().size(), 1);
+    EXPECT_EQ(q.get_conditions()[0].c_type, Condition_type::HAVING);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithCountFunction) {
+    parser.input("SELECT COUNT(*) FROM users");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_fields().size(), 1);
+    EXPECT_EQ(q.get_fields()[0].agg_t, Aggregation_type::COUNT);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithSumFunction) {
+    parser.input("SELECT SUM(amount) FROM sales GROUP BY city");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_fields().size(), 1);
+    EXPECT_EQ(q.get_fields()[0].agg_t, Aggregation_type::SUM);
+    EXPECT_EQ(q.get_fields()[0].value, "amount");
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithMinAndMaxFunctions) {
+    parser.input("SELECT MIN(price), MAX(price) FROM products GROUP BY category");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_fields().size(), 2);
+    EXPECT_EQ(q.get_fields()[0].agg_t, Aggregation_type::MIN);
+    EXPECT_EQ(q.get_fields()[1].agg_t, Aggregation_type::MAX);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesWhereWithNotEqualOperator) {
+    parser.input("SELECT * FROM users WHERE city != 'Kyiv'");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_conditions().size(), 1);
+    EXPECT_EQ(q.get_conditions()[0].get_operator(), Query_operator::ne);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesWhereWithGreaterAndLessOperators) {
+    parser.input("SELECT * FROM products WHERE price > '10' AND price < '100'");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_conditions().size(), 2);
+    EXPECT_EQ(q.get_conditions()[0].get_operator(), Query_operator::gt);
+    EXPECT_EQ(q.get_conditions()[1].get_operator(), Query_operator::lt);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesWhereWithGreaterOrEqualAndLessOrEqual) {
+    parser.input("SELECT * FROM products WHERE price >= '10' AND price <= '100'");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_conditions().size(), 2);
+    EXPECT_EQ(q.get_conditions()[0].get_operator(), Query_operator::gte);
+    EXPECT_EQ(q.get_conditions()[1].get_operator(), Query_operator::lte);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesWhereWithMultipleAndConditions) {
+    parser.input("SELECT id FROM users WHERE city = 'Warsaw' AND role = 'Engineer' AND active = '1'");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_conditions().size(), 3);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesTrailingSemicolonInSelect) {
+    parser.input("SELECT * FROM users;");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    EXPECT_EQ(q.get_table_name(), "users");
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, HandlesSelectWithThreeColumns) {
+    parser.input("SELECT id, name, city FROM users");
+    Query q = parser.parse();
+    ASSERT_EQ(q.get_query_type(), Query_type::Select);
+    EXPECT_EQ(q.get_fields().size(), 3);
+    EXPECT_EQ(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, FailsOnDuplicateColumnNameInCreateTable) {
+    parser.input("CREATE TABLE users (id INTEGER, id NVARCHAR2)");
+    parser.parse();
+    EXPECT_NE(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, FailsOnInvalidDataTypeInCreateTable) {
+    parser.input("CREATE TABLE users (id UNKNOWN_TYPE)");
+    parser.parse();
+    EXPECT_NE(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, FailsOnSelectWithoutFromKeyword) {
+    parser.input("SELECT id users");
+    parser.parse();
+    EXPECT_NE(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, FailsOnSelectWithoutTableName) {
+    parser.input("SELECT id FROM");
+    parser.parse();
+    EXPECT_NE(parser.get_error().message, "");
+}
+
+TEST_F(ParserTest, FailsOnUpdateWithoutSetKeyword) {
+    parser.input("UPDATE users name = 'Arsenii'");
+    parser.parse();
+    EXPECT_NE(parser.get_error().message, "");
+}
