@@ -16,10 +16,10 @@ The goal of this project is to explore database internals "under the hood": quer
 The system is decoupled into modular layers:
 
 - **Input:** SQL Query string
-- **Lexer and Parser:** Finite-State Machine (FSM) tokenizer and parser validating grammar rules and syntax tokens
+- **Lexer and Parser:** Zero-regex Finite-State Machine (FSM) tokenizer and parser (`O(N)` token scan) validating grammar rules and syntax tokens
 - **Query Representation:** Structured intermediate representation (`Query` command object) representing DDL, DML, or DQL commands
-- **Execution Engine:** Evaluates relational queries, performing multi-condition filtering (`WHERE`), table joins (`JOIN`), and aggregations
-- **Storage Layer:** File-based table snapshot persistence and schema type management (`INTEGER`, `NVARCHAR2`, `DATE`)
+- **Execution Engine:** Evaluates relational queries, performing multi-condition filtering (`WHERE`), hash-based table joins (`JOIN` / `LEFT JOIN`), and hash-based aggregations (`GROUP BY` / `HAVING`)
+- **Storage Layer:** Columnar in-memory table layout (`std::vector<Column>`) with file-based snapshot persistence, `PRIMARY KEY` / `FOREIGN KEY` constraint validation, and schema type management (`INTEGER`, `NVARCHAR2`, `DATE`)
 - **Desktop UI:** Qt 6 graphical interface featuring `QSyntaxHighlighter`, query tabs, and table grid visualization via `QAbstractTableModel`
 
 ---
@@ -27,17 +27,17 @@ The system is decoupled into modular layers:
 ## Key Features
 
 - **Custom SQL Engine:**
-  - **DDL:** `CREATE TABLE` (with `PRIMARY KEY`, `FOREIGN KEY`, `REFERENCES`), `DROP TABLE`.
-  - **DML:** `INSERT INTO`, `UPDATE`, `DELETE`.
+  - **DDL:** `CREATE TABLE` (with `PRIMARY KEY` uniqueness and `FOREIGN KEY REFERENCES` referential integrity checks), `DROP TABLE`.
+  - **DML:** `INSERT INTO`, `UPDATE`, `DELETE` (full table or filtered via `WHERE`).
   - **DQL:** `SELECT ... FROM ... WHERE` with multi-conditional filtering (`AND`, comparison operators).
-  - **Aggregations and Grouping:** `GROUP BY`, `HAVING`, and `COUNT(...)`.
-  - **Relationships:** Basic `JOIN` evaluation between tables.
+  - **Aggregations and Grouping:** Hash-based `GROUP BY`, `HAVING`, and aggregate functions (`COUNT`, `SUM`, `MIN`, `MAX`).
+  - **Relationships:** Hash-based `JOIN` and `LEFT JOIN` evaluation (`O(N + M)`) between tables.
 - **Desktop Database Explorer (Qt 6):**
   - Custom code editor with real-time SQL syntax highlighting (`QSyntaxHighlighter`).
   - Tabular data visualization implemented via `QAbstractTableModel`.
   - Tabbed query workspace and interactive schema explorer.
 - **Robust Verification:**
-  - Automated unit and integration test suite using **GoogleTest** covering parser state transitions, edge-case query parsing, and execution results.
+  - **55+ automated unit and integration tests** using **GoogleTest** covering parser state transitions, relational joins, aggregations, key constraints, and execution results.
 
 ---
 

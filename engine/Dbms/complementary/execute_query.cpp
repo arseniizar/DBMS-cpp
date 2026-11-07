@@ -70,7 +70,10 @@ std::pair<std::vector<Column>, Execution_error> Dbms::execute_create_table() {
     }
     if (!Dbms::executor.q.get_referenced_table_name().empty()) {
         auto are_relations_ok = Dbms::check_relations();
-        if (are_relations_ok) Dbms::populate_keys();
+        if (!are_relations_ok) {
+            return make_executor_error("at EXECUTION: invalid foreign key reference");
+        }
+        Dbms::populate_keys();
     }
     Dbms::add_table(Dbms::executor.tmp_t);
     if (!Dbms::is_loading) ut_print(Dbms::executor.tmp_t);

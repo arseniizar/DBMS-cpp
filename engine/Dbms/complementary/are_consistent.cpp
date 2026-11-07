@@ -36,19 +36,10 @@ std::pair<std::vector<Column>, Execution_error> Dbms::are_cols_consistent() {
     }
     // case for the * in select
     auto fields = Dbms::executor.q.get_fields();
-    if (fields.at(0).value == "*" and fields.size() == 1) {
+    if (!fields.empty() and fields.at(0).value == "*" and fields.size() == 1) {
         return make_executor_error("");
     }
     auto col_names = Dbms::find_table_by_name(table_name).get_columns_names();
-    // in case of adding less than all columns
-    if (field_col_names.size() < col_names.size() and Dbms::executor.action != Q_action::SELECT) {
-        Execution_error exe_er = Dbms::add_and_override_cols(table_name, Dbms::executor.tmp_cols);
-        if (!exe_er.message.empty()) {
-            Dbms::executor.error = exe_er;
-            return make_executor_error(exe_er.message);
-        }
-        return std::make_pair(Dbms::executor.tmp_cols, Execution_error());
-    }
 
     bool are_col_names_consistent =
             ut_contains_elems(col_names, field_col_names);
@@ -99,7 +90,10 @@ std::pair<std::vector<Column>, Execution_error> Dbms::are_conditions_consistent(
         if (condition.c_type == Condition_type::HAVING) {
             std::string upper_field = field_to_check;
             std::transform(upper_field.begin(), upper_field.end(), upper_field.begin(), ::toupper);
-            if (upper_field.rfind("COUNT(", 0) == 0) {
+            if (upper_field.rfind("COUNT(", 0) == 0 ||
+                upper_field.rfind("SUM(", 0) == 0 ||
+                upper_field.rfind("MIN(", 0) == 0 ||
+                upper_field.rfind("MAX(", 0) == 0) {
                 continue;
             }
         }

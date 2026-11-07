@@ -205,6 +205,8 @@ Execution_error Dbms::add_and_override_cols(const std::string& table_name, std::
         Dbms::executor.error = Execution_error(message);
         return Execution_error(message);
     }
+    const auto pk_col_name = table.get_primary_key().curr_col_name;
+    const auto foreign_keys = table.get_foreign_keys();
     for (auto& t_col : table_cols) {
         for (auto& col : cols) {
             if (col.get_name() == t_col.get_name()) {
@@ -214,6 +216,38 @@ Execution_error Dbms::add_and_override_cols(const std::string& table_name, std::
                             "columns with improper data type";
                         Dbms::executor.error = Execution_error(message);
                         return Execution_error(message);
+                    }
+                    if (!pk_col_name.empty() && t_col.get_name() == pk_col_name) {
+                        for (const auto& existing_row : t_col.get_rows()) {
+                            if (existing_row.get_data() == row.get_data()) {
+                                const std::string message = "at EXECUTION: duplicate primary key value";
+                                Dbms::executor.error = Execution_error(message);
+                                return Execution_error(message);
+                            }
+                        }
+                    }
+                    for (const auto& fk : foreign_keys) {
+                        if (fk.curr_col_name == t_col.get_name() && !fk.k_a.reference.table_name.empty()) {
+                            if (!is_table_already_exist(fk.k_a.reference.table_name)) {
+                                const std::string message = "at EXECUTION: referenced table does not exist";
+                                Dbms::executor.error = Execution_error(message);
+                                return Execution_error(message);
+                            }
+                            auto ref_table = find_table_by_name(fk.k_a.reference.table_name);
+                            auto ref_col = ref_table.find_column_by_name(fk.k_a.reference.column_name);
+                            bool ref_found = false;
+                            for (const auto& ref_row : ref_col.get_rows()) {
+                                if (ref_row.get_data() == row.get_data()) {
+                                    ref_found = true;
+                                    break;
+                                }
+                            }
+                            if (!ref_found) {
+                                const std::string message = "at EXECUTION: foreign key constraint failed";
+                                Dbms::executor.error = Execution_error(message);
+                                return Execution_error(message);
+                            }
+                        }
                     }
                     t_col.add_row(row);
                 }

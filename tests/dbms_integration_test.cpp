@@ -84,6 +84,25 @@ TEST_F(DbmsIntegrationTest, DeleteWithWhereRemovesMatchingRows) {
     EXPECT_NE(result.find("Mouse"), std::string::npos);
 }
 
+TEST_F(DbmsIntegrationTest, RejectsDuplicatePrimaryKeyOnInsert) {
+    dbms.process_query_to_string("CREATE TABLE users (id INTEGER PRIMARY KEY, name NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO users (id, name) VALUES ('1', 'Arsenii')");
+    std::string duplicate = dbms.process_query_to_string("INSERT INTO users (id, name) VALUES ('1', 'Max')");
+    EXPECT_NE(duplicate.find("duplicate primary key"), std::string::npos);
+}
+
+TEST_F(DbmsIntegrationTest, EnforcesForeignKeyConstraintOnInsert) {
+    dbms.process_query_to_string("CREATE TABLE users (id INTEGER PRIMARY KEY, name NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO users (id, name) VALUES ('10', 'Arsenii')");
+    dbms.process_query_to_string("CREATE TABLE orders (order_id INTEGER, user_id INTEGER FOREIGN KEY REFERENCES users(id))");
+
+    std::string valid_res = dbms.process_query_to_string("INSERT INTO orders (order_id, user_id) VALUES ('100', '10')");
+    EXPECT_NE(valid_res.find("successfully"), std::string::npos);
+
+    std::string invalid_res = dbms.process_query_to_string("INSERT INTO orders (order_id, user_id) VALUES ('101', '999')");
+    EXPECT_NE(invalid_res.find("foreign key constraint failed"), std::string::npos);
+}
+
 
 TEST_F(DbmsIntegrationTest, UiCommandTablesOnEmptyDb) {
     std::string result = dbms.process_query_to_string("-tables");
