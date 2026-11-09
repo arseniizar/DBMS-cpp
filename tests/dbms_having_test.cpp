@@ -70,3 +70,73 @@ TEST_F(DbmsHavingTest, HandlesHavingWithGroupByColumn) {
     EXPECT_EQ(result.find("Lviv"), std::string::npos);
     EXPECT_EQ(result.find("Kharkiv"), std::string::npos);
 }
+
+TEST_F(DbmsHavingTest, HandlesHavingWithLessThan) {
+    dbms.process_query_to_string("CREATE TABLE orders (user_id INTEGER, item NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('1', 'Book')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('1', 'Pen')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('2', 'Notebook')");
+
+    std::string result = dbms.process_query_to_string(
+        "SELECT user_id, COUNT(*) FROM orders GROUP BY user_id HAVING COUNT(*) < 2"
+    );
+
+    EXPECT_NE(result.find("2"), std::string::npos);
+    EXPECT_EQ(result.find("1\t2"), std::string::npos);
+}
+
+TEST_F(DbmsHavingTest, HandlesHavingWithGreaterOrEqual) {
+    dbms.process_query_to_string("CREATE TABLE orders (user_id INTEGER, item NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('10', 'Book')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('10', 'Pen')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('20', 'Notebook')");
+
+    std::string result = dbms.process_query_to_string(
+        "SELECT user_id, COUNT(*) FROM orders GROUP BY user_id HAVING COUNT(*) >= 2"
+    );
+
+    EXPECT_NE(result.find("10"), std::string::npos);
+    EXPECT_EQ(result.find("20"), std::string::npos);
+}
+
+TEST_F(DbmsHavingTest, HandlesHavingWithLessOrEqual) {
+    dbms.process_query_to_string("CREATE TABLE orders (user_id INTEGER, item NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('10', 'Book')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('10', 'Pen')");
+    dbms.process_query_to_string("INSERT INTO orders (user_id, item) VALUES ('20', 'Notebook')");
+
+    std::string result = dbms.process_query_to_string(
+        "SELECT user_id, COUNT(*) FROM orders GROUP BY user_id HAVING COUNT(*) <= 1"
+    );
+
+    EXPECT_NE(result.find("20"), std::string::npos);
+    EXPECT_EQ(result.find("10"), std::string::npos);
+}
+
+TEST_F(DbmsHavingTest, HandlesHavingWithNotEqual) {
+    dbms.process_query_to_string("CREATE TABLE cities (name NVARCHAR2, region NVARCHAR2)");
+    dbms.process_query_to_string("INSERT INTO cities (name, region) VALUES ('Kyiv', 'North')");
+    dbms.process_query_to_string("INSERT INTO cities (name, region) VALUES ('Lviv', 'West')");
+
+    std::string result = dbms.process_query_to_string(
+        "SELECT name FROM cities GROUP BY name HAVING name != 'Lviv'"
+    );
+
+    EXPECT_NE(result.find("Kyiv"), std::string::npos);
+    EXPECT_EQ(result.find("Lviv"), std::string::npos);
+}
+
+TEST_F(DbmsHavingTest, HandlesHavingAfterWhereFilter) {
+    dbms.process_query_to_string("CREATE TABLE events (city NVARCHAR2, active INTEGER)");
+    dbms.process_query_to_string("INSERT INTO events (city, active) VALUES ('Warsaw', '1')");
+    dbms.process_query_to_string("INSERT INTO events (city, active) VALUES ('Warsaw', '1')");
+    dbms.process_query_to_string("INSERT INTO events (city, active) VALUES ('Kyiv', '1')");
+    dbms.process_query_to_string("INSERT INTO events (city, active) VALUES ('Kyiv', '0')");
+
+    std::string result = dbms.process_query_to_string(
+        "SELECT city, COUNT(*) FROM events WHERE active = '1' GROUP BY city HAVING COUNT(*) > 1"
+    );
+
+    EXPECT_NE(result.find("Warsaw"), std::string::npos);
+    EXPECT_EQ(result.find("Kyiv"), std::string::npos);
+}
