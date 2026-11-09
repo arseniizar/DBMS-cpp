@@ -37,7 +37,7 @@ The system is decoupled into modular layers:
   - Tabular data visualization implemented via `QAbstractTableModel`.
   - Tabbed query workspace and interactive schema explorer.
 - **Robust Verification:**
-  - **55+ automated unit and integration tests** using **GoogleTest** covering parser state transitions, relational joins, aggregations, key constraints, and execution results.
+  - **100+ automated unit and integration tests** using **GoogleTest** covering parser state transitions, relational joins, aggregations, key constraints, and execution benchmarks.
 
 ---
 

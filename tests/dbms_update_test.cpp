@@ -77,3 +77,27 @@ TEST_F(DbmsUpdateTest, FailsOnUpdateWithMismatchedDataType) {
     EXPECT_NE(result.find("error"), std::string::npos);
     EXPECT_NE(result.find("data type mismatch"), std::string::npos);
 }
+
+TEST_F(DbmsUpdateTest, HandlesUpdateWithNotEqualCondition) {
+    dbms.process_query_to_string("UPDATE users SET city = 'Updated' WHERE id != '2'");
+
+    std::string res1 = dbms.process_query_to_string("SELECT city FROM users WHERE id = '1'");
+    EXPECT_NE(res1.find("Updated"), std::string::npos);
+
+    std::string res2 = dbms.process_query_to_string("SELECT city FROM users WHERE id = '2'");
+    EXPECT_NE(res2.find("Lviv"), std::string::npos);
+}
+
+TEST_F(DbmsUpdateTest, HandlesUpdateWhereNoRowsMatch) {
+    std::string update_result = dbms.process_query_to_string("UPDATE users SET name = 'Nobody' WHERE id = '999'");
+    EXPECT_EQ(update_result, "Query executed successfully");
+
+    std::string select_result = dbms.process_query_to_string("SELECT * FROM users");
+    EXPECT_EQ(select_result.find("Nobody"), std::string::npos);
+}
+
+TEST_F(DbmsUpdateTest, FailsOnUpdateWithNonExistentWhereColumn) {
+    std::string result = dbms.process_query_to_string("UPDATE users SET name = 'Test' WHERE missing_col = '1'");
+    std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+    EXPECT_NE(result.find("does not exist"), std::string::npos);
+}
